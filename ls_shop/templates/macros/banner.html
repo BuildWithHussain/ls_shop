@@ -1,0 +1,19 @@
+{% from "templates/macros/icon.html" import icon %}
+{% macro banner() %}
+<div x-data="{
+    banner_visible: true 
+    }" x-show="banner_visible" 
+    x-transition:enter="transition ease-out duration-500"
+    x-transition:enter-start="-translate-y-10" 
+    x-transition:enter-end="translate-y-0" 
+    x-transition:leave="opacity-0"
+    class=" w-full h-auto py-2 duration-300 ease-out bg-gray-100 rounded-lg sm:py-0 sm:h-10" x-cloak>
+    <div class="flex items-center justify-between w-full h-full px-3 ">
+        {{caller()}}
+        <button @click="banner_visible=false; "
+            class="flex items-center flex-shrink-0 translate-x-1 ease-out duration-150 justify-center w-6 h-6 p-1.5 text-black rounded-full hover:bg-neutral-100 cursor-pointer">
+            {{icon('close', 'h-6 w-6')}}
+        </button>
+    </div>
+</div>
+{% endmacro %}

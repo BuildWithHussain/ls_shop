@@ -1,0 +1,149 @@
+{% from "templates/macros/modal.html" import modal %}
+{% from 'templates/macros/user_dashboard_product.html' import dashboard_product %}
+
+{% macro return_button(classes='', order_id='N/A', delivery_status='Not Delivered',items=[],return_reasons=[]) %}
+{% set button_classes = 'w-full bg-white hover:bg-gray-50 text-sm text-center p-2 rounded-lg border border-gray-400
+cursor-pointer ' + classes %}
+
+
+
+{% if delivery_status != "Not Delivered" %}
+
+<script>
+    async function return_items(order_id, selected_items, btn, refs) {
+        if (!selected_items.length) {
+            const message = $store.i18n.t('Please select at least one item to return.')
+            toast(message, { "type": "warning" });
+            return;
+        }
+        let items_to_return = [];
+        let valid = true;
+        selected_items.forEach(code => {
+            const comment = refs[`${code}_return_comment`].value;
+            const reason = refs[`${code}_return_reason`].value;
+            const error_span = refs[`${code}_error`];
+            if (!reason) {
+                error_span.textContent = "Reason is required.";
+                valid = false;
+
+            } else {
+                error_span.textContent = "";
+            }
+            items_to_return.push({
+                item_code: code,
+                comment: comment,
+                reason: reason
+            });
+        });
+        if (!valid) return;
+        const spinner = btn.querySelector(".animate-spin");
+        btn.disabled = true;
+        spinner.classList.remove("hidden");
+        try {
+            const response = await frappe_call('/api/v2/method/ls_shop.api.return.return_items', {
+                sales_order_id: order_id,
+                items: items_to_return
+            });
+            if (!response.data.success) {
+                const message = $store.i18n.t('Something went wrong');
+                toast(message, { "type": "danger" })
+                return
+            }
+            const message = $store.i18n.t('Return raised successfully!');
+            toast(message, { "type": "success" })
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            window.location.reload()
+        } catch (error) {
+
+        }
+        finally {
+            btn.disabled = false
+            spinner.classList.add("hidden");
+
+        }
+
+
+    }
+</script>
+
+{% call modal(
+button_text='Return Order',
+button_classes=button_classes,
+modal_header='Select items to return',
+modal_classes='w-full md:max-w-1/2'
+) %}
+
+
+<div class="p-6 md:p-10">
+
+    {% for item in items %}
+
+    <div class="flex items-center justify-between {% if not loop.last %}border-b border-gray-300 mb-4 pb-4 {% endif %}"
+        :class="!returned_items.includes('{{item.item_code}}') && ! returned_items_in_draft.includes('{{item.item_code}}') ? 'flex-col md:flex-row':''">
+        <div class="flex items-center">
+            <input type="checkbox" class="h-5 w-5 rounded border-gray-300 me-10" :value="'{{ item.item_code }}'"
+                x-model="selected_items"
+                :disabled="returned_items.includes('{{ item.item_code }}') || returned_items_in_draft.includes('{{ item.item_code }}')">
+            <div
+                :class="(returned_items.includes('{{ item.item_code }}') || returned_items_in_draft.includes('{{ item.item_code }}')) ? 'opacity-75' : ''">
+                {% set display_name = item.item_name if frappe.lang == "en" else item.item_name_ar or "" %}
+                {{ dashboard_product(item['image'],
+                item['brand'],
+                display_name,
+                item['price'],
+                img_size="w-20 h-27",
+                size=item['size'],
+                info_class=""
+                ) }}
+            </div>
+        </div>
+
+        <!-- Badge -->
+        <template x-if="returned_items.includes('{{ item.item_code }}')">
+            <span
+                class="text-xs font-semibold bg-red-50 text-red-600 border border-red-600  px-2 py-0.5 rounded-lg ms-4 md:me-20">
+                {{_('Returned')}}
+            </span>
+        </template>
+        <template x-if="returned_items_in_draft.includes('{{ item.item_code }}')">
+            <span
+                class="text-xs font-semibold border bg-yellow-50 text-yellow-600 border-yellow-600  px-2 py-0.5 rounded-lg ms-4 md:me-20">
+                {{_('Processing')}}
+            </span>
+        </template>
+        <template
+            x-if="!returned_items.includes('{{item.item_code}}') && ! returned_items_in_draft.includes('{{item.item_code}}') && ('{{item.is_free_item}}'=== '0') ">
+            <div class="w-full md:max-w-65  mt-3 md:mt-0">
+                <label class="block text-xs font-normal text-gray-600  mb-1">
+                    {{ _('Reason for Return') }}*
+                </label>
+                {% include "templates/components/core/reason_for_return.html" %}
+                <label class="block text-xs font-normal text-gray-600 mt-3 mb-1">
+                    {{ _('Comment') }}
+                </label>
+                <textarea type="text" x-ref="{{item.item_code}}_return_comment" name="{{id}}_return_comment" required
+                    class="w-full border-gray-300 rounded-md border p-1 text-sm text-gray-600 focus:outline-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                    placeholder="Enter your comment..."></textarea>
+                <span class="text-red-800 text-xs" x-ref="{{item.item_code}}_error" x-transition></span>
+            </div>
+        </template>
+    </div>
+    {% endfor %}
+
+    <div
+        class="flex flex-col-reverse justify-between gap-2 border-t border-gray-300 bg-white/60 mt-4 pt-4 sm:flex-row sm:items-center md:justify-end">
+        <button type="button" x-on:click="return_items('{{ order_id }}', selected_items,$event.target,$refs)"
+            class="whitespace-nowrap rounded-lg bg-red-900 px-4 py-2 text-center text-sm font-medium tracking-wide text-white transition hover:opacity-75 active:opacity-100 disabled:opacity-75 flex items-center justify-center">
+            {{ _('Return') }} <div
+                class="hidden  animate-spin  size-4 border-3 border-current border-t-transparent  rounded-full ms-2"
+                role="status" aria-label="loading">
+            </div>
+        </button>
+    </div>
+</div>
+
+{% endcall %}
+
+{% endif %}
+
+{% endmacro %}

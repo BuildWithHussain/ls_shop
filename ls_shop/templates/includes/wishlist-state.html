@@ -1,0 +1,40 @@
+<script defer>
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('wishlist', {
+            items: Alpine.$persist([]).as("wishlist_items"),
+            route_set: new Set(), // internal cache for fast lookup
+
+            init() {
+                this.refresh_route_set();
+            },
+
+            refresh_route_set() {
+                this.route_set = new Set(this.items.map(item => item.route));
+            },
+
+            is_in_wishlist(item) {
+                return this.route_set.has(item.route);
+            },
+
+            add(item) {
+                if (this.is_in_wishlist(item)) {
+                    toast("Item already in wishlist!", { type: "warning" });
+                    return;
+                }
+                this.items.push(item);
+                this.refresh_route_set();
+                toast("Item added to wishlist!", { type: "success" });
+            },
+
+            remove(item) {
+                this.items = this.items.filter(w_item => w_item.route !== item.route);
+                this.refresh_route_set();
+            },
+
+            get count() {
+                return this.items.length;
+            }
+        })
+
+    })
+</script>

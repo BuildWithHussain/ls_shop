@@ -1,0 +1,64 @@
+<div class="w-full max-w-sm flex items-center" x-data="{
+    is_open: false,
+    opened_with_keyboard: false,
+    selected_option: { value: cart_item.variant.size, label: cart_item.variant.size },
+    options: cart_item.sizes.filter(s => s.stock_detail.in_stock === 1).map(s => ({ value: s.size, label: s.size })),
+    set_selected_option(option) {
+        this.selected_option = option;
+        this.is_open = false;
+        this.opened_with_keyboard = false;
+        this.$refs.hidden_text_field.value = option.value;
+        $store.cart.update_variant(cart_item, option.value); // Trigger size update
+    },
+    highlight_first_matching_option(pressed_key) {
+        const option = this.options.find(item =>
+            item.label.toLowerCase().startsWith(pressed_key.toLowerCase()));
+        if (option) {
+            const index = this.options.indexOf(option);
+            const all_options = document.querySelectorAll('.combobox-option');
+            if (all_options[index]) {
+                all_options[index].focus();
+            }
+        }
+    }
+}" x-on:keydown="highlight_first_matching_option($event.key)"
+    x-on:keydown.esc.window="is_open = false, opened_with_keyboard = false">
+
+    <div class="relative">
+        <button type="button" role="combobox"
+            class="inline-flex w-full items-center justify-between gap-2  cursor-pointer py-1 text-xs md:text-sm text-gray-900 bg-white"
+            x-on:click="is_open = !is_open" x-on:keydown.down.prevent="opened_with_keyboard = true"
+            x-on:keydown.enter.prevent="opened_with_keyboard = true"
+            x-on:keydown.space.prevent="opened_with_keyboard = true"
+            :aria-label="selected_option ? selected_option.value : 'Please Select'"
+            :aria-expanded="is_open || opened_with_keyboard">
+            <span x-text="selected_option ? selected_option.value : 'Please Select'"></span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20" class="size-5"
+                :class="{ 'transition-transform duration-200 transform rotate-180': is_open }">
+                <path fill="currentColor" fill-rule="evenodd"
+                    d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 011.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z"
+                    clip-rule="evenodd" />
+            </svg>
+        </button>
+
+        <input type="text" x-ref="hidden_text_field" hidden />
+
+        <ul x-cloak x-show="is_open || opened_with_keyboard"
+            class="absolute z-50 left-0 top-11 max-h-44  overflow-y-auto  bg-white border border-gray-300 rounded-lg shadow-md py-1.5"
+            role="listbox" x-on:click.outside="is_open = false, opened_with_keyboard = false"
+            x-trap="opened_with_keyboard">
+
+            <template x-for="(item, index) in options" :key="item.value">
+                <li class="combobox-option px-4 py-2 text-xs md:text-sm text-gray-900 hover:bg-gray-300 cursor-pointer text-nowrap whitespace-nowrap"
+                    role="option" x-on:click="set_selected_option(item)" x-on:keydown.enter="set_selected_option(item)"
+                    :id="'option-' + index" tabindex="0">
+                    <span :class="selected_option?.value === item.value ? 'font-bold' : ''" x-text="item.label"></span>
+                    <svg x-show="selected_option?.value === item.value" class="inline size-4 ml-2" fill="none"
+                        stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                </li>
+            </template>
+        </ul>
+    </div>
+</div>

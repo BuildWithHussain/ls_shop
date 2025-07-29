@@ -1,0 +1,81 @@
+{% extends "templates/user_layout.html" %}
+
+
+{% block user_body %}
+<div class="md:grid md:grid-cols-2 md:gap-10">
+    <div class="border border-gray-300  rounded-lg">
+        <div class="flex items-center justify-between border-b border-gray-300 bg-gray-50 p-3">
+            <h3 class="text-base text-red-900 font-medium uppercase">{{_('my profile')}}</h3>
+            <a href="/{{frappe.lang}}/account/profile">
+                <p class="underline">{{_('Edit')}}</p>
+            </a>
+        </div>
+        <div class="p-3">
+            <p class="text-base flex items-center mt-2">{{_('First name')}}: <span
+                    class="ms-2">{{_(user_details.first_name)}}</span></p>
+            <p class="text-base flex items-center mt-2">{{_('Last name')}}: <span
+                    class="ms-2">{{_(user_details.last_name)}}</span></p>
+            <p class="text-base flex items-center mt-2">{{_('Email')}}: <span class="ms-2">{{_(user_details.email)}}</span>
+            </p>
+            {% if user_details.mobile_no %}
+            <p class="text-base flex items-center mt-2">{{_('Phone number')}}: <span
+                    class="ms-2">{{_(user_details.mobile_no)}}</span></p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="border border-gray-300  mt-4 md:mt-0 rounded-lg">
+        <div class="flex items-center justify-between border-b border-gray-300 bg-gray-50 p-3">
+            <h3 class="text-base text-red-900 font-medium uppercase">{{_('billing information')}}</h3>
+            <a href="/{{frappe.lang}}/account/address">
+                <p class="underline">{{_('View all')}}</p>
+            </a>
+        </div>
+        <div class="p-3">
+
+            {% if billing_address %}
+            <p class="text-base flex items-center mt-2">{{_(billing_address.display)}}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<template x-if="$store.wishlist.items.length > 0">
+    <div class="border border-gray-300  rounded-lg mt-4 md:mt-10">
+        <div class="flex items-center justify-between border-b border-gray-300 bg-gray-50 p-3">
+            <h3 class="text-base text-red-900 font-medium uppercase">{{_('my wishlist')}}</h3>
+            <a href="/{{frappe.lang}}/account/wishlist">
+                <p class="underline">{{_('Edit')}}</p>
+            </a>
+        </div>
+        <div class="p-4">
+            <template x-for="item in $store.wishlist.items">
+                <div class="flex pb-3 mb-3 border-b border-gray-300 md:w-2/3">
+                    <img :src="item.image || '/assets/ls_shop/images/1.jpg'"
+                        class="w-34 h-45 object-cover rounded-lg me-3 md:me-7" alt="">
+                    <div class="md:mt-5">
+                    
+                        <div class="text-sm gap-2 flex flex-col">
+                            <p class="text-red-800 font-medium text-base" :title="item.brand" x-text="$store.i18n.t(item.brand)"></p>
+                            <p>
+                                {% if frappe.lang == "en" %}
+                                <span x-text="item.item_name"></span>
+                                <span x-text="item.attribute_value"></span>
+                            
+                                {% else %}
+                                <span x-text="item.custom_item_name_ar || item.item_name"></span>
+                                <span x-text="$store.i18n.t(item.attribute_value)"></span>
+                                {% endif %}
+                            </p>
+
+                            <p class="flex">
+                                {{get_currency_symbol()}}
+                                <span x-text="item.sale_price.toFixed(2)"></span>
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+</template>
+{% endblock %}

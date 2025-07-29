@@ -1,0 +1,87 @@
+{
+	"actions": [],
+	"allow_import": 1,
+	"autoname": "autoincrement",
+	"creation": "2025-05-24 11:44:16.899358",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"brand",
+		"column_break_dbgl",
+		"item_group",
+		"size_chart_section",
+		"size_chart",
+		"size_chart_json",
+		"chart_preview"
+	],
+	"fields": [
+		{
+			"fieldname": "brand",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Brand",
+			"options": "Brand",
+			"reqd": 1
+		},
+		{
+			"fieldname": "column_break_dbgl",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "item_group",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Item Group",
+			"options": "Item Group",
+			"reqd": 1
+		},
+		{
+			"fieldname": "size_chart_section",
+			"fieldtype": "Section Break",
+			"label": "Size Chart"
+		},
+		{
+			"fieldname": "size_chart",
+			"fieldtype": "Attach",
+			"label": "Size Chart",
+			"reqd": 1
+		},
+		{
+			"fieldname": "size_chart_json",
+			"fieldtype": "JSON",
+			"hidden": 1,
+			"label": "Size Chart JSON",
+			"read_only": 1
+		},
+		{
+			"fieldname": "chart_preview",
+			"fieldtype": "HTML",
+			"label": "Chart Preview"
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"links": [],
+	"modified": "2025-05-24 14:01:27.339138",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Size Chart",
+	"naming_rule": "Autoincrement",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

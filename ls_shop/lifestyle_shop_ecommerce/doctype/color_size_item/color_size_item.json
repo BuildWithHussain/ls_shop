@@ -1,0 +1,43 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2025-03-16 15:37:28.650120",
+	"doctype": "DocType",
+	"editable_grid": 1,
+	"engine": "InnoDB",
+	"field_order": ["size", "column_break_sege", "item_code"],
+	"fields": [
+		{
+			"fieldname": "size",
+			"fieldtype": "Data",
+			"in_list_view": 1,
+			"label": "Size",
+			"reqd": 1
+		},
+		{
+			"fieldname": "column_break_sege",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "item_code",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Item Code",
+			"link_filters": "[[\"Item\",\"has_variants\",\"=\",0]]",
+			"options": "Item",
+			"reqd": 1
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"istable": 1,
+	"links": [],
+	"modified": "2025-03-16 15:38:04.841880",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Color Size Item",
+	"owner": "Administrator",
+	"permissions": [],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

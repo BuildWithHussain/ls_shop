@@ -1,0 +1,8 @@
+<a href="/{{frappe.lang}}/account/wishlist" class="relative">
+    {{icon(name="heart",classes="h-6 w-6 ")}}
+    <span
+        class="absolute -top-3 ltr:-right-4 rtl:-left-4 bg-red-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+        x-text="$store.wishlist.count" x-show="$store.wishlist.count > 0 ? true : false" x-cloak>
+        0
+    </span>
+</a>

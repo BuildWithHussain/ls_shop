@@ -1,0 +1,74 @@
+{% extends "templates/layout.html" %}
+{% from "templates/macros/item_card.html" import item_card %}
+
+{% block body %}
+
+<div class="my-6 flex items-center justify-between">
+    <h1 class="text-2xl font-semibold md:text-3xl">
+        {% if category %}
+        {{_(category)}} ({{total_count}})
+        {% else %}
+        {{ _("Products") }} ({{total_count}})
+        {% endif %}
+    </h1>
+    {% include "templates/components/filter_offcanvas.html" %}
+</div>
+<div class="flex flex-col gap-12 md:flex-row">
+    <div class="hidden md:block md:w-1/4">
+        <div class="sticky top-6">
+            {% include 'templates/components/product_filter.html' %}
+        </div>
+    </div>
+    <div class="w-full md:w-3/4">
+        {% if products|length > 0 %}
+            <div class="flex items-end justify-end mb-3  w-full ">
+                {% include "templates/components/core/sort_by.html" %}
+            </div>
+        {% endif %}
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6">
+            {% for product in products %}
+          {% set product_name = product.item_name if frappe.lang == "en" else product.custom_item_name_ar or product.item_name %}
+
+                <a href="/{{frappe.lang}}/products/{{product.route}}" class="flex justify-end">
+                    {{ item_card(
+                    image=product.image or "/assets/ls_shop/images/1.jpg",
+                    brand=product.brand,
+                    product_name=product_name,
+                    original_price=product.default_price,
+                    formatted_price=product.sale_price,
+                    discount=product.discount_percent,
+                    size_variant="default",
+                    product_obj=product,
+                    attribute_value = product.attribute_value
+                    ) }}
+                </a>
+            {% else %}
+            <div class="text-center md:col-start-2">
+            <h2 class="text-md font-medium">No product found..</h2>
+            </div>
+            {% endfor %}
+        </div>
+        {% if products|length > 0 %}
+            <div class="flex items-center justify-center mt-20">
+                {% include "templates/components/core/pagination.html" %}
+            </div>
+        {% endif %}
+    </div>
+    
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script>
+    function go_to_page(page) {
+        state.page = `${page}`;
+        window.location.reload();
+        window.scrollTo(0, 0);
+    }
+    function sort_by(sort_by_value) {
+        state.sort_by = `${sort_by_value}`;
+        window.location.reload();
+    }
+</script>
+{% endblock %}

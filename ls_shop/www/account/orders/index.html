@@ -1,0 +1,219 @@
+{% extends "templates/user_layout.html" %}
+{% from "templates/macros/icon.html" import icon %}
+{% from "templates/macros/cancel_order_button.html" import cancel_order_button %}
+{% from 'templates/macros/return_button.html' import return_button %}
+{% from 'templates/macros/user_dashboard_product.html' import dashboard_product %}
+{% set status_map = {
+    'Waiting for Approval': {'color_class': 'bg-yellow-50 text-yellow-600 border-yellow-600'},
+    'Order Received': {'color_class': 'bg-green-50 text-green-600 border-green-600'},
+    'Preparing for Shipment': {'color_class': 'bg-yellow-50 text-yellow-600 border-yellow-600'},
+    'Shipped': { 'color_class': 'bg-gray-50 text-gray-600 border-gray-600'},
+  'Delivered': {'color_class': 'bg-green-50 text-green-600 border-green-600'},
+    'Cancelled': {'color_class': 'bg-red-50 text-red-600 border-red-600'},
+    'Returned': {'color_class': 'bg-red-50 text-red-600 border-red-600'}
+} %}
+
+{% block alpine_plugins %}
+<script src="/assets/ls_shop/js/vendor/alpinejs/plugins/focus.js"></script>
+{% endblock %}
+
+{% block user_body %}
+<div x-data="{
+    loading_status: true,
+    init() {
+        {% if not orders %}
+        this.loading_status = false;
+        {% endif %}
+    }
+}" x-init="init()">
+{% for order in orders %}
+<div x-data="{ 
+    selected_items: [],
+    returned_items: [],
+    returned_items_in_draft:[],
+    is_fully_returned:false,
+    partially_returned: false,
+    free_items_map: {},
+    async fetch_returned_items(order_id) {
+    const response = await frappe_call('/api/v2/method/ls_shop.api.return.get_returned_items', {
+        sales_order_id: order_id
+    });
+    this.returned_items = response.data.returned_items;
+    this.returned_items_in_draft = response.data.returned_items_in_draft;
+    this.is_fully_returned = response.data.is_fully_returned;
+    this.partially_returned = response.data.partially_returned;
+    this.loading_status = false;
+    this.free_items_map = response.data.free_items_map;
+    },
+    watch_selected_items() {
+        let updated_selected = [...this.selected_items];
+
+        // First: Ensure free items selected with original
+        for (let item of updated_selected) {
+            if (this.free_items_map[item]) {
+                let free_item = this.free_items_map[item];
+                if (!updated_selected.includes(free_item)) {
+                    updated_selected.push(free_item);
+                }
+            }
+        }
+
+        // Second: If original unselected, remove free item too
+        for (const [original, free] of Object.entries(this.free_items_map)) {
+            if (!updated_selected.includes(original) && updated_selected.includes(free)) {
+                updated_selected = updated_selected.filter(i => i !== free);
+            }
+        }
+
+        this.selected_items = updated_selected;
+    },
+}" x-init="fetch_returned_items('{{ order.name }}')" x-effect="watch_selected_items()" class="flex flex-col border  border-gray-300 rounded-lg mb-4">
+    <div class="flex items-start justify-between border-b border-gray-300 bg-gray-50 p-4 rounded-t-lg">
+        <div>
+            <h3 class="text-sm text-red-800 font-medium uppercase">{{order.name}}</h3>
+            <a href="/{{frappe.lang}}/account/orders/detail?order_id={{order.name}}"
+                class="text-sm font-normal  underline">
+                <div class="mt-3">
+                    {{_('View details')}}
+                </div>
+            </a>
+        </div>
+        <div class="hidden md:block">
+            <h3 class="text-sm text-red-800 font-medium capitalize">{{_('payment method')}}</h3>
+            <h3 class="text-sm font-normal mt-3 ">
+                {% if order.custom_ecommerce_payment_mode %}
+                {% if order.custom_ecommerce_payment_mode == "Telr" %}
+                {{_('Card')}}
+                {% else %}
+                {{_(order.custom_ecommerce_payment_mode)}}
+                {% endif %}
+                {% endif %}
+            </h3>
+        </div>
+        <div class="hidden md:block">
+            <h3 class="text-sm text-red-800 font-medium ">
+                {% if order.custom_is_store_pickup %}
+                    {{_('Pickup from')}}
+                {% else %}
+                    {{_('Ship to')}}
+                {% endif %}
+            </h3>
+            <h3 class="text-sm font-normal mt-3 ">
+                {% if order.custom_is_store_pickup %}
+                    {% set pickup_parts = [
+                        order.pickup_address_line_1,
+                        order.pickup_address_line_2,
+                        order.pickup_city,
+                        order.pickup_state,
+                        order.pickup_pincode,
+                        "Phone: " ~ order.pickup_phone if order.pickup_phone else ""
+                    ] %}
+                    {% set pickup_display = ", ".join(pickup_parts | select) %}
+                    {{ _(pickup_display[:25]) }}...
+                {% else %}
+                    {% if order.shipping_address %}
+                        {{ _(order.shipping_address.replace('<br>', ', ')[:25] )}}...
+                    {% endif %}
+                {% endif %}
+            </h3>
+        </div>
+       {% set print_format  =  frappe.db.get_value("Lifestyle Settings","Lifestyle Settings","print_format") or 'Standard' %}
+        <div class=" md:w-1/6">
+            <div class="min-h-5">
+                {% with sales_invoice = frappe.get_all("Sales Invoice",filters={'sales_order':order.name},limit=1) %}
+                {% if sales_invoice %}
+                <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Sales Invoice&name={{sales_invoice[0].name}}&format={{print_format}}"
+                    target="_blank" class="text-sm text-red-800 font-medium flex items-center justify-end mb-2 "
+                    x-show="!partially_returned">
+                    {% if order.custom_ecommerce_status == "Delivered" %}
+            
+                    {{icon("invoice",classes = 'size-4 me-1')}}
+                    {{_('Invoice')}}
+            
+                    {% endif %}
+                </a>
+                <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Sales Invoice&name={{sales_invoice[0].name}}&format={{print_format}}"
+                    target="_blank" class="text-sm text-red-800 font-medium flex items-center justify-end mb-2"
+                    x-show="partially_returned && !is_fully_returned" x-cloak>
+                    {{icon("invoice",classes = 'size-4 me-1')}}
+                    {{_('Invoice')}}
+                </a>
+                {% endif %}
+                {% endwith %}
+            </div>
+            {% with order_status = status_map.get(order.custom_ecommerce_status) %}
+
+            <span
+                class="text-xxs px-2 py-1   border rounded-md font-medium flex justify-center {{ order_status.color_class }}"
+                x-show="!is_fully_returned && !partially_returned && !loading_status" x-cloak>
+                {{ _(order.custom_ecommerce_status) }}
+            </span>
+            {% endwith %}
+            <span x-show="partially_returned && !is_fully_returned"
+                class="text-xxs px-2 py-1   border    bg-red-50 text-red-600 border-red-600  rounded-md font-medium flex justify-center capitalize" x-cloak>
+                {{_("partially returned")}}
+            </span>
+            <span x-show="is_fully_returned"
+                class="text-xxs px-2 py-1   border    bg-red-50 text-red-600 border-red-600  rounded-md font-medium flex justify-center" x-cloak>
+                {{_("Returned")}}
+            </span>
+        </div>
+    </div>
+    <div class="flex flex-col md:flex-row items-start justify-between p-4">
+        <div class="w-full md:w-3/4">
+
+            {% set items = json.loads(order['items'])%}
+            {% for item in items %}
+            <div class="{{ 'border-b border-gray-300 mb-4 pb-4' if not loop.last }}">
+                {% set display_name = item.item_name if frappe.lang == "en" else item.item_name_ar or item.item_name %}
+                {{ dashboard_product(item['image'],
+                item['brand'],
+                display_name,
+                item['price'],
+                size=item['size']
+                )}}
+            </div>
+            {% endfor %}
+
+        </div>
+        <div class="w-full md:w-1/4 flex flex-col">
+            <!-- <button class="bg-red-800 hover:bg-red-900 text-white text-sm text-center p-2 rounded-lg cursor-pointer">
+                {{ _('Track Order') }}
+            </button> -->
+            <div x-show="!is_fully_returned">
+                {{ cancel_order_button(classes='mt-4', order_id=order.name, ecommerce_order_status =order.custom_ecommerce_status) }}
+            </div>
+            {% if order.name | can_return(return_period) %}
+                {{ return_button("mt-4", order.name, order.delivery_status, items,return_reasons) }}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="text-center">{{_('No orders found')}}...</div>
+{% endfor %}
+ <div x-show="loading_status" style="background: rgba(255,255,255,0.8)"
+        class="fixed top-0 left-0 w-full h-full z-50 flex items-center justify-center" >
+        <div class=" p-4 rounded-md  text-lg text-red-900 flex items-center gap-2">
+            <div class="  animate-spin  size-5 border-3 border-current border-t-transparent  rounded-full ms-2"
+                role="status" aria-label="loading">
+            </div>
+            <span>{{_("Loading your orders")}}...</span>
+        </div>
+    </div>
+</div>
+{% if orders|length > 0 %}
+    <div class="flex items-center justify-center mt-20">
+        {% include "templates/components/core/pagination.html" %}
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block script %}
+<script>
+    function go_to_page(page) {
+        state.page = `${page}`;
+        window.location.reload();
+    }
+</script>
+{% endblock %}

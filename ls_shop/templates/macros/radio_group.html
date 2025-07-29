@@ -1,0 +1,21 @@
+{% macro radio_group(options = []) %}
+
+<div x-data="{
+    radio_group_selected_value: null,
+    radioGroupOptions: {{options}}
+}" class="space-y-3">
+    {% for option in options %}
+    <label @click="radio_group_selected_value={{option.value}}"
+        class="flex items-start p-5 space-x-3 bg-white border rounded-md shadow-sm hover:bg-gray-50 border-neutral-200/70">
+        <input type="radio" name="radio-group" :value="{{option.name}}"
+            class="text-gray-900 translate-y-px focus:ring-gray-700" />
+        <span class="relative flex flex-col text-left space-y-1.5 leading-none">
+            <span class="text-sm opacity-50">
+                {{ option.display}}
+            </span>
+        </span>
+    </label>
+    {% endfor %}
+</div>
+
+{% endmacro %}

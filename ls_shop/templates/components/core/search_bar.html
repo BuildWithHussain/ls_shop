@@ -1,0 +1,16 @@
+<div class="relative w-full flex" >
+    <input type="text"
+        class="flex w-full rounded-lg bg-gray-100 p-1.5 ps-5 text-sm text-gray-900 placeholder-gray-900 focus:ring-2 focus:ring-gray-200 focus:outline-none"
+        placeholder="{{_('Search')}}" 
+        x-model="search_term"
+        @keyup.enter="update_search()"
+        @input.debounce.300ms="get_search_results()"
+        >
+    <div class="absolute inset-y-0 ltr:right-0 rtl:left-0 flex items-center pe-3 cursor-pointer" @click="update_search()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+    </div>
+</div>

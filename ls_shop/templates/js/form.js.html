@@ -1,0 +1,26 @@
+<script>
+   function form_to_object(form) {
+        if (!(form instanceof HTMLFormElement)) {
+            throw new Error('Input must be an HTMLFormElement');
+        }
+
+        const formData = new FormData(form);
+        const formObject = {};
+
+        for (const [key, value] of formData.entries()) {
+            // Handle checkbox groups and multi-select elements that have the same name
+            if (key in formObject) {
+                if (!Array.isArray(formObject[key])) {
+                    formObject[key] = [formObject[key]];
+                }
+                formObject[key].push(value);
+            } else {
+                // Simple key-value assignment
+                formObject[key] = value;
+            }
+        }
+
+        return formObject;
+    }
+
+</script>

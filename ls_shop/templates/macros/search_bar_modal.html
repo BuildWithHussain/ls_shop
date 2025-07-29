@@ -1,0 +1,89 @@
+{% macro search_bar() %}
+{% from "templates/macros/icon.html" import icon %}
+<div x-data="{
+    is_open: false,
+    products :[],
+    query_state: window.query_state,
+    search_term: window.query_state?.search ? window.query_state.search : '',
+    update_search(){
+        this.query_state['search'] = this.search_term;
+        window.location.href = `/{{frappe.lang}}/products?search=${this.search_term}`
+    },
+    async get_search_results() {
+        if (this.search_term.length < 1) {
+            this.products = [];
+            return;
+        }
+        const data = await frappe_call('/api/v2/method/ls_shop.api.utils.get_search_results',
+            {search:this.search_term}
+        );
+        this.products = data.data;
+    },
+    init(){
+        this.get_search_results();
+    },
+    }" 
+    class="w-full"
+    >
+    <div x-on:click="is_open = true ; $nextTick(() => $refs.modalSearch.querySelector('input')?.focus())"
+        class="w-full">
+        {% include 'templates/components/core/search_bar.html' %}
+    </div>
+    <div x-cloak x-show="is_open" x-on:keydown.esc.window="is_open = false" x-on:click.self="is_open = false"
+        class="fixed inset-0 z-110  items-start justify-start bg-black/20  backdrop-blur-sm  hidden md:flex"
+        role="dialog" aria-modal="true" aria-labelledby="defaultModalTitle">
+        <!-- Modal Dialog -->
+        <div x-show="is_open"
+            class="flex w-full h-1/2 flex-col gap-4 overflow-hidden border border-gray-300 bg-white text-gray-600 ">
+            <!-- Dialog Header -->
+            <div class="max-w-7xl mx-auto px-6 md:px-10 py-5 flex items-center justify-between w-full">
+                <a class="rtl:space-x-reverse" href="/">
+                    <img src="/assets/ls_shop/images/lifestyle.png" alt="Lifestyle Logo" class="w-20 h-10 object-fit" />
+                </a>
+                <div class="max-w-3xl w-full mx-10" x-ref="modalSearch">
+                    {% include 'templates/components/core/search_bar.html' %}
+                </div>
+                <button x-on:click="is_open = false" aria-label="close modal" class="flex items-center cursor-pointer">
+                    {{icon(name='close', classes='w-5 h-5 text-gray-500')}}
+                    <p class="text-sm ms-1 capitalize">{{_('close')}}</p>
+                </button>
+            </div>
+            <!-- Dialog Body -->
+            <div class="max-w-4xl w-full mx-auto mt-10 px-6 md:px-10">
+                <h3 class="text-sm my-4" x-show="products.length > 0">{{_("Search Results")}}</h3>
+                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6">
+                    <template x-for="(product, index) in products" :key="index">
+                        <a :href="`/{{frappe.lang}}/products/${product.route}`">
+                            <div class="flex-col">
+                                <div class="flex gap-1 mb-1">
+                                    <img :src="product.image||'/assets/ls_shop/images/1.jpg'" alt=""
+                                        class="h-10 w-10 object-cover rounded-md bg-gray-400">
+                                    <div></div>
+                                    <h3 class="text-base">
+                                        {% if frappe.lang == 'en' %}
+                                        <span x-text="product.item_name"></span> <span x-text="product.attribute_value"></span>
+                                        {% else %}
+                                        <span x-text="product.custom_item_name_ar || product.item_name"></span> <span
+                                            x-text="$store.i18n.t(product.attribute_value)"></span>
+                                        {% endif %}
+                                    </h3>
+                                </div>
+                                <div class="flex gap-1">
+                                    <template x-if="product.default_price && product.discount_percent">
+                                        <p class="text-base font-medium line-through text-red-900 me-2 flex">
+											{{get_currency_symbol()}}<span x-text="product.default_price.toFixed(2)"></span> 
+										</p>
+                                    </template>
+                                    <h3 class="text-base font-medium flex">{{get_currency_symbol()}}<span x-text="(product.sale_price || 0).toFixed(2)"></span>
+                                        </span> </h3>
+                                </div>
+                            </div>
+                        </a>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endmacro %}

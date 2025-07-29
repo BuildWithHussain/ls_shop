@@ -1,0 +1,95 @@
+<div class="space-y-6">
+    <!-- Scrollable Cart Items -->
+
+    <div class="max-h-80 overflow-y-auto space-y-4 pr-2">
+        {% for cart_item in items %}
+        <div class="flex items-center gap-4">
+            <img src="{{cart_item['image'] or '/assets/ls_shop/images/1.jpg'}}"
+                class="w-28 h-36 object-cover rounded-sm" alt="product image" />
+            <div class="flex flex-col gap-2">
+                <span class="text-red-800 text-base font-medium"> {{_(cart_item.brand)}} </span>
+                    {% set product_name = cart_item.item_name if frappe.lang == "en" else cart_item.custom_item_name_ar or cart_item.item_name %}
+                    <span class="text-sm font-medium"> {{_(product_name)}} </span>
+                <div class="text-xs text-gray-700 flex gap-4">
+                    <span>{{ _('Size') }}: <span>{{_(cart_item.size)}}</span></span>
+                    <span>{{ _('Quantity') }}: {{_(cart_item.qty)}}</span>
+                </div>
+                <div class="flex items-center gap-3 md:gap-2">
+                    {% if cart_item.default_price %}
+                    <span class="text-sm md:text-base font-medium text-red-900 line-through flex">
+                        {{get_currency_symbol()}}
+                        {{"%.2f"|format(cart_item.default_price)}}
+                    </span>
+                    {% endif %}
+                    <span class="text-sm md:text-base font-medium flex">
+                        {% if cart_item.rate %}
+                        {{get_currency_symbol()}}
+                        {{"%.2f"|format(cart_item.price_list_rate)}}
+                        {% else %}
+                        {{_('Free')}}
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        {% endfor %}
+    </div>
+    <!-- Price Summary -->
+    <div class="space-y-3 my-4 py-4 border-b border-t border-gray-300">
+        <div class="flex justify-between text-gray-500 text-base">
+            <span>{{ _('Subtotal') }}</span>
+            <span class="font-medium flex"> {{get_currency_symbol()}} <span x-text="$store.cart.total.toFixed(2)"></span> </span>
+        </div>
+
+        {% if cart_quotation.coupon_code %}
+            <div class="flex justify-between text-gray-500 text-base"
+                x-show="$store.cart.total > parseFloat('{{cart_quotation.net_total or 0}}')">
+                <span>{{ _('Coupon Discount') }}</span>
+                <span class="font-medium flex text-green-700"> &minus;{{get_currency_symbol()}} <span
+                        x-text="($store.cart.total - parseFloat('{{cart_quotation.net_total or 0}}')).toFixed(2) "></span> </span>
+            </div>
+        {% endif %}
+        <div class="flex justify-between text-gray-500 text-base" x-show=" delivery_option === 'home_delivery'"
+            x-transition>
+            <span class="capitalize">{{ _('non-refundable delivery charge') }}</span>
+            <span class="font-medium" x-show="delivery_charge_applicable_below > parseFloat({{cart_quotation.total or 0}})"
+                x-transition>
+                {{get_currency_symbol()}} <span x-text="delivery_charge.toFixed(2)"></span>
+            </span>
+            <span class="font-medium" x-show="delivery_charge_applicable_below <= parseFloat({{cart_quotation.total or 0}})"
+                x-transition x-cloak>
+                {{_('Free')}}</span>
+        </div>
+        {% if cod_charge_applicable_below > cart_quotation.rounded_total and cod_charge %}
+        <div class="flex justify-between text-gray-500 text-base"
+            x-show="billing_address_filled && payment_mode === 'cod'" x-transition x-cloak>
+            <span>{{ _('COD Charges') }}</span>
+            <span class="font-medium flex">
+                {{get_currency_symbol()}}
+                {{"%.2f"|format(cod_charge)}}
+            </span>
+        </div>
+        {% endif %}
+         {% if cart_quotation.rounding_adjustment  %}
+        <div class="flex justify-between text-gray-500 text-base"
+           >
+            <span>{{ _('Round Off') }}</span>
+            <span class="font-medium flex">
+               {{get_currency_symbol()}}
+                {{"%.2f"|format(cart_quotation.rounding_adjustment)}} 
+            </span>
+        </div>
+        {% endif %}
+    </div>
+    <!-- Total -->
+    <div class="flex justify-between text-base font-bold">
+        <span class="uppercase">{{ _('Total') }}</span>
+        <div>{{get_currency_symbol()}}
+             <span class="font-medium" x-text="checkout_total.toFixed(2)"> </span>
+        </div>
+    </div>
+    <div x-show="billing_address_filled && payment_mode === 'tabby'" x-transition >
+      {{tabby(selector=tabby_selector,price = cart_quotation.rounded_total)}}
+    </div>
+</div>

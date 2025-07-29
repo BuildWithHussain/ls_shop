@@ -1,0 +1,167 @@
+<script defer>
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('cart', {
+            items: Alpine.$persist([]),
+            add(item, variant, price = 0,default_price=0, brand = '',sizes=[],qty=1) {
+                let already_added = false;
+                // Check if the same item AND variant is already in the cart
+                variant = JSON.parse(variant)
+                for (let cart_item of this.items) {
+                    if (cart_item.item.name === item.name &&
+                        JSON.stringify(cart_item.variant) === JSON.stringify(variant)) {
+                        cart_item.qty += qty;
+                        cart_item.price = price;
+                        cart_item.default_price = default_price;
+                        cart_item.brand = brand
+                        already_added = true;
+                        break;
+                    }
+                }
+
+                // If not already in cart, add as new item
+                if (!already_added) {
+                    this.items.push({
+                        item,
+                        variant,
+                        qty: qty,
+                        price: price,
+                        default_price: default_price,
+                        brand: brand,
+                        stock_qty: 0, // populate on cart load
+                        selected: true,
+                        sizes: sizes,
+                    });
+                }
+            },
+            async fetch_detail_for_cart() {
+                try {
+                    const data = await frappe_call("/api/v2/method/ls_shop.api.cart.get_detail_for_cart_items", { items: this.items });
+                    const stock_data = data.data.stock_data || {};
+                    this.items.forEach(item => {
+                        const key = `${item.variant.item_code}`;
+                        item.stock_qty = stock_data[key] !== undefined ? stock_data[key]["stock"] : 0;
+                        item.price = stock_data[key] !== undefined ? stock_data[key]["sale_price"] : 0;
+                        item.default_price = stock_data[key] !== undefined ? stock_data[key]["default_price"] : 0;
+
+                    });
+                }
+                catch (err) {
+                    toast("Something went wrong!", { type: "warning" });
+                }
+            },
+            async validate_stock_before_checkout(items = this.items) {
+                try {
+                    const data = await frappe_call("/api/v2/method/ls_shop.api.cart.validate_cart_stock", { items: items });
+
+
+                    if (data.data.success) {
+                        return true;
+                    } else {
+                        toast("Some items are out of stock:\n" + data.data.message.join("\n"), { type: "warning" });
+                        await this.fetch_detail_for_cart(); // refresh stock
+                        return false;
+                    }
+                }
+                catch (err) {
+                    return false;
+                }
+            },
+
+            increment(name, variant) {
+                const found_item = this.items.find(cart_item =>
+                    cart_item.item.name === name &&
+                    JSON.stringify(cart_item.variant) === JSON.stringify(variant)
+                );
+                if (!found_item) return;
+                if ((found_item.qty + 1) > found_item.stock_qty) {
+                    toast(`Only ${found_item.stock_qty} left in stock.`, { type: "warning" });
+                    return;
+                }
+                found_item.qty += 1;
+            },
+
+            decrement(name, variant) {
+                const found_item = this.items.find(cart_item =>
+                    cart_item.item.name === name &&
+                    JSON.stringify(cart_item.variant) === JSON.stringify(variant)
+                );
+
+                if (found_item) {
+                    found_item.qty -= 1;
+
+                    // Remove item if quantity becomes 0
+                    if (found_item.qty <= 0) {
+                        this.items = this.items.filter(cart_item =>
+                            !(cart_item.item.name === name &&
+                                JSON.stringify(cart_item.variant) === JSON.stringify(variant))
+                        );
+                    }
+                }
+            },
+
+            removeItem(name, variant) {
+                this.items = this.items.filter(cart_item =>
+                    !(cart_item.item.name === name &&
+                        JSON.stringify(cart_item.variant) === JSON.stringify(variant))
+                );
+            },
+
+            get count() {
+                return this.items.reduce((total, item) => total + item.qty, 0);
+            },
+            get selected_count() {
+                return this.items.filter(item=>item.selected).reduce((total, item) => total + item.qty, 0);
+            },
+
+            get total() {
+                return this.items.filter(item => item.selected).reduce((sum, cart_item) => {
+                    // Handle cases where price is null, undefined, empty string, or not a number
+                    const price = cart_item.price ? parseFloat(cart_item.price) : 0;
+                    const quantity = cart_item.qty || 0;
+                    // Only add to sum if price is a valid number
+                    return sum + (isNaN(price) ? 0 : price * quantity);
+                }, 0);
+            },
+
+            clear() {
+                this.items = [];
+            },
+            remove_selected() {
+                this.items = this.items.filter(item => !item.selected);
+            },
+            async update_variant(cart_item, selected_size) {
+                const item_name = cart_item.item.name;
+                const reponse = await frappe_call("/api/v2/method/ls_shop.api.cart.update_variant", { product_name: item_name, size: selected_size });
+                const data = reponse.data;
+                const new_variant = {
+                    item_code: data.variant.item_code,
+                    size: data.variant.size,
+                    stock_detail: data.variant.stock_detail || {},
+                };
+                const existing_item = this.items.find(item =>
+                    item.item.name === item_name &&
+                    JSON.stringify(item.variant) === JSON.stringify(new_variant) &&
+                    item !== cart_item
+                );
+                // If same product with different size is already in cart
+                if (existing_item) {
+                    this.increment(existing_item.item.name, new_variant)
+                    existing_item.price = data.price || 0;
+                    existing_item.default_price = data.default_price || 0;
+
+                    this.items = this.items.filter(item => item !== cart_item);
+                }
+
+                else {
+                    // No duplicate, just update
+                    cart_item.variant = new_variant;
+                    cart_item.qty = 1;
+                    cart_item.price = data.price || 0;
+                    cart_item.default_price = data.default_price || 0;
+                }
+                window.location.reload();
+            }
+
+        });
+    });
+</script>

@@ -1,0 +1,32 @@
+<div class="">
+    <button @click="toggle_parent('brand')" class="flex w-full items-center justify-between p-4">
+        <span class="capitalize">{{_('brands')}}</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform"
+            :class="{'rotate-180': active_parent === '{{parent_category}}'}" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+    </button>
+    <!--  brands -->
+    <div x-show="active_parent === 'brand'" x-collapse>
+        <div class="p-4 bg-gray-50 border border-gray-100 rounded-2xl ">
+            <div class="mb-4">
+                <h4 class="font-medium text-red-900 mb-3 text-sm">{{_('Shop by Brands')}}</h4>
+                <ul class="grid grid-cols-2 ">
+                    {% for brand in brands %}
+                    <li class="mb-2">
+                        <a href='/{{frappe.lang}}/products?brands={{brand.name | urlencode}}'
+                            class="text-gray-600 flex items-center text-sm">
+                            <div class="h-3 w-3 flex justify-center items-center me-2">
+                                <img src="/assets/ls_shop/icons/arrow-right.svg" alt="">
+                            </div>
+                            <span class="truncate max-w-29 block" title="{{ _(brand.name)}}">{{
+                                _(brand.name|title)}}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

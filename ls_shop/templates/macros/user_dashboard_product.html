@@ -1,0 +1,25 @@
+{% macro dashboard_product(img,brand,name,price,delivery_date = '',view_order=False,img_size="w-34 h-45",size="",info_class="md:mt-5") %}
+
+<div class="flex">
+    <img src="{% if img %} {{img}} {% else %} /assets/ls_shop/images/1.jpg {% endif %}"
+        class="{{img_size}} object-cover rounded-lg me-3 md:me-7" alt="">
+    <div class="{{info_class}}">
+        {% if delivery_date %}
+        <h1 class="text-base md:text-lg  font-medium mb-3"> {{_('Arriving')}} {{_(delivery_date)}}</h1>
+        {% endif %}
+        <div class="text-sm gap-2 flex flex-col">
+            <p class="text-gray-800 capitalize">{{_(brand)}}</p>
+            <p class="capitalize">{{_(name)}}</p>
+            <p class="font-medium"><span class="capitalize">{{_("size")}}:</span> {{_(size)}}</p>
+
+            <p class="flex">{{get_currency_symbol()}} {{"%.2f"|format(price)}} </p>
+        </div>
+        {% if view_order %}
+        <p class="text-base text-red-900 underline capitalize">
+            {{_('view order')}}
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+{% endmacro %}

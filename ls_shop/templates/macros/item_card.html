@@ -1,0 +1,107 @@
+{# components/macros/item_card.html #}
+{% macro item_card(
+    image, 
+    brand, 
+    product_name, 
+    formatted_price,
+    original_price=0, 
+    discount=0, 
+    variations="",
+    size_variant="default",
+    show_wishlist=True,
+    image_size="w-45 h-60 md:w-55 md:h-70 lg:w-3xs lg:h-85",
+    product_obj=None,
+    attribute_value = ""
+) %}
+  {# Define size variants as a dict #}
+  {% set variants = {
+    'default': {
+      'brand_size': 'text-xl',
+      'product_name_size': 'text-xl',
+      'price_size': 'mt-2 text-base'
+    },
+    'small': {
+      'brand_size': 'text-sm',
+      'product_name_size': 'text-sm',
+      'price_size': 'mt-1 text-xs'
+    },
+    'large': {
+      'brand_size': 'text-2xl',
+      'product_name_size': 'text-2xl',
+      'price_size': 'mt-3 text-lg'
+    },
+    'xtra-small': {
+        'brand_size': 'text-xxs md:text-xl',
+        'product_name_size': 'text-xxs md:text-xl',
+        'price_size': 'mt-1 text-3xs md:text-base'
+      },
+  } %}
+  
+  {% set current_variant = variants[size_variant] %}
+
+<div class="flex flex-col w-fit">
+    <div class="relative w-fit ">
+        <div class="w-fit overflow-hidden rounded-lg">
+            <img src="{{ image }}" alt="" class="{{image_size}} object-cover rounded-lg transition duration-300 ease-in-out hover:scale-110" />
+        </div>
+        {# Discount Badge #}
+        {% if discount %}
+            <div class="absolute start-3 top-3 z-40">
+                <span class="rounded bg-red-800 px-2 py-1 text-xs font-normal text-white">
+                    {{ discount|round|int }}% {{ _('off') }}
+                </span>
+            </div>
+        {% endif %}
+        
+        {# Wishlist Button #}
+        <div class="absolute end-3 top-2 z-40" x-data='{
+                            get in_wishlist() {
+                                return $store.wishlist.is_in_wishlist({{ json.dumps(product_obj) }})
+                            }
+                        }'>
+            <button @click.prevent='
+                            in_wishlist
+                                ? $store.wishlist.remove({{ json.dumps(product_obj) }})
+                                : $store.wishlist.add({{ json.dumps(product_obj) }})
+                        ' class="rounded-full bg-white p-2 opacity-75 hover:opacity-100 cursor-pointer">
+        
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" stroke="currentColor"
+                    :stroke-width="in_wishlist?0:2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart"
+                    :fill="in_wishlist ? '#ff0000' : 'none'">
+                    <path
+                        d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                </svg>
+            </button>
+        </div>
+
+        {# Variations Badge #}
+        {% if variations %}
+            <div class="absolute bottom-3 left-1/2 z-40 -translate-x-1/2">
+                <span class="text-xxs rounded-full bg-slate-800 px-3 py-1 font-normal text-white md:text-xs">
+                    {{ variations }} {{_('available')}}
+                </span>
+            </div>
+        {% endif %}
+    </div>
+
+    {# Product Details #}
+    <h3 class="mt-6 font-medium text-red-900 {{  current_variant.brand_size  }}" title="{{_(brand|title)}}">
+        {{_(brand|title)}}
+    </h3>
+    <h4 class="{{ current_variant.product_name_size }}" title="{{_(product_name|title)}}">
+        {% if product_name|length > 25 %}
+        {{ _(product_name[:25]|title) }}...
+        {% else %}
+        {{ _(product_name|title) }}
+        {% endif %}
+        {{_(attribute_value|title)}}
+    </h4>
+    <p class="{{ current_variant.price_size }} flex">
+        {% if discount %}
+        <span class="me-2 text-red-900 line-through decoration-[1px] flex ">{{get_currency_symbol()}}{{ "%.2f"|format(original_price or 0)}}</span>
+        {% endif %}
+        <span class="font-semibold flex">{{get_currency_symbol()}}{{"%.2f"|format(formatted_price or 0) }}</span>
+    </p>
+</div>
+
+{% endmacro %}

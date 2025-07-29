@@ -1,0 +1,20 @@
+<div class="overflow-y-auto max-h-[70vh] w-full overflow-x-auto rounded-lg border border-gray-300">
+    <table class="w-full  text-sm text-gray-900 text-center">
+        <thead class="border-b border-gray-300 bg-white text-sm text-red-900 ">
+            <tr>
+                <template x-for="(cell, index) in size_chart[0]" :key="'head-' + index">
+                    <th scope="col" class="p-4" x-text="cell || ''"></th>
+                </template>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-300 ">
+            <template x-for="(row, rowIndex) in size_chart.slice(1)" :key="rowIndex">
+                <tr>
+                    <template x-for="(cell, cellIndex) in row" :key="cellIndex">
+                        <td class="p-4" x-text="cell ?? ''"></td>
+                    </template>
+                </tr>
+            </template>
+        </tbody>
+    </table>
+</div>

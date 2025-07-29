@@ -1,0 +1,20 @@
+{% from "templates/macros/icon.html" import icon %}
+<div class="relative flex w-full max-w-43 flex-col gap-1 text-gray-900 ">
+    {{icon('arrow-down',classes='absolute pointer-events-none ltr:right-2 rtl:left-2 top-4 size-5')}}
+    <select id="sort_by" name="sort_by"
+        class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-75 font-normal"
+        oninput="sort_by(this.value)">
+        {% with options = [
+        {'discount': 'Discount'},
+        {'new_arrival': 'New Arrival'},
+        {'price_high': 'Price (High to Low)'},
+        {'price_low': 'Price (Low to High)'},
+        ] %}
+        {% for option in options %}
+        {% for key, value in option.items() %}
+        <option value="{{ key }}" {% if sort_by==key %} selected {% endif %}>{{_(value)}}</option>
+        {% endfor %}
+        {% endfor %}
+        {% endwith %}
+    </select>
+</div>

@@ -1,0 +1,143 @@
+{
+	"actions": [],
+	"allow_guest_to_view": 1,
+	"allow_rename": 1,
+	"autoname": "format:{item_style} - {attribute_value}",
+	"creation": "2025-03-16 15:34:53.590003",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"publishing_section",
+		"display_name",
+		"is_published",
+		"column_break_zlge",
+		"route",
+		"item_group",
+		"section_break_okjy",
+		"configurator",
+		"item_style",
+		"attribute_value",
+		"attribute_name",
+		"column_break_meci",
+		"images",
+		"section_break_hjed",
+		"sizes"
+	],
+	"fields": [
+		{
+			"fieldname": "configurator",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Configurator",
+			"options": "Style Attribute Configurator",
+			"reqd": 1
+		},
+		{
+			"fieldname": "column_break_meci",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "section_break_hjed",
+			"fieldtype": "Section Break"
+		},
+		{
+			"fieldname": "sizes",
+			"fieldtype": "Table",
+			"label": "Sizes",
+			"options": "Color Size Item"
+		},
+		{
+			"fieldname": "attribute_value",
+			"fieldtype": "Data",
+			"in_list_view": 1,
+			"label": "Attribute Value",
+			"reqd": 1,
+			"set_only_once": 1
+		},
+		{
+			"fieldname": "images",
+			"fieldtype": "Table",
+			"label": "Images",
+			"options": "Website Slideshow Item"
+		},
+		{
+			"fieldname": "publishing_section",
+			"fieldtype": "Section Break",
+			"label": "Publishing"
+		},
+		{
+			"default": "0",
+			"fieldname": "is_published",
+			"fieldtype": "Check",
+			"label": "Is Published?"
+		},
+		{
+			"fieldname": "column_break_zlge",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "route",
+			"fieldtype": "Data",
+			"label": "Route"
+		},
+		{
+			"fieldname": "section_break_okjy",
+			"fieldtype": "Section Break"
+		},
+		{
+			"fetch_from": "configurator.item_template",
+			"fieldname": "item_style",
+			"fieldtype": "Link",
+			"label": "Item Style",
+			"options": "Item",
+			"reqd": 1
+		},
+		{
+			"fieldname": "display_name",
+			"fieldtype": "Data",
+			"label": "Display Name",
+			"reqd": 1
+		},
+		{
+			"fieldname": "item_group",
+			"fieldtype": "Link",
+			"label": "Item Group",
+			"options": "Item Group"
+		},
+		{
+			"fieldname": "attribute_name",
+			"fieldtype": "Data",
+			"label": "Attribute Name"
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"is_published_field": "is_published",
+	"links": [],
+	"modified": "2025-06-30 06:03:33.477945",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Style Attribute Variant",
+	"naming_rule": "Expression",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"row_format": "Dynamic",
+	"show_title_field_in_link": 1,
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [],
+	"title_field": "display_name"
+}

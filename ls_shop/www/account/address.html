@@ -1,0 +1,78 @@
+{% extends "templates/user_layout.html" %}
+
+{% from "templates/macros/icon.html" import icon %}
+{% from "templates/macros/address_form.html" import address_form %}
+
+
+{% block user_body %}
+<!-- Todo: Implement add and edit -->
+<div>
+    <h2 class="text-xl my-5 capitalize">{{_("billing addresses")}}</h2>
+    <div>
+        {% for address in billing_addresses %}
+            <div class="flex items-center gap-2">
+                <h2 class="text-base w-1/4 hidden md:block">
+                    Address {{ loop.index }}
+                </h2>
+                <div
+                    class="w-full md:w-3/4 flex items-center  p-3 space-x-3 bg-gray-50 border rounded-lg  hover:bg-gray-100 border-gray-200/70 my-3 justify-between">
+                    <span class="text-base">
+                        {{address.display}}
+                    </span>
+                    <span class="flex gap-5">
+                        <button class="text-red-900" @click="delete_doc($el,'Address', '{{address.name}}')">
+                            {{icon(name="trash",classes="h-5 w-5 cursor-pointer")}}
+                        </button>
+                    </span>
+
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <h2 class="text-xl my-5 capitalize">{{_('shipping addresses')}} </h2>
+    <div>
+        {% for address in shipping_addresses %}
+            <div class="flex items-center gap-2">
+                <h2 class="text-base w-1/4 hidden md:block">
+                    {{_('Address')}} {{ loop.index }}
+                </h2>
+                <div
+                    class="w-full md:w-3/4 flex items-center  p-3 space-x-3 bg-gray-50 border rounded-lg  hover:bg-gray-100 border-gray-200/70 my-3 justify-between">
+                    <span class="text-base">
+                        {{_(address.display)}}
+                    </span>
+                    <span class="flex gap-5">
+                        <button class="text-red-900" @click="delete_doc($el,'Address', '{{address.name}}')">
+                            {{icon(name="trash",classes="h-5 w-5 cursor-pointer")}}
+                        </button>
+                    </span>
+
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+<script>
+    async function delete_doc(element, doctype, doc_name) {
+        element.disabled = true;
+        try {
+            const url = `/api/v2/method/ls_shop.api.users.delete_user_address`
+            let response = await frappe_call(url, { address_id: doc_name });
+            const message = $store.i18n.t("Address deleted successfully")
+            toast(message, { type: "success" })
+            window.location.reload()
+
+
+        }
+        catch (err) {
+            const message = $store.i18n.t("Cannot delete address")
+            toast(message, { type: "danger" })
+        }
+        finally {
+            element.disabled = false;
+        }
+
+    }
+</script>
+
+{% endblock %}

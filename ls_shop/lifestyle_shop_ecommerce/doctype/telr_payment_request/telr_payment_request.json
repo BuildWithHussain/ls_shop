@@ -1,0 +1,263 @@
+{
+	"actions": [],
+	"autoname": "autoincrement",
+	"creation": "2025-03-16 11:21:55.625159",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"telr_order_ref",
+		"payment_method",
+		"column_break_prhi",
+		"telr_order_url",
+		"status",
+		"section_break_ijxq",
+		"amount",
+		"column_break_veyu",
+		"currency_code",
+		"refund_section",
+		"refund_amount",
+		"customer_details_section",
+		"customer_ref",
+		"customer_phone",
+		"customer_forenames",
+		"column_break_ljwm",
+		"customer_email",
+		"customer_address",
+		"customer_surname",
+		"reference_section",
+		"ref_doctype",
+		"column_break_webj",
+		"ref_docname",
+		"invoice_section",
+		"transaction_class",
+		"column_break_qzts",
+		"transaction_reference"
+	],
+	"fields": [
+		{
+			"allow_in_quick_entry": 1,
+			"fieldname": "ref_doctype",
+			"fieldtype": "Link",
+			"label": "Reference DocType",
+			"options": "DocType"
+		},
+		{
+			"fieldname": "column_break_webj",
+			"fieldtype": "Column Break"
+		},
+		{
+			"allow_in_quick_entry": 1,
+			"fieldname": "ref_docname",
+			"fieldtype": "Dynamic Link",
+			"label": "Reference Name",
+			"options": "ref_doctype"
+		},
+		{
+			"fieldname": "telr_order_ref",
+			"fieldtype": "Data",
+			"label": "Telr Order Ref",
+			"no_copy": 1,
+			"read_only": 1,
+			"unique": 1
+		},
+		{
+			"default": "Pending",
+			"fieldname": "status",
+			"fieldtype": "Select",
+			"in_list_view": 1,
+			"in_standard_filter": 1,
+			"label": "Status",
+			"no_copy": 1,
+			"options": "Pending\nPaid\nNot Paid\nCancelled\nExpired\nPartially Refunded\nRefunded",
+			"read_only": 1
+		},
+		{
+			"fieldname": "reference_section",
+			"fieldtype": "Section Break",
+			"label": "Reference"
+		},
+		{
+			"fieldname": "invoice_section",
+			"fieldtype": "Section Break",
+			"label": "Transaction Details"
+		},
+		{
+			"fieldname": "column_break_qzts",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "section_break_ijxq",
+			"fieldtype": "Section Break",
+			"label": "Amount"
+		},
+		{
+			"allow_in_quick_entry": 1,
+			"fieldname": "amount",
+			"fieldtype": "Currency",
+			"in_list_view": 1,
+			"label": "Amount",
+			"options": "currency_code",
+			"set_only_once": 1
+		},
+		{
+			"fieldname": "column_break_veyu",
+			"fieldtype": "Column Break"
+		},
+		{
+			"allow_in_quick_entry": 1,
+			"fieldname": "currency_code",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Currency Code",
+			"options": "Currency",
+			"set_only_once": 1
+		},
+		{
+			"fieldname": "telr_order_url",
+			"fieldtype": "Data",
+			"label": "Telr Order URL",
+			"no_copy": 1,
+			"options": "URL",
+			"read_only": 1
+		},
+		{
+			"fieldname": "customer_details_section",
+			"fieldtype": "Section Break",
+			"label": "Customer Details",
+			"set_only_once": 1
+		},
+		{
+			"fieldname": "customer_ref",
+			"fieldtype": "Data",
+			"label": "Customer Reference",
+			"set_only_once": 1
+		},
+		{
+			"fieldname": "column_break_ljwm",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "customer_email",
+			"fieldtype": "Data",
+			"label": "Customer Email",
+			"options": "Email",
+			"set_only_once": 1
+		},
+		{
+			"fieldname": "customer_phone",
+			"fieldtype": "Data",
+			"label": "Customer Phone",
+			"set_only_once": 1
+		},
+		{
+			"fieldname": "customer_address",
+			"fieldtype": "Link",
+			"label": "Customer Address",
+			"options": "Address",
+			"set_only_once": 1
+		},
+		{
+			"fieldname": "customer_forenames",
+			"fieldtype": "Data",
+			"label": "Customer Forenames",
+			"set_only_once": 1
+		},
+		{
+			"fieldname": "customer_surname",
+			"fieldtype": "Data",
+			"label": "Customer Surname",
+			"set_only_once": 1
+		},
+		{
+			"fieldname": "transaction_class",
+			"fieldtype": "Data",
+			"label": "Transaction Class",
+			"read_only": 1
+		},
+		{
+			"fieldname": "transaction_reference",
+			"fieldtype": "Data",
+			"label": "Transaction Reference",
+			"read_only": 1
+		},
+		{
+			"fieldname": "column_break_prhi",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "payment_method",
+			"fieldtype": "Data",
+			"label": "Payment Method",
+			"read_only": 1
+		},
+		{
+			"fieldname": "refund_section",
+			"fieldtype": "Section Break",
+			"label": "Refund"
+		},
+		{
+			"fieldname": "refund_amount",
+			"fieldtype": "Currency",
+			"label": "Refund Amount",
+			"non_negative": 1,
+			"read_only": 1
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"links": [],
+	"modified": "2025-06-09 07:59:06.407064",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Telr Payment Request",
+	"naming_rule": "Autoincrement",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		},
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "Customer",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"quick_entry": 1,
+	"row_format": "Dynamic",
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [
+		{
+			"color": "Red",
+			"title": "Expired"
+		},
+		{
+			"color": "Yellow",
+			"title": "Cancelled"
+		},
+		{
+			"color": "Purple",
+			"title": "Refunded"
+		},
+		{
+			"color": "Purple",
+			"title": "Partially Refunded"
+		}
+	]
+}

@@ -1,0 +1,40 @@
+{% import "templates/macros/dropdown.html" as dropdown %}
+{% from 'templates/macros/signup_modal.html' import signup_modal %}
+
+{% call dropdown.dropdown(
+        id="user",
+        icon_src="/assets/ls_shop/icons/user.svg",
+        position="right",
+        width="w-40",
+        link='account/dashboard',
+
+    ) 
+%}
+
+<script defer>
+    function logout() {
+        frappe_call("/api/v2/method/logout").then(() => {
+            window.location.reload();
+        })
+    }
+</script>
+{% if frappe.session.user != 'Guest' %}
+    <a href="/{{frappe.lang}}/account/orders"
+        class="px-2 lg:py-1.5 py-2 w-full flex items-center rounded-md transition-colors text-left hover:bg-gray-20 text-gray-800 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer capitalize">
+        {{_('my orders')}}
+    </a>
+{% endif %}
+{% if frappe.session.user != 'Guest' %}
+    <button @click="logout"
+        class="px-2 lg:py-1.5 py-2 w-full flex items-center rounded-md transition-colors text-left hover:bg-gray-20 text-gray-800 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer capitalize">
+        {{_('log out')}}
+    </button>
+    {% else %}
+    {% call signup_modal() %}
+<div 
+class="px-2 lg:py-1.5 py-2 w-full flex items-center rounded-md transition-colors text-left hover:bg-gray-20 text-gray-800 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer capitalize">
+   {{_('login')}}
+</div>
+{% endcall %}
+{% endif %}
+{% endcall %}

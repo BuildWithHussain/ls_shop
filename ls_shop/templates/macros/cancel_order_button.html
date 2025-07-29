@@ -1,0 +1,48 @@
+{% from "templates/macros/modal.html" import modal %}
+
+{% macro cancel_order_button(classes='', order_id='N/A', ecommerce_order_status='Waiting for Approval' ) %}
+
+{% set button_classes = 'w-full bg-white hover:bg-gray-50 text-sm text-center p-2 rounded-lg border border-gray-400
+cursor-pointer ' + classes %}
+
+{% set show_cancel_button = ecommerce_order_status in ("Waiting for Approval","Order Received") %}
+
+{% if show_cancel_button %}
+
+<script>
+    async function cancel_order(order_id) {
+        try {
+            const response = await frappe_call('/api/v2/method/ls_shop.api.orders.cancel_order', {
+                order_id
+            });
+            toast('{{ _("Order cancelled successfully!") }}', {"type": "success"})
+            // wait for 400ms before reload
+            await new Promise(resolve => setTimeout(resolve, 600));
+            // reload the page
+            window.location.reload()
+        } catch (e) {
+            console.log(e);
+        }
+    }
+</script>
+
+{% call modal(
+button_text='Cancel Order',
+button_classes=button_classes,
+modal_header='Confirm Cancellation of #{0}'.format(order_id),
+modal_classes='w-full md:max-w-1/2'
+) %}
+<div class="p-5">
+    {{ _("Are you sure you want to cancel this order?") }}
+
+    <div class="mt-3 w-full flex items-end justify-start">
+        <button type="button" @click="cancel_order('{{order_id}}', $data)"
+            class="cursor-pointer bg-red-800 rounded-xl p-2 px-5 text-base tracking-wide text-white transition hover:opacity-75  active:outline-offset-0 flex items-center disabled:cursor-not-allowed disabled:opacity-75">{{_('Yes')}}
+        </button>
+    </div>
+</div>
+{% endcall %}
+
+{% endif %}
+
+{% endmacro %}

@@ -1,0 +1,11 @@
+{% from "templates/macros/icon.html" import icon %}
+<div class="relative flex  w-full max-w-80 flex-col gap-1 text-gray-900 ">
+    {{icon('arrow-down',classes='absolute pointer-events-none right-2 top-3 size-5')}}
+    <select x-ref="{{item.item_code}}_return_reason" name="return_reason"
+        class="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-1 text-sm focus:outline-none disabled:cursor-not-allowed disabled:opacity-75 font-normal cursor-pointer"
+        required>
+            {% for option in return_reasons %}
+                <option value="{{ option.display_name }}">{{ _(option.display_name) }}</option>
+            {% endfor %}
+    </select>
+</div>

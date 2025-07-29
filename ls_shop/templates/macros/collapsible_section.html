@@ -1,0 +1,35 @@
+{% macro collapsible_section(title, additional_classes) %}
+<div x-data="{ open: window.innerWidth >= 768 }" x-init="window.addEventListener('resize', () => { 
+      if (window.innerWidth >= 768) { open = true; }
+    })" class="{{ additional_classes }}">
+  <div class="flex w-full items-center justify-between py-3 border-b border-gray-800 md:border-0 md:disable"
+    @click="open = !open">
+    <h3>{{ _(title) }}</h3>
+    <button class="md:hidden focus:outline-none">
+      <span x-show="open" class="block w-4 h-4">
+        <!-- Minus icon for open state -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </span>
+      <span x-show="!open" class="block w-4 h-4">
+        <!-- Plus icon for closed state -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </span>
+    </button>
+  </div>
+
+  <div x-show="open || window.innerWidth >= 768" x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0 transform -translate-y-2"
+    x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100 transform translate-y-0"
+    x-transition:leave-end="opacity-0 transform -translate-y-2" class="overflow-hidden py-5 md:py-4">
+    {{ caller() }}
+  </div>
+</div>
+{% endmacro %}

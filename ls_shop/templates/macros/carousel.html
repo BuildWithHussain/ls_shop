@@ -1,0 +1,31 @@
+{% macro carousel(navigation=false,pagination =
+false,embla_container_classes='',carousel_container_classes='',embla_classes='') %}
+<div class="carousel_container flex mx-auto justify-center {{carousel_container_classes}}"
+    data-navigation="{{ navigation | lower }}" data-pagination="{{ pagination | lower }}">
+    {% if navigation %}
+    <button class="prev_btn  cursor-pointer rtl:rotate-180">   
+        <img src="/assets/ls_shop/icons/arrow-left.svg" alt="" class="h-6 w-6" dir="auto">
+    </button>
+
+    {% endif %}
+
+    <div class="embla  {{embla_classes}}">
+        <div class="embla__viewport overflow-hidden">
+            <div class="embla__container flex {{embla_container_classes}}">
+                {{ caller() }}
+            </div>
+        </div>
+
+        {% if pagination %}
+        <div class="embla__controls flex justify-center mt-2">
+            <div class="embla__dots flex gap-2"></div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if navigation %}
+    <button class="next_btn cursor-pointer rtl:rotate-180"> <img src="/assets/ls_shop/icons/arrow-right.svg" alt="" class="h-6 w-6">
+    </button>
+    {% endif %}
+</div>
+{% endmacro %}

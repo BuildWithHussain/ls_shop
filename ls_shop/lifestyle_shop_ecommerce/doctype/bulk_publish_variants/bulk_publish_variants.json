@@ -1,0 +1,71 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2025-05-24 18:16:58.144696",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"vendor_code",
+		"brand",
+		"season_code",
+		"column_break_tdnm",
+		"dcs",
+		"item_code"
+	],
+	"fields": [
+		{
+			"fieldname": "vendor_code",
+			"fieldtype": "Data",
+			"label": "Vendor Code"
+		},
+		{
+			"fieldname": "brand",
+			"fieldtype": "Link",
+			"label": "Brand",
+			"options": "Brand"
+		},
+		{
+			"fieldname": "column_break_tdnm",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "dcs",
+			"fieldtype": "Data",
+			"label": "DCS"
+		},
+		{
+			"fieldname": "item_code",
+			"fieldtype": "Data",
+			"label": "Item Code / Barcode"
+		},
+		{
+			"fieldname": "season_code",
+			"fieldtype": "Data",
+			"label": "Season Code"
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2025-06-05 15:48:02.110170",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Bulk Publish Variants",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"print": 1,
+			"read": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"row_format": "Dynamic",
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

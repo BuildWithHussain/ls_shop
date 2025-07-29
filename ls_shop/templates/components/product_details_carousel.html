@@ -1,0 +1,70 @@
+<div class="flex">
+    <div class="me-5 hidden ipad-pro:flex ipad:flex-col">
+        {% for image in images %}
+        <img src="{{ image }}" class="mb-5 max-w-21 min-w-21 cursor-pointer rounded-lg object-cover shadow-sm h-30"
+            @click="embla.scrollTo({{ loop.index0 }});
+                current_index = {{ loop.index0 }}"
+            :class="current_index === {{ loop.index0 }} ? 'opacity-100 ' : 'opacity-45'" />
+        {% endfor %}
+    </div>
+    <div class="carousel_container flex mx-auto justify-center md:px-3 w-[340px] h-110 md:h-190 md:w-150 rounded-2xl relative"
+        data-navigation="{{ navigation | lower }}" data-pagination="{{ pagination | lower }}">
+        <div class="absolute end-6 top-5 z-40 flex text-3xl">
+            {% with wishlist_item = {
+                "display_name": product_variant.display_name,
+                "route": product_variant.route,
+                "name": product.item_code,
+                "brand": product.brand,
+                "default_price": default_price,
+                "sale_price": selected_price,
+                "discount_percent": discount_percent,
+                "image": images[0]
+            } %}
+                <button
+                    class="rounded-full bg-white p-2 opacity-75 hover:opacity-100 cursor-pointer" 
+                    x-data='{
+                        get in_wishlist() {
+                            return $store.wishlist.is_in_wishlist({{ wishlist_item | tojson  }})
+                        }
+                    }'
+                     @click='
+                     in_wishlist ?$store.wishlist.remove({{ wishlist_item | tojson }}) :$store.wishlist.add({{ wishlist_item | tojson }})'
+                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" stroke="currentColor"
+                    :stroke-width="in_wishlist?0:2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart"
+                    :fill="in_wishlist ? '#ff0000' : 'none'">
+                    <path
+                        d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                </svg>
+                </button>
+            {% endwith %}
+        </div>
+        <div class="absolute end-6 bottom-9 z-40 hidden md:flex text-3xl">
+            <button class="me-2 rounded-full bg-gray-950 p-2 opacity-75 hover:opacity-100 prev_btn"
+                @click="previous_image">
+                <img src="/assets/ls_shop/icons/arrow-left.svg" alt="" class="h-6 w-6 filter invert rtl:rotate-180">
+            </button>
+            <button class="rounded-full bg-gray-950 p-2 opacity-75 hover:opacity-100 next_btn" @click="next_image">
+                <img src="/assets/ls_shop/icons/arrow-right.svg" alt="" class="h-6 w-6 filter invert rtl:rotate-180">
+            </button>
+        </div>
+        <div class="embla ">
+            <div class="embla__viewport overflow-hidden ">
+                <div class="embla__container flex ">
+                    {% for image in images %}
+                    <div
+                        class="embla__slide flex-shrink-0  w-fit zoom-container overflow-hidden relative cursor-crosshair">
+                        <img src="{{image}}"
+                            class=" zoom-image transition-transform  duration-400 ease-in-out scale-100 opacity-100 will-change-transform w-[340px]  h-110 md:h-190 md:w-150 flex-shrink-0 rounded-2xl shadow-sm object-cover" />
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="md:hidden -m-10 ">
+                <div class="embla__controls flex justify-center mt-2 ">
+                    <div class="embla__dots flex gap-2 z-50"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

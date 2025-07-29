@@ -1,0 +1,156 @@
+{% set item_categories = frappe.get_all('Item Group', filters={'parent_item_group': parent_category,'custom_display_on_website': True
+},fields=["name","custom_item_group_display_name"],order_by='custom_item_group_display_name') %}
+<li class="me-0">
+    <div x-data="mega_menu()" x-init="init();
+    activeTab='{{item_categories.0.name if item_categories else ''}}'" 
+    @mouseenter="on_parent_enter"
+    @mouseleave="on_parent_leave">
+        <a href="/{{frappe.lang}}/products?search={{parent_category | urlencode}}&category={{parent_category | urlencode}}"
+            class="flex w-full items-center justify-between px-3 py-2 font-extralight text-gray-800 hover:bg-gray-100 md:w-auto md:border-0 md:p-0 md:hover:bg-transparent md:hover:text-slate-900 cursor-pointer">
+            <p class="flex items-center text-sm">
+                {{ _(parent_category) }}
+            <div class="w-6 h-6 flex items-center justify-center">
+                <img src="/assets/ls_shop/icons/arrow-down.svg" alt=""
+                    :class="{ 'transition-transform duration-200 transform rotate-180': open }">
+            </div>
+            </p>
+        </a>
+        <!-- Full-width mega menu -->
+        <div x-show="open" @mouseenter="on_submenu_enter" @mouseleave="on_submenu_leave"
+            x-transition:enter="transition ease-out duration-200 " @click.away="open = false"
+            x-transition:enter-start="opacity-0 transform -translate-y-2"
+            x-transition:enter-end="opacity-100 transform translate-y-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 transform translate-y-0"
+            x-transition:leave-end="opacity-0 transform -translate-y-2"
+            class="absolute top-19 left-0  right-0 z-99 w-full bg-white shadow-xs border-t border-gray-200" x-cloak>
+            <div class="max-w-7xl mx-auto px-6 md:px-10">
+                <!-- Tabs navigation -->
+                <div class="flex border-b border-gray-200">
+                    <a href="/{{frappe.lang}}/products?search={{parent_category | urlencode}}&category={{parent_category | urlencode}}" 
+                        :class="{ 'border-b-2 border-red-700 text-red-700': activeTab === 'New Arrival', 'text-gray-600': activeTab !== 'New Arrival' }"
+                        class="px-5 py-4 font-medium text-sm focus:outline-none hover:text-red-900 capitalize">
+                        {{_('new arrival')}}
+                </a>
+                    {% for item_category in item_categories %}
+                    <a href="/{{frappe.lang}}/products?search={{item_category.name | urlencode}}&category={{parent_category | urlencode}}"  @mouseenter="activeTab = '{{item_category.name}}'"
+                        :class="{ 'border-b-2 border-red-700 text-red-700': activeTab === '{{item_category.name}}', 'text-gray-600': activeTab !== '{{item_category.name}}' }"
+                        class="px-5 py-4 font-medium text-sm focus:outline-none hover:text-red-900 capitalize">
+                        {{_(item_category.custom_item_group_display_name or item_category.name)}}
+            </a>
+                    {% endfor %}
+                    <a href="/{{frappe.lang}}/products?search={{parent_category | urlencode}}&category={{parent_category | urlencode}}&has_discount=1&sort_by=discount"
+                        :class="{ 'border-b-2 border-red-700 text-red-700': activeTab === 'view-all', 'text-gray-600': activeTab !== 'view-all' }"
+                        class="px-5 py-4 font-medium text-sm focus:outline-none hover:text-red-900 capitalize">
+                        {{_('sale')}}
+                    </a>
+                    <a href="/{{frappe.lang}}/products?search={{parent_category | urlencode}}&category={{parent_category | urlencode}}"
+                        :class="{ 'border-b-2 border-red-700 text-red-700': activeTab === 'view-all', 'text-gray-600': activeTab !== 'view-all' }"
+                        class="px-5 py-4 font-medium text-sm focus:outline-none hover:text-red-900">
+                        {{_('View all')}} {{_(parent_category)}}
+                    </a>
+                </div>
+                <!-- Tab content -->
+                <div class="py-8">
+                    <!-- New Arrivals Tab -->
+                    {% for item_category in item_categories %}
+                    <div x-show="activeTab === '{{item_category.name}}'" class="flex">
+
+                        {% if item_category.name[:4]|lower == 'kids' %}
+                        {% with item_subcategories = frappe.get_all('Item Group',
+                        filters={'parent_item_group':
+                        item_category.name,"custom_display_on_website":True},fields=["name","custom_item_group_display_name"],order_by="custom_item_group_display_name")
+                        %}
+                        {% for item_subcategory in item_subcategories%}
+                        <div class="w-1/5 pr-8 ">
+                            <div>
+                                <a href='/{{frappe.lang}}/products?search={{item_subcategory.name or ''}}&category={{parent_category  or ''}}'
+                                    class="text-base font-medium text-red-900 mb-5 block">{{_('Shop by')}}
+                                    {{_(item_subcategory.custom_item_group_display_name)}}</a>
+                                <ul class="grid grid-cols-1 w-full gap-x-4">
+                                    <!-- This will be dynamically populated -->
+                                    {% with items = frappe.get_all('Item Group',
+                                    filters={'parent_item_group':
+                                    item_subcategory.name,'custom_display_on_website':True},fields=["name","custom_item_group_display_name"],order_by="custom_item_group_display_name")
+                                    %}
+                                    {% for item in items %}
+                                    <li class="mb-2">
+                                        <a href='/{{frappe.lang}}/products?subcategory={{item.name | urlencode}}&category={{parent_category | urlencode}}'
+                                            class="text-gray-600 hover:text-red-900 flex items-center">
+                                            <div class="h-4 w-4 flex justify-center items-center me-2">
+                                                <img src="/assets/ls_shop/icons/arrow-right.svg" alt="">
+                                            </div>
+                                            <span class="text-sm truncate max-w-40 block"
+                                                title="{{item.custom_item_group_display_name}}">{{item.custom_item_group_display_name}}
+                                            </span>
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                    {% endwith %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% endwith %}
+                        {% else %}
+                        <div class="w-1/4 pr-8 ">
+
+                            <div>
+                                <h3 class="text-base font-medium text-red-900 mb-5">{{_('Shop by Product')}}</h3>
+                                <ul class="grid grid-cols-1 w-full gap-x-4">
+                                    <!-- This will be dynamically populated -->
+                                    {% set item_subcategories = frappe.get_all('Item Group',
+                                    filters={'parent_item_group':
+                                    item_category.name,'custom_display_on_website':True},fields=["name","custom_item_group_display_name"],order_by="custom_item_group_display_name")
+                                    %}
+                                    {% for item_subcategory in item_subcategories %}
+                                    <li class="mb-2">
+                                        <a href='/{{frappe.lang}}/products?subcategory={{item_subcategory.name | urlencode}}&category={{parent_category | urlencode}}'
+                                            class="text-gray-600 hover:text-red-900 flex items-center">
+                                            <div class="h-4 w-4 flex justify-center items-center me-2">
+                                                <img src="/assets/ls_shop/icons/arrow-right.svg" alt="">
+                                            </div>
+                                            <span class="text-sm truncate max-w-40 block"
+                                                title="{{item_subcategory.custom_item_group_display_name}}">{{item_subcategory.custom_item_group_display_name}}
+                                            </span>
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                 
+                        <!-- Right side images -->
+                        <!-- <div class="w-2/4 pl-8">
+                                <div class="flex gap-6 justify-end">
+                                    <div class="">
+                                        <a href="#" class="">
+                                            <div class=" ">
+                                                <img src="/assets/ls_shop/images/homepage/neustar.gif" alt="Lara Rossi" class="w-40 h-60 object-cover rounded-sm">
+                                            </div>
+                                        </a>
+                                    </div>
+                                    <div class="">
+                                        <a href="#" class="">
+                                            <div class=" ">
+                                                <img src="/assets/ls_shop/images/homepage/neustar.gif" alt="Lara Rossi" class="w-40 h-60 object-cover rounded-sm">
+                                            </div>
+                                        </a>
+                                    </div>                               
+                                    <div class="">
+                                        <a href="#" class="">
+                                            <div class=" ">
+                                                <img src="/assets/ls_shop/images/homepage/neustar.gif" alt="Lara Rossi" class="w-40 h-60 object-cover rounded-sm">
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div> -->
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</li>

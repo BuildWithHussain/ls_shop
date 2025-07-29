@@ -1,0 +1,148 @@
+{% import "templates/macros/collapsible_section.html" as macros %}
+{% set my_account_links = [
+    {"label": "Login/register", "url": "#"},
+    {"label": "My account", "url": "#"},
+    {"label": "Orders history", "url": "#"},
+    {"label": "Track my order", "url": "#"},
+    {"label": "Find our store in Saudi Arabia", "url": "#"}
+  ] 
+%}
+
+{% set policies_links = [
+    {"label": "Offers policy", "url": "#"},
+    {"label": "Payment policy", "url": "#"},
+    {"label": "Returns policy", "url": "#"},
+    {"label": "Shipping policy", "url": "#"},
+    {"label": "Terms and conditions", "url": "#"},
+    {"label": "Privacy and policy", "url": "#"},
+    {"label": "Promotions", "url": "#"},
+  ] 
+%}
+
+{% set customer_service_links = [
+    {"label": "Sizing charts", "url": "#"},
+    {"label": "FAQ", "url": "#"},
+    {"label": "Contact us", "url": "#"},
+    {"label": "International Shipping", "url": "#"},
+  ] 
+%}
+<div class="flex justify-center md:hidden my-9">
+  <a href="https://www.lifestyle.sa/">
+    <img src="/assets/ls_shop/images/lifestyle.png" alt="Lifestyle Logo" />
+  </a>
+</div>
+<footer class="bg-gray-900 text-white">
+  <div class="max-w-7xl mx-auto px-6 md:px-10 mt-14 py-12">
+    <!-- Top Logo Section -->
+    <div class="hidden items-start justify-start md:flex mb-12">
+      <a href="https://www.lifestyle.sa/">
+        <img src="/assets/ls_shop/images/lifestyle.png" alt="Lifestyle Logo" />
+      </a>
+    </div>
+  
+    <!-- Main Footer Content -->
+    <div class="flex flex-col justify-between md:flex-row">
+      <!-- My Account -->
+      {% call macros.collapsible_section("My Account", "order-2 mb-4 md:order-1 md:mb-0 md:w-1/") %}
+        <ul class="list-disc ps-4 text-sm">
+          {% for item in my_account_links %}
+            <li class="mb-2">
+              <a href="{{ item.url }}" class="text-xs text-gray-300 hover:text-white">{{ _(item.label) }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endcall %}
+  
+      <!-- Policies -->
+      {% call macros.collapsible_section("Policies", "order-3 mb-4 md:order-2 md:mb-0 md:w-1/") %}
+        <ul class="list-disc ps-4 text-sm">
+          {% for item in policies_links %}
+            <li class="mb-2">
+              <a href="{{ item.url }}" class="text-xs text-gray-300 hover:text-white">{{ _(item.label) }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endcall %}
+  
+      <!-- Customer Service -->
+      {% call macros.collapsible_section("Customer", "order-4 mb-4 md:order-3 md:mb-0 md:w-1/") %}
+        <ul class="list-disc ps-4 text-sm">
+          {% for item in customer_service_links %}
+            <li class="mb-2">
+              <a href="{{ item.url }}" class="text-xs text-gray-300 hover:text-white">{{ _(item.label) }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endcall %}
+  
+      <!-- Contact Us -->
+      {% call macros.collapsible_section("Contact us", "md:w-1/ order-5 mb-4 md:order-4 md:mb-0") %}
+        <div class="me-14 flex items-start border-b border-gray-700 pb-4">
+          <div class="h-5 w-5 flex items-center justify-center me-3">
+            <img src="/assets/ls_shop/icons/phone.svg" alt="">
+          </div>
+          <div class="flex flex-col">
+            <p class="mb-1 text-xs uppercase">{{_('phone')}}</p>
+            <p class="text-xs text-gray-400">920000576</p>
+          </div>
+        </div>
+    
+        <div class="me-14 flex items-start border-b border-gray-700 py-4">
+          <div class="h-5 w-5 flex items-center justify-center me-3">
+            <img src="/assets/ls_shop/icons/mail.svg" alt="">
+          </div>
+          <div class="flex flex-col">
+            <p class="mb-1 text-xs uppercase">{{_('email')}}</p>
+            <p class="text-xs text-gray-400">Contact@lifestyle.sa</p>
+          </div>
+        </div>
+    
+        <div class="flex items-start py-4">
+          <div class="h-5 w-5 flex items-center justify-center me-3">
+            <img src="/assets/ls_shop/icons/clock.svg" alt="">
+          </div>
+          <div class="flex flex-col">
+            <p class="mb-1 text-xs uppercase">{{_('working days/hours')}}</p>
+            <p class="text-xs text-gray-400">Sun - Thu / 10.00 AM - 6.00 PM</p>
+          </div>
+        </div>
+      {% endcall %}
+  
+      <!-- Newsletter Sign Up -->
+      <div
+        class="order-1 mt-12 mb-4 border-b border-gray-700 pb-6 decoration-1 md:order-5 md:mt-0 md:w-1/5 md:border-0 md:pb-0">
+        <h3 class="py-3 text-sm">{{_('Newsletter sign up')}}</h3>
+        <p class="me-8 mb-4 pt-4 text-xs text-gray-400">
+          {{_('Get all the latest information on Events, Sales and Offers. Sign up for the newsletter today')}}.
+        </p>
+        <form class="w-full">
+          <div class="me-8 flex max-w-full">
+            <input type="email" placeholder="{{_('Enter your email')}}"
+              class="min-w-0 flex-1 rounded-s-md border border-gray-700 px-4 py-1 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+            <button type="submit" class="shrink-0 rounded-e-md bg-white px-2 py-1">
+              <div class="h-4 w-4 flex items-center justify-center">
+                <img src="/assets/ls_shop/icons/arrow-right.svg" alt="arrow-right" />
+              </div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  
+    <!-- Bottom Bar -->
+    <div class="mt-8 flex flex-col-reverse items-center justify-between border-t border-gray-700 pt-10 pb-15 md:flex-row">
+      <div class="mb-12 flex space-x-4 md:mb-0">
+        <img src="/assets/ls_shop/images/payment_method.png" alt="Payment Icons" class="h-6" />
+      </div>
+      <div class="mb-12 flex flex-col text-center text-[10px] text-gray-400 md:mb-0 md:flex-row">
+        <img src="/assets/ls_shop/images/vat.png" alt="" class="me-4 mb-4 h-9 w-auto object-contain md:mb-0" />
+        <div class="flex flex-col items-start">
+          <p>&copy; {{ frappe.utils.getdate().year }} {{_('Lifestyle. All Rights Reserved')}}</p>
+
+
+        </div>
+      </div>
+      {% include "templates/includes/social_links.html" %}
+    </div>
+  </div>
+</footer>

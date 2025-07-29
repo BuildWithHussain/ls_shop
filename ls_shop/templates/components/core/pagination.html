@@ -1,0 +1,103 @@
+<div x-data="{
+        page_length: {{ page_length }},
+        current_page: {{ current_page }},
+        total_products_count: {{ total_count }},
+        get total_pages() { 
+            return Math.ceil(this.total_products_count / this.page_length);
+        },
+        get has_previous() {
+            return this.current_page > 1;
+        },
+        get has_next() {
+            return this.current_page < this.total_pages;
+        },
+        get pages_to_show() {
+            let pages = [];
+            
+            // Always show first page
+            pages.push(1);
+            
+            // Calculate range around current page
+            let start = Math.max(2, this.current_page - 1);
+            let end = Math.min(this.total_pages - 1, this.current_page + 1);
+            
+            // Add ellipsis after first page if needed
+            if (start > 2) {
+                pages.push('ellipsis_start');
+            }
+            
+            // Add pages around current page
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            // Add ellipsis before last page if needed
+            if (end < this.total_pages - 1) {
+                pages.push('ellipsis_end');
+            }
+            
+            // Always show last page if it exists
+            if (this.total_pages > 1) {
+                pages.push(this.total_pages);
+            }
+            
+            return pages;
+        }
+    }">
+	<nav aria-label="pagination">
+		<ul class="flex shrink-0 items-center gap-2 text-sm font-medium">
+			<!-- Previous button -->
+			<li>
+				<a href="#" @click.prevent="if(has_previous) { go_to_page(current_page - 1) }"
+					:class="{'text-gray-400 cursor-not-allowed': !has_previous, 'text-gray-700 hover:text-gray-900 cursor-pointer': has_previous}"
+					class="flex items-center rounded-lg p-1" aria-label="previous page">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+						class="size-6 rtl:rotate-180">
+						<path fill-rule="evenodd"
+							d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z"
+							clip-rule="evenodd" />
+					</svg>
+				</a>
+			</li>
+
+			<!-- Page numbers and ellipses -->
+			<template x-for="(page, index) in pages_to_show" :key="index">
+				<!-- Regular page number -->
+				<li x-show="page !== 'ellipsis_start' && page !== 'ellipsis_end'">
+					<a href="#" @click.prevent="go_to_page(page)"
+						:class="current_page === page ? 'text-gray-900  ' : 'text-gray-300 hover:text-gray-900'"
+						class="flex size-6 items-center justify-center rounded-lg p-1"
+						:aria-current="current_page === page ? 'page' : null" :aria-label="'page ' + page"
+						x-text="page"></a>
+				</li>
+
+				<!-- Ellipsis (more pages indicator) -->
+				<li x-show="page === 'ellipsis_start' || page === 'ellipsis_end'">
+					<span class="flex size-6 items-center justify-center rounded-lg p-1 text-gray-900"
+						aria-label="more pages">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+							aria-hidden="true" stroke="currentColor" class="size-6">
+							<path stroke-linecap="round" stroke-linejoin="round"
+								d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+						</svg>
+					</span>
+				</li>
+			</template>
+
+			<!-- Next button -->
+			<li>
+				<a href="#" @click.prevent="if(has_next) { go_to_page(current_page + 1) }"
+					:class="{'text-gray-400 cursor-not-allowed': !has_next, 'text-gray-700 hover:text-gray-900 cursor-pointer': has_next}"
+					class="flex items-center rounded-lg p-1" aria-label="next page">
+					
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+						class="size-6 rtl:rotate-180">
+						<path fill-rule="evenodd"
+							d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z"
+							clip-rule="evenodd" />
+					</svg>
+				</a>
+			</li>
+		</ul>
+	</nav>
+</div>

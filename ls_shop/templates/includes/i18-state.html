@@ -1,0 +1,27 @@
+<script defer>
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('i18n', {
+            i18n: Alpine.$persist([]).as("i18n_data"),
+            lastFetched: Alpine.$persist(null).as("i18n_last_fetched"),
+            ttl: 60 * 60 * 24 * 1000, // 1 hour
+
+            async init() {
+                const now = Date.now();
+
+                if (
+                    !this.i18n || Object.keys(this.i18n).length === 0 ||
+                    !this.lastFetched || (now - this.lastFetched) > this.ttl
+                ) {
+                    const res = await frappe_call('/api/v2/method/ls_shop.api.utils.get_translations');
+                    this.i18n = res.data || {};
+                    this.lastFetched = now;
+                }
+            },
+
+            t(key) {
+                return this.i18n[key] || key;
+            }
+        });
+    });
+
+</script>

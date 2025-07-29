@@ -1,0 +1,71 @@
+{% macro dropdown(
+        id=None,
+        icon_src=None,
+        icon_alt="Dropdown icon",
+        position="right",
+        width="w-64",
+        custom_classes="",
+        button_classes="",
+        panel_classes="",
+        badge_count=0,
+        show_badge=false,
+        link=''
+    ) 
+%}
+<div class="flex justify-center {{ custom_classes }}">
+    <div x-data="{
+            open: false,
+            toggle() {
+                if(window.innerWidth < 768) {
+                    window.location.href = '/{{frappe.lang}}/{{ link }}'
+                    return
+                }
+                if (this.open) {
+                    return this.close()
+                }
+                this.$refs.button.focus()
+                this.open = true
+            },
+            close(focusAfter) {
+                if (! this.open) return
+                this.open = false
+                focusAfter && focusAfter.focus()
+            }
+        }" x-on:keydown.escape.prevent.stop="close($refs.button)"
+        x-on:focusin.window="! $refs.panel.contains($event.target) && close()" x-id="['dropdown-{{ id }}']"
+        class="relative">
+
+        <!-- Button -->
+        <button x-ref="button" x-on:click="toggle()" :aria-expanded="open" :aria-controls="$id('dropdown-{{ id }}')"
+            type="button"
+            class="relative flex items-center whitespace-nowrap justify-center cursor-pointer {{ button_classes }}">
+            <span class="w-6 h-6">
+                {% if icon_src %}
+                <img src="{{ icon_src }}" alt="{{ icon_alt }}">
+                {% else %}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+                {% endif %}
+            </span>
+        </button>
+
+        <!-- Badge (optional) -->
+        {% if show_badge %}
+        <span
+            class="absolute -top-3 ltr:-right-4 rtl:-left-4 bg-red-900 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+            {% if badge_count is number %} x-text="{{ badge_count }}" {% else %} x-text="{{ badge_count }}"
+            x-show="{{ badge_count }} > 0 ? true : false" {% endif %} x-cloak>
+            0
+        </span>
+        {% endif %}
+
+        <!-- Panel -->
+        <div x-ref="panel" x-show="open" x-transition.origin.top.{{ position }} x-on:click.outside="close($refs.button)"
+            :id="$id('dropdown-{{ id }}')" x-cloak
+            class="absolute {{ 'ltr:left-1 rtl:right-1' if position == 'left' else 'ltr:-right-5 rtl:-left-5' }} rounded-2xl shadow-sm mt-2 z-50 origin-top-{{ position }} bg-white p-2 outline-none border border-gray-200 {{ width }} {{ panel_classes }}">
+            {{ caller() }}
+        </div>
+    </div>
+</div>
+{% endmacro %}

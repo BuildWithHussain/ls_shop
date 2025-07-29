@@ -1,0 +1,86 @@
+{% set direction = "left" %}
+{% set position = "inset-0" %}
+{% set width = "w-full" %}
+{% set height = "h-screen" %}
+{% extends "templates/components/core/offcanvas.html" %}
+{% from 'templates/macros/search_bar_modal.html' import search_bar %}
+{% from 'templates/macros/signup_modal.html' import signup_modal %}
+
+{% block offcanvas_header %}
+    <div class="flex items-center justify-between  ">
+        <div class="flex space-x-4 rtl:space-x-reverse ">
+            {% include "templates/components/wishlist_icon.html" %}
+            {% include "templates/components/user_dropdown.html" %}
+            {% include "templates/components/cart_dropdown.html" %}
+        </div>
+        <button @click="is_offcanvas_open = false" class="text-white bg-red-900 rounded-full p-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+{% endblock %}
+
+{% block offcanvas_content %}
+    <div class="">
+        <!-- Mobile search -->
+        <div class=" mt-10 ">
+            {{search_bar()}}
+        </div>
+        <!-- Language selector -->
+        <div class="p-4 border-b border-gray-200 mt-10 ">
+            <h3 class="mb-2 text-gray-700 capitalize">{{_('language')}}</h3>
+            {% include "templates/components/core/language_selector.html" %}
+        </div>
+        <!-- Mobile navigation accordion -->
+        <div x-data="{ 
+                    active_category: null,
+                    toggle_category(category) {
+                        this.active_category = this.active_category === category ? null : category;
+                        }
+                }" class="mt-10 ">
+            <div x-data="{ 
+                        active_parent: null, 
+                        active_category: null,
+                        active_subcategory: null,
+                        toggle_parent(parent) {
+                        this.active_parent = this.active_parent === parent ? null : parent;
+                        this.active_category = null;
+                        this.active_subcategory = null;
+                        },
+                        toggle_category(category) {
+                        this.active_category = this.active_category === category ? null : category;
+                        this.active_subcategory = null;
+                        },
+                        toggleSubcategory(subcategory) {
+                        this.active_subcategory = this.active_subcategory === subcategory ? null : subcategory;
+                        }
+                    }">
+                <!-- Parent category -->
+                {% for category in parent_categories %}
+                    {% with parent_category = category.name %}
+                        {% include 'templates/components/mobile_header_nav.html' %}
+                    {% endwith %}
+                {% endfor %}
+                <!-- Brands -->
+                {% include 'templates/components/brand_mobile_header_nav.html' %}
+                <!-- Support link -->
+                <!-- <div class="p-4">
+                    <a href="#" class="block text-gray-700">Support</a>
+                </div> -->
+            </div>
+        </div>
+
+        {% if frappe.session.user != 'Guest' %}
+            <button @click="logout" class="flex w-full items-center justify-between p-4 text-red-800 font-medium mt-25 capitalize">
+                {{_('log out')}}
+            </button>
+        {% else %}
+            {% call signup_modal() %}
+                <div class="flex w-full items-center justify-between p-4 text-red-800 font-medium mt-25 capitalize">
+                    {{_('login')}}  
+                </div>
+            {% endcall %}
+        {% endif %}
+    </div>
+{% endblock %}

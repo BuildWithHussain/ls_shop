@@ -1,0 +1,69 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2025-04-15 21:55:56.080125",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": ["import", "images_uploaded", "column_break_pwcs", "variant"],
+	"fields": [
+		{
+			"fieldname": "import",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Import",
+			"options": "Bulk Image Upload",
+			"read_only": 1,
+			"reqd": 1
+		},
+		{
+			"fieldname": "column_break_pwcs",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "variant",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Variant",
+			"options": "Style Attribute Variant",
+			"read_only": 1
+		},
+		{
+			"default": "0",
+			"fieldname": "images_uploaded",
+			"fieldtype": "Int",
+			"in_list_view": 1,
+			"label": "Images Uploaded",
+			"non_negative": 1,
+			"read_only": 1
+		}
+	],
+	"grid_page_length": 50,
+	"in_create": 1,
+	"index_web_pages_for_search": 1,
+	"links": [],
+	"modified": "2025-04-15 22:11:10.419419",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Bulk Image Upload Log",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"read_only": 1,
+	"row_format": "Dynamic",
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [],
+	"track_seen": 1
+}

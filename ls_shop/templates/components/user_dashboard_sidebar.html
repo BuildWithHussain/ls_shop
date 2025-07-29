@@ -1,0 +1,32 @@
+{% from "templates/macros/icon.html" import icon %}
+<div class="mt-3 mb-5">
+    <h2 class="mb-6 text-base font-medium text-red-800">
+        {{_('My Account')}}
+    </h2>
+    <div class="grid grid-cols-2 ipad:flex ipad:flex-col">
+        {% if frappe.session.user !="Guest" %}
+        {% for page in pages %}
+            {% set is_active = frappe.request.path.endswith('/account/' + page|lower) %}
+            <a href="/{{frappe.lang}}/account/{{page|lower}}">
+                <div class="ipad:border-b ipad:border-gray-300 flex items-center text-sm">
+                    {{icon('arrow-left',classes='rotate-180 size-4 me-1')}}
+                    <button class="flex w-full items-center justify-between font-medium cursor-pointer my-3 
+                            {% if is_active %}text-red-800 font-bold{% else %}hover:text-red-800{% endif %}">
+                        <span>{{_(page)}}</span>
+                    </button>
+                </div>
+            </a>
+        {% endfor %}
+        {% else %}
+        <a href="/{{frappe.lang}}/account/wishlist">
+            <div class="ipad:border-b ipad:border-gray-300 flex items-center text-sm">
+                {{icon('arrow-left',classes='rotate-180 size-4 me-1')}}
+                <button class="flex w-full items-center justify-between font-medium cursor-pointer my-3 
+                        {% if is_active %}text-red-800 font-bold{% else %}hover:text-red-800{% endif %}">
+                    <span>{{_("Wishlist")}}</span>
+                </button>
+            </div>
+        </a>
+        {% endif %}
+    </div>
+</div>

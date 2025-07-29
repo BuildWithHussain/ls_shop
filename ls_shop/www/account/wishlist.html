@@ -1,0 +1,50 @@
+{% extends "templates/user_layout.html" %}
+{% from "templates/macros/item_card.html" import item_card %}
+
+{% block user_body %}
+
+<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6">
+	<template x-for="item in $store.wishlist.items">
+		<div class="flex flex-col w-fit mb-4">
+			<div class="relative w-fit">
+				<a :href="'/{{ frappe.lang }}/products/' + item.route">
+					<img :src="item.image || '/assets/ls_shop/images/1.jpg'" alt=""
+						class="w-45 h-60 md:w-55 md:h-70 lg:w-3xs lg:h-85 object-cover rounded-lg" />
+				</a>
+				<div class="absolute end-3 top-2 z-40">
+					<button @click="$store.wishlist.remove(item)"
+						class="rounded-full bg-white p-2 opacity-75 hover:opacity-100 cursor-pointer">
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+							fill="#ff0000" stroke-linecap="round" stroke-linejoin="round">
+							<path
+								d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+						</svg>
+					</button>
+				</div>
+			</div>
+
+			<h3 class="mt-6 font-medium text-red-900 text-base md:text-xl" :title="item.brand" x-text="$store.i18n.t(item.brand)">
+			</h3>
+			{% if frappe.lang == 'en' %}
+			<h4 class="text-base md:text-xl ">
+				<span x-text="item.item_name" class="me-1"></span> <span x-text="item.attribute_value"></span>
+			</h4>
+			
+			{% else %}
+			<h4 class="text-base md:text-xl" :title="item.custom_item_name_ar||item.item_name">
+				<span x-text="item.custom_item_name_ar||item.item_name" class="me-1"></span> <span
+					x-text="$store.i18n.t(item.attribute_value)"></span>
+			</h4>
+			{% endif %}
+			<div class="mt-2 text-sm md:text-base flex font-semibold">
+				<p class="flex">{{get_currency_symbol()}} <span x-text="item.sale_price.toFixed(2)"></span>
+				</p>
+			</div>
+		</div>
+	</template>
+	<template x-if="$store.wishlist.count === 0">
+		<p>{{ _("No items in wishlist") }}</p>
+	</template>
+</div>
+
+{% endblock %}

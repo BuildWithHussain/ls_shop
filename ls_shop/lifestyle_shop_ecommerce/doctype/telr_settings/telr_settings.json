@@ -1,0 +1,114 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2025-03-15 21:56:56.242908",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"store_id",
+		"currency",
+		"column_break_owle",
+		"test_mode",
+		"remote_api_section",
+		"auth_key",
+		"column_break_qjit",
+		"remote_auth_key",
+		"redirection_urls_section",
+		"authorised_url",
+		"cancelled_url",
+		"column_break_wvlj",
+		"declined_url"
+	],
+	"fields": [
+		{
+			"fieldname": "store_id",
+			"fieldtype": "Data",
+			"label": "Store ID"
+		},
+		{
+			"fieldname": "column_break_owle",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "auth_key",
+			"fieldtype": "Password",
+			"label": "Auth Key"
+		},
+		{
+			"default": "SAR",
+			"fieldname": "currency",
+			"fieldtype": "Data",
+			"label": "Currency Code"
+		},
+		{
+			"fieldname": "redirection_urls_section",
+			"fieldtype": "Section Break",
+			"label": "Redirection URLs"
+		},
+		{
+			"fieldname": "authorised_url",
+			"fieldtype": "Data",
+			"label": "Authorised URL",
+			"options": "URL"
+		},
+		{
+			"default": "1",
+			"fieldname": "test_mode",
+			"fieldtype": "Check",
+			"label": "Test Mode?"
+		},
+		{
+			"fieldname": "cancelled_url",
+			"fieldtype": "Data",
+			"label": "Cancelled URL",
+			"options": "URL"
+		},
+		{
+			"fieldname": "column_break_wvlj",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "declined_url",
+			"fieldtype": "Data",
+			"label": "Declined URL",
+			"options": "URL"
+		},
+		{
+			"fieldname": "remote_api_section",
+			"fieldtype": "Section Break",
+			"label": "Remote API"
+		},
+		{
+			"fieldname": "column_break_qjit",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "remote_auth_key",
+			"fieldtype": "Password",
+			"label": "Remote Auth Key"
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2025-04-26 11:42:05.713665",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Telr Settings",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"print": 1,
+			"read": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

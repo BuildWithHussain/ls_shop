@@ -1,0 +1,273 @@
+{% extends "templates/layout.html" %}
+{% from 'templates/macros/banner.html' import banner %}
+{% from 'templates/macros/signup_modal.html' import signup_modal %}
+{% from 'templates/macros/icon.html' import icon %}
+{% block body %}
+<script defer>
+	async function proceed_to_checkout(state) {
+		state.checkout_loading = true;
+		const selected_items = Alpine.store("cart").items.filter(item => item.selected);
+		const has_stock = await Alpine.store("cart").validate_stock_before_checkout(selected_items);
+
+		if (!has_stock) {
+			state.checkout_loading = false;
+			return;
+		}
+		frappe_call("/api/v2/method/ls_shop.api.payments.generate_quotation_for_cart", { cart: { items: selected_items } })
+			.then((d) => {
+				window.location.href = "/{{frappe.lang}}/cart/checkout"
+			}).finally(() => {
+				state.checkout_loading = false;
+			})
+	}
+</script>
+
+<div class=" space-y-10" x-data="{ 
+		checkout_loading: false,
+		cart_loading: true,
+		delivery_charge: {{delivery_charge}},
+		delivery_charge_applicable_below: {{delivery_charge_applicable_below}},
+		cart_total : $store.cart.total,
+		show_delivery_charges: false,
+	}" x-init="
+		if (delivery_charge_applicable_below > cart_total && delivery_charge > 0  && $store.cart.selected_count > 0) {
+			cart_total = cart_total + delivery_charge
+			show_delivery_charges = true
+		} 
+		else {
+			show_delivery_charges = false
+		};
+		await $store.cart.fetch_detail_for_cart();
+		cart_loading = false;" x-effect="
+		cart_total = $store.cart.total;
+		if (delivery_charge_applicable_below > $store.cart.total && delivery_charge > 0 && $store.cart.selected_count > 0) {
+			cart_total = $store.cart.total + delivery_charge;
+			show_delivery_charges = true;
+		} 
+		else {
+			show_delivery_charges = false;
+	}">
+
+	<div x-show="show_delivery_charges && $store.cart.selected_count >0" x-transition>
+		{% call banner() %}
+		<div class="text-sm text-red-800 w-full text-center">
+			{{_('Add items worth')}} {{get_currency_symbol()}} <span x-text="(delivery_charge_applicable_below - $store.cart.total) > 0 ? (delivery_charge_applicable_below - $store.cart.total).toFixed(2) : 0"></span>
+			{{_('more to get free delivery')}}
+		</div>
+		{% endcall %}
+	</div>
+	<div x-show="$store.cart.selected_count < 1" x-transition x-transition:leave="opacity-0">
+		{% call banner() %}
+		<div class="text-sm text-red-800 w-full text-center">
+			{{ _('Add items to continue') }}
+		</div>
+		{% endcall %}
+	</div>
+	<div class="mb-6 md:mb-10">
+		<h1 class="mb-4 text-3xl font-semibold">{{ _('Your bag') }}</h1>
+		<h3 class="text-lg font-medium flex">
+			{{ _('Total') }} (<span x-text="$store.cart.selected_count"></span><span class=""> &nbsp; {{ _('items') }}) </span>{{get_currency_symbol()}} <span
+				x-text="$store.cart.total.toFixed(2)" class="ps-0.5"></span>
+		</h3>
+	</div>
+	<div class="flex flex-col ipad:flex-row md:gap-20">
+		<div class="flex-2">
+			<ol>
+				<template x-for="cart_item in $store.cart.items" :key="cart_item.variant.item_code">
+					<li class="flex w-full items-center">
+						<input type="checkbox" x-model="cart_item.selected"
+							class="w-5 h-5 accent-red-900 text-red-900 border-red-900 rounded-lg focus:ring-red-900 me-1 md:me-2 ">
+
+						<div class="flex gap-2 rounded-lg border border-gray-300 md:gap-7 mb-4 w-full" x-data='{
+						wishlist_item:{
+							"display_name": cart_item.item.display_name,
+							"route": cart_item.item.route,
+							"name": cart_item.item.item_code,
+							"brand": cart_item.brand,
+							"default_price": cart_item.default_price,
+							"sale_price": cart_item.price,
+							"image": cart_item.item.images[0]?.image
+						}
+					}'>
+							<!-- Product Image -->
+							<a :href="`/{{frappe.lang}}/products/${cart_item.item.route}`">
+						<img :src="cart_item.item.images.length > 0 ? cart_item.item.images[0].image : '/assets/ls_shop/images/1.jpg'"
+								alt="Product Image" class="w-35 h-50 md:w-45 md:h-60 object-cover rounded-lg" />
+							</a>
+						<!-- Product Details -->
+							<div class="mt-4 md:mt-6 flex flex-4 justify-between">
+								<div>
+									<h3 class="mb-2.5 text-sm font-medium text-red-900 md:text-base"
+										x-text="cart_item.brand">
+									</h3>
+									<h4 class="mb-2 text-sm font-medium md:text-base">
+									{% if frappe.lang == "en" %}
+									<span x-text="cart_item.variant.item_name"></span>
+									{% else %}
+									<span x-text="cart_item.variant.item_name_ar || cart_item.variant.item_name"></span>
+									{% endif %}
+
+									</h4>
+								
+									<!-- Size dropdown -->
+									{% include 'templates/components/cart_product_size_dropdown.html'   %}
+									<div class="text-sm font-medium mt-2 md:mt-9 flex">
+										<template x-if="cart_item.default_price && cart_item.default_price !== cart_item.price">
+										<p class="text-sm font-medium line-through text-red-900 me-2 flex">
+											{{get_currency_symbol()}}
+											<span x-text="parseFloat(cart_item.default_price).toFixed(2)"></span> 
+										</p>
+									</template>
+									&nbsp;
+									<p class="flex">{{get_currency_symbol()}} <span x-text="parseFloat(cart_item.price).toFixed(2)"></span>
+											
+										</p>
+								</div>
+									<div
+										class="flex items-center gap-1 md:gap-2 border px-1 md:px-2 py-1 w-fit mt-1 md:mt-5 rounded-lg border-gray-300 ">
+										<button
+											x-on:click="$store.cart.decrement(cart_item.item.name, cart_item.variant)"
+											class="cursor-pointer">
+											<img src="/assets/ls_shop/icons/minus.svg" alt="">
+										</button>
+										<span x-text="cart_item.qty" class="text-sm font-medium"></span>
+										<button
+											x-on:click="$store.cart.increment(cart_item.item.name, cart_item.variant)"
+											class="cursor-pointer">
+											<img src="/assets/ls_shop/icons/add.svg" alt="">
+										</button>
+									</div>
+								</div>
+							</div>
+							<div class="mt-6 hidden md:flex items-start " 
+							x-data='{
+								get in_wishlist() {
+									return $store.wishlist.is_in_wishlist(wishlist_item)
+									}
+								}'>
+								<button @click.prevent='
+										in_wishlist?
+										$store.wishlist.remove(wishlist_item) :
+										$store.wishlist.add(wishlist_item)'>
+								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 24 24"
+								 stroke="currentColor"
+								:stroke-width="in_wishlist?0:2"
+								stroke-linecap="round" 
+								stroke-linejoin="round"
+								class="lucide lucide-heart me-5 h-6 cursor-pointer" :fill="in_wishlist ? '#ff0000' : 'none'">
+									<path
+										d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+								</svg>
+								</button>
+								<button
+									class="cursor-pointer border rounded-full flex items-center justify-center p-1 me-3 -mt-1"
+									x-on:click="$store.cart.removeItem(cart_item.item.name, cart_item.variant)">
+									{{icon(name="close",classes='size-5 ')}}
+								</button>
+							</div>
+							<div class=" flex flex-col justify-between md:hidden my-6" x-data='{
+								get in_wishlist() {
+									return $store.wishlist.is_in_wishlist(wishlist_item)
+								}
+								}'>
+								<button
+									class="cursor-pointer border rounded-full flex items-center justify-center p-1 me-3"
+									x-on:click="$store.cart.removeItem(cart_item.item.name, cart_item.variant)">
+									{{icon(name="close",classes='size-5 ')}}
+								</button>
+								<button @click.prevent='
+									in_wishlist?
+									$store.wishlist.remove(wishlist_item) :
+									$store.wishlist.add(wishlist_item)
+								'>
+									<svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" 
+									viewBox="0 0 24 24" 
+									stroke="currentColor"
+									:stroke-width="in_wishlist?0:2" 
+									stroke-linecap="round" 
+									stroke-linejoin="round" 
+									class="lucide lucide-heart  cursor-pointer"
+									:fill="in_wishlist ? '#ff0000' : 'none'">
+									<path
+										d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+									</svg>
+								</button>
+							</div>
+						</div>
+					</li>
+				</template>
+			</ol>
+		</div>
+		<div class="flex flex-1 flex-col">
+			<div class="flex w-full flex-col">
+				<div class="mb-5 flex items-center justify-between border-b border-gray-300 pb-3">
+					<h2 class="text-base font-medium md:text-lg capitalize">
+						{{ _('order summary') }}
+					</h2>
+				</div>
+				<div class="mb-3 flex items-center justify-between">
+					<p class="text-base font-normal text-gray-400"><span x-text="$store.cart.selected_count"></span> {{
+						_('items') }}</p>
+
+					<p class="text-base font-medium flex">{{get_currency_symbol()}}<span x-text="$store.cart.total.toFixed(2)" class="me-2"></span>
+						</p>
+				</div>
+				<div class="mb-3 flex items-center justify-between">
+					<p class="text-base font-normal text-gray-400 capitalize">{{ _("non-refundable delivery charge") }}</p>
+					<div x-show="show_delivery_charges && $store.cart.selected_count >0">
+						<p class="text-base font-medium flex">{{get_currency_symbol()}}<span x-text="delivery_charge.toFixed(2)" ></span>
+							</p>
+					</div>
+					<div x-show="!show_delivery_charges">
+						<p class="text-base font-medium flex">Free</p>
+					</div>
+				</div>
+				<div class="mb-3 flex items-center justify-between">
+					<p class="text-base font-normal text-gray-400"> {{
+						_('Total') }}</p>
+					<p class="text-base font-medium flex">	{{get_currency_symbol()}}<span x-text="cart_total.toFixed(2)"></span>
+					
+					</p>
+				</div>
+
+				<div class="mt-6 md:mt-9">
+				</div>
+				<div class="w-full">
+					{% if frappe.session.user == "Guest" %}
+
+					{% call signup_modal() %}
+					<span
+						class=" text-white text-base font-semibold uppercase w-full h-12 py-3 bg-red-900 hover:bg-red-800 rounded-lg flex justify-center items-center gap-2.5">
+						{{ _("Login to Checkout") }}
+					</span>
+					{% endcall %}
+					{% else %}
+					<button x-on:click="proceed_to_checkout($data)"
+						class="w-full h-12  py-3 bg-red-900 hover:bg-red-800 rounded-lg flex justify-center items-center gap-2.5 cursor-pointer disabled:opacity-75"
+						:disabled="checkout_loading?true:false">
+						<span class="flex items-center text-white text-base font-semibold uppercase">
+					
+							<span>{{ _("proceed to checkout") }}</span>
+							<div class="animate-spin inline-block size-5 border-3 border-current border-t-transparent rounded-full ms-2"
+								role="status" aria-label="loading" x-show="checkout_loading" x-cloak>
+							</div>
+						</span>
+					</button>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+	</div>
+	<div x-show="cart_loading" style="background: rgba(255,255,255,0.8)"
+		class="fixed top-0 left-0 w-full h-full z-50 flex items-center justify-center" x-cloak>
+		<div class=" p-4 rounded-md  text-lg text-red-900 flex items-center gap-2">
+			<div class="  animate-spin  size-5 border-3 border-current border-t-transparent  rounded-full ms-2"
+				role="status" aria-label="loading">
+			</div>
+			<span>{{_("Loading your bag")}}...</span>
+		</div>
+	</div>
+</div>
+
+
+{% endblock %}

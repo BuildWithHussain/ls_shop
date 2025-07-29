@@ -1,0 +1,301 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2025-03-29 16:14:22.177674",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"cod_section",
+		"cod_charge_applicable_below",
+		"charge_account_head",
+		"column_break_nnvn",
+		"cod_charge",
+		"ecommerce_warehouse",
+		"price_list_section",
+		"default_price_list",
+		"column_break_sgnu",
+		"sale_price_list",
+		"delivery_section",
+		"shipping_rule",
+		"reason_for_return",
+		"column_break_pkyw",
+		"return_period",
+		"print_format",
+		"payment_mode_section",
+		"telr_enabled",
+		"column_break_iirq",
+		"tabby_enabled",
+		"column_break_oopm",
+		"cod_enabled",
+		"bulk_import_tab",
+		"create_variants_automatically_on_configurator_creation",
+		"section_break_ekez",
+		"based_on_attribute",
+		"attribute_name_field",
+		"publish_variants_for_all_templates",
+		"view_logs",
+		"item_group_section",
+		"ecommerce_item_group_mapping",
+		"sync_item_group_mapping_to_ecommerce_items",
+		"communication_tab",
+		"order_section",
+		"order_confirmation_email_template",
+		"item_in_stock_email_template",
+		"column_break_tald",
+		"order_cancellation_email_template",
+		"logo_url",
+		"email_section",
+		"cc_email"
+	],
+	"fields": [
+		{
+			"fieldname": "delivery_section",
+			"fieldtype": "Section Break",
+			"label": "Shipping & Returns"
+		},
+		{
+			"fieldname": "shipping_rule",
+			"fieldtype": "Link",
+			"label": "Shipping Rule",
+			"link_filters": "[[\"Shipping Rule\",\"calculate_based_on\",\"=\",\"Net Total\"],[\"Shipping Rule\",\"disabled\",\"=\",0]]",
+			"options": "Shipping Rule"
+		},
+		{
+			"fieldname": "cod_section",
+			"fieldtype": "Section Break",
+			"label": "Cash on Delivery"
+		},
+		{
+			"fieldname": "column_break_nnvn",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "cod_charge",
+			"fieldtype": "Currency",
+			"label": "COD Charge"
+		},
+		{
+			"fieldname": "cod_charge_applicable_below",
+			"fieldtype": "Currency",
+			"label": "COD Charge Applicable Below"
+		},
+		{
+			"fieldname": "charge_account_head",
+			"fieldtype": "Link",
+			"label": "Charge Account Head",
+			"options": "Account"
+		},
+		{
+			"fieldname": "ecommerce_warehouse",
+			"fieldtype": "Link",
+			"label": "Ecommerce Warehouse",
+			"options": "Warehouse"
+		},
+		{
+			"fieldname": "column_break_pkyw",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "return_period",
+			"fieldtype": "Int",
+			"hide_seconds": 1,
+			"label": "Return Period (Days) After Invoice Generated",
+			"non_negative": 1
+		},
+		{
+			"fieldname": "price_list_section",
+			"fieldtype": "Section Break",
+			"label": "Price List"
+		},
+		{
+			"fieldname": "default_price_list",
+			"fieldtype": "Link",
+			"label": "Default Price List",
+			"options": "Price List"
+		},
+		{
+			"fieldname": "column_break_sgnu",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "sale_price_list",
+			"fieldtype": "Link",
+			"label": "Sale Price List",
+			"options": "Price List"
+		},
+		{
+			"fieldname": "reason_for_return",
+			"fieldtype": "Table",
+			"label": "Reason for Return",
+			"options": "Return Reason"
+		},
+		{
+			"fieldname": "print_format",
+			"fieldtype": "Link",
+			"label": "Print Format",
+			"link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Sales Invoice\"]]",
+			"options": "Print Format"
+		},
+		{
+			"fieldname": "bulk_import_tab",
+			"fieldtype": "Tab Break",
+			"label": "Bulk Actions / Import"
+		},
+		{
+			"default": "0",
+			"fieldname": "create_variants_automatically_on_configurator_creation",
+			"fieldtype": "Check",
+			"label": "Create variants automatically on Configurator Creation"
+		},
+		{
+			"fieldname": "publish_variants_for_all_templates",
+			"fieldtype": "Button",
+			"label": "Publish Variants for All Templates"
+		},
+		{
+			"fieldname": "section_break_ekez",
+			"fieldtype": "Section Break"
+		},
+		{
+			"fieldname": "based_on_attribute",
+			"fieldtype": "Link",
+			"label": "Based on Attribute",
+			"options": "Item Attribute"
+		},
+		{
+			"fieldname": "communication_tab",
+			"fieldtype": "Tab Break",
+			"label": "Communication"
+		},
+		{
+			"fieldname": "order_section",
+			"fieldtype": "Section Break",
+			"label": "Order"
+		},
+		{
+			"fieldname": "order_confirmation_email_template",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Order Confirmation Email Template",
+			"options": "Email Template",
+			"reqd": 1
+		},
+		{
+			"fieldname": "column_break_tald",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "order_cancellation_email_template",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Order Cancellation Email Template",
+			"options": "Email Template",
+			"reqd": 1
+		},
+		{
+			"fieldname": "logo_url",
+			"fieldtype": "Data",
+			"label": "Logo URL",
+			"options": "URL"
+		},
+		{
+			"fieldname": "item_in_stock_email_template",
+			"fieldtype": "Link",
+			"label": "Item In Stock Email Template",
+			"options": "Email Template",
+			"reqd": 1
+		},
+		{
+			"fieldname": "item_group_section",
+			"fieldtype": "Section Break",
+			"label": "Item Group"
+		},
+		{
+			"fieldname": "ecommerce_item_group_mapping",
+			"fieldtype": "Table",
+			"label": "eCommerce Item Group Mapping",
+			"options": "Item Group Map"
+		},
+		{
+			"fieldname": "sync_item_group_mapping_to_ecommerce_items",
+			"fieldtype": "Button",
+			"label": "Sync Item Group Mapping to Existing Items"
+		},
+		{
+			"fieldname": "payment_mode_section",
+			"fieldtype": "Section Break",
+			"label": "Payment Mode"
+		},
+		{
+			"fieldname": "column_break_iirq",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "column_break_oopm",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "1",
+			"fieldname": "telr_enabled",
+			"fieldtype": "Check",
+			"label": "Telr"
+		},
+		{
+			"default": "1",
+			"fieldname": "tabby_enabled",
+			"fieldtype": "Check",
+			"label": "Tabby"
+		},
+		{
+			"default": "1",
+			"fieldname": "cod_enabled",
+			"fieldtype": "Check",
+			"label": "COD"
+		},
+		{
+			"fieldname": "email_section",
+			"fieldtype": "Section Break",
+			"label": "Email"
+		},
+		{
+			"fieldname": "cc_email",
+			"fieldtype": "Data",
+			"label": "CC Email",
+			"options": "Email"
+		},
+		{
+			"fieldname": "attribute_name_field",
+			"fieldtype": "Data",
+			"label": "Attribute Name Field"
+		},
+		{
+			"fieldname": "view_logs",
+			"fieldtype": "Button",
+			"label": "View Logs"
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2025-06-30 13:14:47.225075",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Lifestyle Settings",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"print": 1,
+			"read": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"row_format": "Dynamic",
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

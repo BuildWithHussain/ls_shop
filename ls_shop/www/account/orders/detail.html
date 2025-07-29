@@ -1,0 +1,182 @@
+{% extends "templates/user_layout.html" %}
+{% from "templates/macros/icon.html" import icon %}
+{% from "templates/macros/cancel_order_button.html" import cancel_order_button %}
+{% from 'templates/macros/return_button.html' import return_button   %}
+
+{% from 'templates/macros/user_dashboard_product.html' import dashboard_product %}
+
+{% block alpine_plugins %}
+<script src="/assets/ls_shop/js/vendor/alpinejs/plugins/focus.js"></script>
+{% endblock %}
+
+{% block user_body %}
+<div x-data="{ 
+    selected_items: [],
+    returned_items: [],
+    returned_items_in_draft:[],
+    is_fully_returned:false,
+    partially_returned: false,
+    async fetch_returned_items(order_id) {
+    const response = await frappe_call('/api/v2/method/ls_shop.api.return.get_returned_items', {
+        sales_order_id: order_id
+    });
+    this.returned_items = response.data.returned_items;
+    this.returned_items_in_draft = response.data.returned_items_in_draft;
+    this.is_fully_returned = response.data.is_fully_returned;
+    this.partially_returned = response.data.partially_returned;
+
+}
+}"
+x-init="fetch_returned_items('{{ order.name }}')" class=" flex flex-col border border-gray-300 rounded-lg w-full p-4">
+    <div class="flex md:justify-between md:items-center border-b border-gray-300 mb-5 pb-5 flex-col md:flex-row">
+        <div class="flex flex-col md:flex-row md:w-2/3 md:justify-between md:items-center">
+            <h1 class=" text-base mb-2 md:mb-0 md:text-lg font-normal">{{_('Order placed')}} {{
+                frappe.utils.pretty_date(frappe.utils.get_datetime(order.creation)) }}</h1>
+            <h1 class="text-base mb-2 md:mb-0 md:text-lg">{{_('Order Id')}}: {{order.name}}</h1>
+        </div>
+       {% set print_format  =  frappe.db.get_value("Lifestyle Settings","Lifestyle Settings","print_format") or 'Standard' %}
+
+        {% with sales_invoice = frappe.get_all("Sales Invoice",filters={'sales_order':order.name},limit=1) %}
+        {% if sales_invoice %}
+        <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Sales Invoice&name={{sales_invoice[0].name}}&format={{print_format}}" target="_blank" class="text-base flex items-center mb-2 md:mb-0 "       x-show="!partially_returned">
+            {% if order.custom_ecommerce_status == "Delivered"  %}
+                    {{icon("invoice",classes = 'size-4 me-1')}}
+                    {{_('Invoice')}}
+                {% endif %}
+        </a>
+        <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Sales Invoice&name={{sales_invoice[0].name}}&format={{print_format}}" target="_blank" class="text-base flex items-center mb-2 md:mb-0 "    x-show="partially_returned && !is_fully_returned" x-cloak>
+            {{icon("invoice",classes = 'size-4 me-1')}}
+            {{_('Invoice')}}
+        </a>
+        {% endif %}
+        {% endwith %}
+    </div>
+    <div
+        class="flex flex-col md:flex-row items-start md:justify-between border-b border-gray-300 pb-5 mb-5 gap-3 ipad:gap-20">
+        <div class="md:w-1/3">
+            <h3 class="text-base text-red-800 font-medium ">
+                {% if order.custom_is_store_pickup %}
+                    {{_('Pickup from')}}
+                {% else %}
+                    {{_('Ship to')}}
+                {% endif %}
+            </h3>
+            <h3 class="text-base font-normal mt-3 ">
+                {% if order.custom_is_store_pickup %}
+                    {% set pickup_parts = [
+                        order.pickup_address_line_1,
+                        order.pickup_address_line_2,
+                        order.pickup_city,
+                        order.pickup_state,
+                        order.pickup_pincode,
+                        "Phone: " ~ order.pickup_phone if order.pickup_phone else ""
+                    ] %}
+                    {% set pickup_display = ", ".join(pickup_parts | select) %}
+                    {{ _(pickup_display) }}
+                {% else %}
+                    {% if order.shipping_address %}
+                        {{ _(order.shipping_address.replace('<br>', ', '))}}
+                    {% endif %}
+                {% endif %}
+            </h3>
+        </div>
+        <div class="md:w-1/3">
+            <h3 class="text-base text-red-800 font-medium capitalize">{{_('payment method')}}</h3>
+            <h3 class="text-base font-normal mt-3 ">
+                 {% if order.custom_ecommerce_payment_mode %}
+                {% if order.custom_ecommerce_payment_mode == "Telr" %}
+                {{_('Card')}}
+                {% else %}
+                {{_(order.custom_ecommerce_payment_mode)}}
+                {% endif %}
+                {% endif %}
+            </h3>
+        </div>
+        <div class="w-full md:w-1/3">
+            <h3 class="text-base text-red-800 font-medium ">{{_('Order Summary')}}</h3>
+            <h3 class="text-base font-normal mt-2 flex items-center justify-between">
+                <span>
+                    {{_('Item(s) subtotal')}}
+                </span>
+                <span class="flex">
+                    {{get_currency_symbol()}}
+                    {{"%.2f"|format(order.total)}}
+                </span>
+            </h3>
+            {% if order.total > order.net_total + (order.rounding_adjustment or 0) %}
+                <h3 class="text-base font-normal mt-2 flex items-center justify-between">
+                    <span>
+                        {{_('Discount')}}
+                    </span>
+                    <span class="flex text-green-700">
+                        &minus;
+                        {{get_currency_symbol()}}
+                        {{"%.2f"|format(order.total - order.net_total)}}
+
+                    </span>
+                </h3>
+            {% endif %}
+            {% if order.total_taxes_and_charges %}
+                <h3 class="text-base font-normal mt-2 flex items-center justify-between">
+                    <span>
+                        {{_('Shipping & Handling')}}
+                    </span>
+                    <span class="flex">
+                        {{get_currency_symbol()}}
+                        {{"%.2f"|format(order.total_taxes_and_charges)}}
+                    </span>
+                </h3>
+            {% endif %}
+            {% if order.rounding_adjustment %}
+            <h3 class="text-base font-normal mt-2 flex items-center justify-between capitalize">
+                <span>
+                    {{_('rounding adjustment')}}
+                </span>
+                <span class="flex">
+                    {{get_currency_symbol()}}
+                    {{"%.2f"|format(order.rounding_adjustment)}}
+
+                </span>
+            </h3>
+            {% endif %}
+            <h3 class="text-base font-medium mt-3 flex items-center justify-between capitalize">
+                <span>
+                    {{_('grand total')}}
+                </span>
+                <span class="flex">
+                    {{get_currency_symbol()}}
+                    {{"%.2f"|format(order.rounded_total)}}
+                </span>
+            </h3>
+        </div>
+    </div>
+    <div class="flex flex-col md:flex-row items-start justify-between ">
+        <div class="w-full md:w-3/4">
+            {% set items = json.loads(order['items'])%}
+            {% for item in items %}
+                <div class="border-b border-gray-300 mb-4 pb-4">
+                {% set display_name = item.item_name if frappe.lang == "en" else item.item_name_ar or item.item_name %}
+                    {{ dashboard_product(item['image'],
+                    item['brand'],
+                    display_name,
+                    item['price'],
+                    size=item['size']
+                     ) }}
+                </div>
+            {% endfor %}
+
+        </div>
+        <div class="w-full md:w-1/4 flex flex-col">
+            <!-- <button class="bg-red-800 hover:bg-red-900 text-white text-sm text-center p-2 rounded-lg cursor-pointer">
+                {{_('Track Order')}}
+            </button> -->
+            <div x-show="!is_fully_returned">
+               {{ cancel_order_button(classes='mt-4', order_id=order.name, ecommerce_order_status =order.custom_ecommerce_status) }}
+            </div>
+            {% if order.name | can_return(return_period) %}
+            {{return_button("mt-4",order.name,order.delivery_status,items,return_reasons)}}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

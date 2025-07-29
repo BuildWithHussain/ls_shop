@@ -1,0 +1,570 @@
+{% extends "templates/layout.html" %}
+
+{% block alpine_plugins %}
+<script src="/assets/ls_shop/js/vendor/alpinejs/plugins/focus.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+{% endblock %}
+
+{% import "templates/macros/modal.html" as modal %}
+{% from "templates/macros/address_form.html" import address_form %}
+{% import "templates/macros/search_combo_box.html" as search_combo_box %}
+{% from "templates/macros/icon.html" import icon %}
+{% include "templates/js/form.js.html" %}
+{% from 'templates/macros/tabby-promo.html' import tabby %}
+
+{% block body %}
+<script>
+    function get_available_payment_modes(){
+        return [
+                { key: 'telr', enabled: parseInt('{{ show_telr }}') },
+                { key: 'tabby', enabled: parseInt('{{ show_tabby }}') },
+                { key: 'cod', enabled: parseInt('{{ show_cod }}') },
+            ]
+    }
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('checkout_state', () => ({
+            billing_address_filled: false,
+            payment_mode: Alpine.$persist("telr").as("payment_mode"),
+            payment_mode_confirmed: false,
+            telr_frame_loaded: false,
+            telr_order_ref: null,
+            tabby_order_rejected: false,
+            address_loading: false,
+            payment_gateway_loading:false,
+            delivery_option: 'home_delivery',
+            checkout_total: parseFloat('{{cart_quotation.net_total or 0}}') + parseFloat('{{delivery_charge or 0}}') + parseFloat('{{cart_quotation.rounding_adjustment or 0}}'),
+            delivery_charge_applicable_below: parseFloat('{{delivery_charge_applicable_below or 0}}'),
+            delivery_charge: parseFloat('{{delivery_charge or 0}}'),
+
+
+            init() {
+                this.calculate_checkout_total();
+                if (!this.payment_mode) {
+                    this.payment_mode = "telr";
+                }
+                this.$watch('payment_mode', (value, oldValue) => {
+                    if (oldValue && value) {
+                        this.payment_mode_confirmed = false;
+                    }
+                    this.calculate_checkout_total()
+
+
+                })
+                this.$watch('delivery_option', (value) => {
+                    this.calculate_checkout_total();
+
+                })
+                this.$watch('checkout_total', (newTotal) => {
+                    this.update_tabby_promo(newTotal);
+                })
+                this.apply_shipping_rule()
+                this.validate_payment_mode()
+            },
+            calculate_checkout_total() {
+
+                this.checkout_total = parseFloat('{{cart_quotation.net_total or 0}}') + parseFloat('{{cart_quotation.rounding_adjustment or 0}}')
+                if(this.delivery_option === 'home_delivery') {
+                    if (this.delivery_charge_applicable_below > parseFloat('{{cart_quotation.net_total or 0}}')) {
+                        this.checkout_total += this.delivery_charge 
+                    }
+
+                }
+                if (this.billing_address_filled && this.payment_mode === 'cod' && parseFloat('{{cod_charge_applicable_below or 0}}') > parseFloat('{{cart_quotation.rounded_total or 0}}')) {
+                    this.checkout_total += parseFloat('{{cod_charge or 0}}')
+                }
+
+            },
+            async apply_shipping_rule() {
+                const data = await frappe_call(
+                    "/api/v2/method/ls_shop.api.checkout.apply_shipping_rule"
+                )
+                this.delivery_charge = parseFloat(data.data[0])
+                this.delivery_charge_applicable_below = parseFloat(data.data[1])
+            },
+            // Update Tabby price on delivery charge update
+            update_tabby_promo(total) {
+                if (this.payment_mode !== 'tabby') return;
+                const tabby_element_ids = ['tabby-promo-mobile', 'tabby-promo-desktop'];
+                tabby_element_ids.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.innerHTML = '';
+                        new TabbyPromo({
+                            selector: `#${id}`,
+                            currency: 'SAR',
+                            price: total.toFixed(2),
+                            lang: '{{ frappe.lang }}',
+                            source: 'product',
+                            productType: 'installments'
+                        });
+                    }
+                });
+            },
+            validate_payment_mode() {
+                const payment_modes = get_available_payment_modes()
+
+                const current = payment_modes.find(m => m.key === this.payment_mode);
+                // If current mode is disabled or not found
+                if (!current || !current.enabled) {
+                    const fallback = payment_modes.find(m => m.enabled);
+                    this.payment_mode = fallback ? fallback.key : null;
+                }
+            }
+        }))
+
+                    
+    })
+    function billing_state() {
+        return {
+            billing_use_address: 'saved_address',
+            same_as_billing: true,
+            shipping_use_address: 'saved_address',
+            show_billing_state: true,
+            show_pickup_state: true,
+            errors: {},
+            store_pickup_location: '',
+        }
+    }
+</script>
+
+<script defer>
+    async function fetch_payment_details(payment_mode_confirmed, state) {
+        state.tabby_order_rejected = false;
+        // Check if selected payment mode is available and enabled
+        payment_modes = get_available_payment_modes()
+        const selected_mode = payment_modes.find(m => m.key === state.payment_mode);
+        
+        if (!selected_mode || !selected_mode.enabled) {
+             toast(`Payment method '${state.payment_mode.toUpperCase()}' is not available or disabled`, { type: "danger" })
+             return
+        }
+        if (!payment_mode_confirmed) {
+            return
+        }
+
+        const btn = document.getElementById("render_payment_gateway_btn");
+
+        const spinner = btn.querySelector(".animate-spin");
+        btn.disabled = true;
+        spinner.classList.remove("hidden");
+        try {
+            let response = await frappe_call(
+                "/api/v2/method/ls_shop.api.payments.initiate_checkout_with_mode",
+                { payment_mode: state.payment_mode }
+            )
+            const data = response.data;
+
+            if (state.payment_mode === 'cod') {
+                window.location.href = "/{{frappe.lang}}/account/orders/confirmation?payment_mode=cod&reference_id=" + "{{cart_quotation.name}}"
+            }
+            if (state.payment_mode === "telr") {
+                state.telr_order_ref = data["payment_request"]["telr_order_ref"]
+                const element = document.getElementById('telr_frame_container');
+                const elementTop = element.offsetTop;
+                window.scrollTo({
+                    top: elementTop,
+                    behavior: 'smooth'
+                });
+
+            }
+
+            if (state.payment_mode === "tabby") {
+                if (data?.payment_request?.status === "REJECTED") {
+                    state.tabby_order_rejected = true;
+                    return
+                }
+                window.location.href = data["payment_request"]["tabby_order_url"]
+            }
+        }
+        catch (err) {
+            btn.disabled = false;
+            spinner.classList.add("hidden");
+        }
+        finally {
+            btn.disabled = false;
+            spinner.classList.add("hidden");
+        }
+
+    }
+    async function add_pickup_address(state, refs) {
+        const store_pickup_warehouse = document.getElementById("store_pickup_addresses_combo").value
+        if (!store_pickup_warehouse) {
+            state.errors.push('Please select a store pickup location.');
+            state.address_loading = false;
+            return;
+        }
+        let payload = {
+            is_store_pickup: true,
+            store_pickup_warehouse: store_pickup_warehouse
+        };
+        try {
+            const data = await frappe_call(
+                "/api/v2/method/ls_shop.api.payments.update_quotation_address", { address: payload }
+            )
+            if (data.data.success) {
+                toast(data.data.message, { type: "success" })
+                state.show_pickup_state = false;
+                state.billing_address_filled = true;
+            }
+            else {
+                toast("Something went wrong!", { type: "danger" })
+            }
+        }
+        catch (err) {
+        }
+        finally {
+            state.address_loading = false;
+            state.calculate_checkout_total()
+        }
+    }
+    async function add_billing_address(state, refs) {
+
+        const data = form_to_object(refs.checkout_form);
+        // Validate Billing Address
+        if (data.billing_tab === 'saved_address') {
+            if (!data.billing_combo) {
+                state.errors.push('Please select an address from saved billing addresses.');
+            }
+        }
+
+        if (data.billing_tab === 'new_address') {
+            if (!data.billing_country) {
+                state.errors.push('Please select a valid country in billing address.');
+            }
+
+            if (!data.billing_phone_number || !/^(\+?\d{1,3}[-.\s]?)?(\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{3,4}$/.test(data.billing_phone_number)) {
+                state.errors.push('Please enter a valid billing phone number.');
+            }
+        }
+        // Validate Shipping Address (only if "same as billing" is not checked)
+        if (!data.shipping_address_same_as_billing_address) {
+            if (data.shipping_tab === 'saved_address') {
+                if (!data.shipping_combo) {
+                    state.errors.push('Please select an address from saved shipping addresses.');
+                }
+            }
+
+            if (data.shipping_tab === 'new_address') {
+                if (!data.shipping_country) {
+                    state.errors.push('Please select a valid country in shipping address.');
+                }
+
+                if (!data.shipping_phone_number || !/^(\+?\d{1,3}[-.\s]?)?(\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{3,4}$/.test(data.shipping_phone_number)) {
+                    state.errors.push('Please enter a valid shipping phone number.');
+                }
+            }
+        }
+        if (state.errors.length > 0) {
+            state.address_loading = false;
+            return
+        }
+        let payload = {
+            is_store_pickup: false,
+            billing_address: {
+                is_saved: data.billing_tab === 'saved_address',
+                address_id: data.billing_combo || null,
+                first_name: data.billing_tab === 'new_address' ? data.billing_first_name : null,
+                last_name: data.billing_tab === 'new_address' ? data.billing_last_name : null,
+                email: data.billing_tab === 'new_address' ? data.billing_email : null,
+                phone_number: data.billing_tab === 'new_address' ? data.billing_phone_number : null,
+                full_address: data.billing_tab === 'new_address' ? data.billing_full_address : null,
+                landmark: data.billing_tab === 'new_address' ? data.billing_landmark : null,
+                country: data.billing_tab === 'new_address' ? data.billing_country : null,
+                city: data.billing_tab === 'new_address' ? data.billing_city : null,
+                po_box: data.billing_tab === 'new_address' ? data.billing_po_box : null
+            },
+            shipping_address: {
+                is_saved: data.shipping_tab === 'saved_address',
+                address_id: data.shipping_combo || null,
+                first_name: data.shipping_tab === 'new_address' ? data.shipping_first_name : null,
+                last_name: data.shipping_tab === 'new_address' ? data.shipping_last_name : null,
+                email: data.shipping_tab === 'new_address' ? data.shipping_email : null,
+                phone_number: data.shipping_tab === 'new_address' ? data.shipping_phone_number : null,
+                full_address: data.shipping_tab === 'new_address' ? data.shipping_full_address : null,
+                landmark: data.shipping_tab === 'new_address' ? data.shipping_landmark : null,
+                country: data.shipping_tab === 'new_address' ? data.shipping_country : null,
+                city: data.shipping_tab === 'new_address' ? data.shipping_city : null,
+                po_box: data.shipping_tab === 'new_address' ? data.shipping_po_box : null
+            },
+            shipping_same_as_billing: !!data.shipping_address_same_as_billing_address // Ensure boolean value
+        };
+        try {
+            const response_data = await frappe_call(
+                "/api/v2/method/ls_shop.api.payments.update_quotation_address", { address: payload }
+            )
+            if (response_data.data.success) {
+                toast(response_data.data.message, { type: "success" })
+                state.show_billing_state = false;
+                state.billing_address_filled = true;
+            }
+            else {
+                toast("Something went wrong!", { type: "danger" })
+            }
+        }
+        catch (err) {
+
+        }
+        finally {
+            state.address_loading = false;
+            state.calculate_checkout_total()
+        }
+    }
+    async function update_quotation_address(state, refs) {
+        state.billing_address_filled = false;
+        state.address_loading = true;
+        state.errors = [];
+        // For Store Pickup
+        if (refs.checkout_form.delivery_option.value === 'store_pickup') {
+            add_pickup_address(state, refs)
+            return;
+        }
+        add_billing_address(state, refs)
+    }
+</script>
+
+<div class="space-y-10" x-data="checkout_state"
+    x-init="$watch('payment_mode_confirmed', value => fetch_payment_details(value, $data))">
+    <div class="flex items-baseline justify-between">
+        <h1 class="text-3xl font-bold my-3 md:mb-11 md">{{ _('Checkout') }}</h1>
+        <div class="md:hidden my-3">
+            {% include 'templates/components/promo_code_component.html' %}
+        </div>
+    </div>
+    <div class="flex items-baseline md:hidden">
+        <h2 class="text-lg font-medium me-2 flex">
+            {{_('TOTAL')}} ( {{ cart_quotation.total_qty|int }}&nbsp;<span class="">
+                {% if cart_quotation.total_qty != 1 %}
+                {{_('Items')}}
+            {% else %}
+                {{_('Item')}}
+                {% endif %}
+            )
+        </span>{{get_currency_symbol()}} <span x-text="checkout_total.toFixed(2)"></span> 
+        </h2>
+        <div>
+            {% call modal.modal(button_text='View Items',button_classes='text-sm text-red-900 font-semibold ms-2',
+            modal_header='Your Cart') %}
+            <div class="p-6">
+                {% with tabby_selector="tabby-promo-mobile" %}
+                {% include 'templates/components/checkout_product_details.html' %}
+                {% endwith %}
+            </div>
+            {% endcall %}
+        </div>
+    </div>
+    <div class="flex flex-col md:flex-row gap-8 md:gap-25 md:mt-2">
+        <div class="flex-1" x-data="billing_state()">
+            <form x-ref="checkout_form" @submit.prevent="update_quotation_address($data, $refs)">
+                <div class="flex justify-between items-center border-b border-gray-200 pb-4">
+                    <h2 class="text-lg font-semibold text-red-800 capitalize">
+                        {{ _('select delivery option') }}
+                    </h2>
+                </div>
+                <div class="mt-4 gap-4 flex flex-col md:flex-row justify-between">
+                    <label
+                        class="flex flex-1 items-center p-3 space-x-3 bg-white border rounded-lg hover:bg-gray-50 border-gray-200/70 cursor-pointer"
+                        :class="{'border-red-800': delivery_option === 'home_delivery'}" @click="billing_address_filled = false;
+                        show_billing_state = true;
+                        payment_mode_confirmed = false;
+                        errors={};">
+                        <input type="radio" name="delivery_option" value="home_delivery"
+                            class="accent-gray-900 translate-y-px focus:ring-gray-700" x-model="delivery_option" />
+                        <span class="text-base capitalize">
+                            {{ _('home delivery') }}
+                        </span>
+                    </label>
+                    <label
+                        class="flex flex-1 items-center p-3 space-x-3 bg-white border rounded-lg hover:bg-gray-50 border-gray-200/70 cursor-pointer"
+                        :class="{'border-red-800': delivery_option === 'store_pickup'}" @click="billing_address_filled = false;
+                        show_pickup_state = true;
+                        payment_mode_confirmed = false;
+                        errors={};">
+                        <input type="radio" name="delivery_option" value="store_pickup"
+                            class="accent-gray-900 translate-y-px focus:ring-gray-700" x-model="delivery_option" />
+                        <span class="text-base capitalize">
+                            {{ _('pickup from store') }}
+                        </span>
+                    </label>
+                </div>
+                <!-- Store Pickup Section -->
+                <div x-show="delivery_option === 'store_pickup'" class="mt-6 "
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform -translate-y-4"
+                    x-transition:enter-end="opacity-100 transform translate-y-0" x-cloak>
+                    <div class="flex justify-between items-center border-b border-gray-200 pb-4 mt-6">
+                        <h2 class="text-lg font-semibold text-red-800 capitalize">
+                            {{ _('billing details') }}
+                        </h2>
+                        <h3 class="text-sm text-red-800 hover:text-red-900 font-semibold ms-2 cursor-pointer"
+                            x-show="!show_pickup_state" x-cloak @click="show_pickup_state = true;
+                            billing_address_filled = false;
+                            payment_mode_confirmed = false " x-collapse.duration.300ms
+                            x-transition:enter="ease-out duration-200" x-transition:leave="ease-in duration-100">
+                            {{icon(name="edit",classes="h-5 w-5")}}
+                        </h3>
+                    </div>
+                    <div x-show="show_pickup_state" x-ref="billing_form" class="mt-5" x-collapse.duration.300ms
+                        x-transition:enter="ease-out duration-200" x-transition:leave="ease-in duration-100">
+                        <h3 class="text-base font-medium mb-4">{{ _('Select Pickup Location') }}</h3>
+                        <div class="space-y-4">
+                            <div class="space-y-20">
+                                {{ search_combo_box.combo_box(options=store_pickup_addresses,id='store_pickup_addresses',show_title = True) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Home Delivery Section -->
+                <div x-show="delivery_option === 'home_delivery'" x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform -translate-y-4"
+                    x-transition:enter-end="opacity-100 transform translate-y-0">
+                    {% include 'templates/includes/home_delivery.html' %}
+                </div>
+
+                <div x-show="errors.length > 0"
+                    class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mt-4" x-cloak
+                    x-transition.origin.top>
+                    <ul>
+                        <template x-for="error in errors" :key="error">
+                            <li class="text-sm"> <span x-text="error"></span></li>
+                        </template>
+                    </ul>
+                </div>
+                <div class="mt-6"
+                    x-show="delivery_option === 'home_delivery' && show_billing_state === true || delivery_option === 'store_pickup' && show_pickup_state === true "
+                    x-transition>
+                    <button type="submit"
+                        class="w-full flex items-center justify-center rounded-md bg-red-900 px-6 py-3 font-normal text-white opacity-90 hover:opacity-100 focus:ring-2 focus:ring-red-900 focus:outline-none cursor-pointer text-center disabled:opacity-70 disabled:cursor-not-allowed"
+                        :disabled="address_loading">
+                        {{_('Continue')}}
+                        <div class="animate-spin inline-block size-5 border-3 border-current border-t-transparent rounded-full ms-2"
+                            role="status" aria-label="loading" x-show="address_loading" x-cloak>
+                        </div>
+                    </button>
+                </div>
+            </form>
+            <template x-if="billing_address_filled">
+                <div class="space-y-10">
+                    <h2 class="text-lg font-semibold text-red-800 border-b border-gray-200 pb-4 my-5">{{ _("Payment method") }}</h2>
+                    <div class="space-y-3">
+                        <label
+                            class="flex items-start flex-col p-3 space-x-3 bg-white border rounded-lg hover:bg-gray-50 border-gray-200/70 cursor-pointer"
+                            x-show="{{show_telr}}">
+                            <div class="flex items-center">
+                                <input type="radio" name="telr_radio" value="telr"
+                                    class="h-5 w-5 accent-gray-900 translate-y-px focus:ring-gray-700 cursor-pointer"
+                                    x-model="payment_mode" />
+                                <span class="text-base ps-3">
+                                    {{ _('Credit Card') }}
+                                </span>
+                            </div>
+                       {% include "templates/components/payment_svg.html" %}
+                        </label>
+                        <label
+                            class="flex flex-col items-start p-3 space-x-3 bg-white border rounded-lg hover:bg-gray-50 border-gray-200/70 cursor-pointer"
+                            x-show="{{show_tabby}}">
+                            <div class="flex items-center">
+                                <input type="radio" name="tabby_radio" value="tabby"
+                                    class="h-5 w-5 accent-gray-900 translate-y-px focus:ring-gray-700 cursor-pointer"
+                                    x-model="payment_mode" />
+                                <span class="text-base ps-3">
+                                    {{ _('Tabby') }}
+                                </span>
+                            </div>
+                            <img src="/assets/ls_shop/images/tabby.png" alt="" class="mt-3 -ms-1 h-6 object-contain">
+                            <div x-show="tabby_order_rejected"
+                                class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mt-4"
+                                x-cloak x-transition.origin.top>
+                                <p class="text-sm">{{_('Sorry, Tabby is unable to approve this purchase. Please use an alternative payment method for your order.')}}</p>
+                            </div>
+                        </label>
+                        <label
+                            class="flex flex-col items-start p-3 space-x-3 bg-white border rounded-lg hover:bg-gray-50 border-gray-200/70 cursor-pointer"
+                            x-show="{{show_cod}}">
+                            <div class="flex items-center">
+                                <input type="radio" name="cod_radio" value="cod"
+                                    class="h-5 w-5 accent-gray-900 translate-y-px focus:ring-gray-700 cursor-pointer"
+                                    x-model="payment_mode" />
+                                <span class="text-base ps-3">
+                                    {{ _('Cash on Delivery') }}
+                                </span>
+                            </div>
+                            {% if cod_charge_applicable_below > cart_quotation.rounded_total and cod_charge %}
+                            <div class="text-red-600 rounded-lg relative mt-4">
+                                <p class="text-sm">
+                                    ({{ _('Additional cash on delivery charge of')}}  {{get_currency_symbol()}}{{"%.2f"|format(cod_charge)}} {{_('will apply')}})
+                                </p>
+                                <p class="text-sm">
+                                    ({{ _('Non refundable fee of')}} {{get_currency_symbol()}} {{"%.2f"|format(cod_charge)}} {{_('will apply')}})
+                                </p>
+                            </div>
+                            {% endif %}
+                            <img src="/assets/ls_shop/images/cod.png" alt="" class="mt-3 -ms-1 h-6 object-contain">
+                        </label>
+                    </div>
+                    <button @click="payment_mode_confirmed = true"
+                        class="w-full items-center justify-center rounded-md bg-red-900 px-6 py-3 font-normal text-white opacity-90 hover:opacity-100 focus:ring-2 focus:ring-red-900 focus:outline-none cursor-pointer text-center mb-5 flex disabled:opacity-75" id="render_payment_gateway_btn">
+                       
+                        {{ _("Proceed to pay") }}
+                         <div class="animate-spin  size-5 border-3 border-current border-t-transparent rounded-full ms-2 hidden"
+								role="status" aria-label="loading"x-cloak>
+							</div>
+                       
+                    </button>
+                </div>
+            </template>
+            <template x-if="billing_address_filled && payment_mode_confirmed && payment_mode === 'telr'">
+                <div class="mt-10">
+                    <template x-if="!telr_frame_loaded" x-cloak x-transition>
+                        <!-- <span>Loading telr...</span> -->
+                        <div class="relative w-full overflow-hidden rounded-lg border border-green-500 bg-surface text-on-surface mb-5"
+                            role="alert">
+                            <div class="flex w-full items-center gap-2 bg-green-500/10 p-4">
+                                <div class="bg-green-500/15 text-green-500 rounded-full p-1" aria-hidden="true">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"
+                                        class="size-5 fill-green-500 motion-safe:animate-spin ">
+                                        <path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
+                                            opacity=".25" />
+                                        <path
+                                            d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z" />
+                                    </svg>
+                                </div>
+                                <div class="flex w-full flex-col items-center justify-between gap-2 ml-2 sm:flex-row">
+                                    <div>
+                                        <h3 class="text-sm font-semibold text-green-500 capitalize">loading payment gateway</h3>
+                                        <p class="text-xs font-medium sm:text-sm">Please wait while we load the payment gateway...
+                                        </p>
+                                    </div>
+            
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    <div id="telr_frame_container">
+                        <template x-if="telr_order_ref">
+                            <div>
+                                <iframe
+                                    sandbox="allow-forms allow-modals allow-popups-to-escape-sandbox allow-popups allow-scripts allow-top-navigation allow-same-origin"
+                                    class="h-200 desktop:h-376 w-full"
+                                    x-bind:src="`https://secure.telr.com/gateway/process_framed_full.html?o=${telr_order_ref}`"
+                                    id="telr_frame" name="telr_frame" style="width:100%;height:450px !important;border:0;margin:0;"
+                                    frameborder="0" x-on:load="telr_frame_loaded = true"></iframe>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <!-- Cart Summary -->
+        <div class="hidden rounded-lg border border-gray-300 md:block md:w-[40%] p-6 h-fit">
+            <div class="flex justify-between items-end mb-4 pb-4 border-b border-gray-300">
+                <h3 class="text-lg font-medium capitalize">{{ _('your cart') }}</h3>
+                {% include 'templates/components/promo_code_component.html' %}
+            </div>
+            {% with tabby_selector="tabby-promo-desktop" %}
+            {% include 'templates/components/checkout_product_details.html' %}
+            {% endwith %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

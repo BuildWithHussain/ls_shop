@@ -1,0 +1,39 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2025-03-12 10:23:44.519444",
+	"doctype": "DocType",
+	"editable_grid": 1,
+	"engine": "InnoDB",
+	"field_order": ["banner_image", "column_break_ubbm", "url"],
+	"fields": [
+		{
+			"fieldname": "banner_image",
+			"fieldtype": "Attach Image",
+			"label": "Banner Image"
+		},
+		{
+			"fieldname": "column_break_ubbm",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "/",
+			"fieldname": "url",
+			"fieldtype": "Data",
+			"label": "Url",
+			"options": "URL"
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"istable": 1,
+	"links": [],
+	"modified": "2025-05-02 13:49:40.337003",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Landing Page Hero Banner",
+	"owner": "Administrator",
+	"permissions": [],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

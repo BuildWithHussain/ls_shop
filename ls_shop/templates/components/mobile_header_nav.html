@@ -1,0 +1,113 @@
+{% set item_categories = frappe.get_all('Item Group', filters={'parent_item_group': parent_category
+,'custom_display_on_website':True},fields=["name","custom_item_group_display_name"],order_by='custom_item_group_display_name') %}
+<div class="">
+    <button @click="toggle_parent('{{parent_category}}')" class="flex w-full items-center justify-between p-4">
+        <span>{{_(parent_category)}}</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform"
+            :class="{'rotate-180': active_parent === '{{parent_category}}'}" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+    </button>
+    <!--  categories -->
+    <div x-show="active_parent === '{{parent_category}}'" x-collapse>
+        <!-- category -->
+        {% for item_category in item_categories %}
+        <div class="">
+            <button @click="toggle_category('{{item_category.name}}')"
+                class="flex w-full items-center justify-between p-3 ps-8 text-sm ">
+                <span>{{_(item_category.custom_item_group_display_name or item_category.name)}}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform"
+                    :class="{'rotate-180': active_category === '{{item_category.name}}'}" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <!-- subcategories -->
+            <div x-show="active_category === '{{item_category.name}}'" x-collapse>
+                <div class="p-4 bg-gray-50 border border-gray-100 rounded-2xl grid grid-cols-2 gap-4">
+                    <div class="mb-4">
+                        {% if item_category.name[:4]|lower == 'kids' %}
+                        {% with item_subcategories = frappe.get_all('Item Group',
+                        filters={'parent_item_group':
+                        item_category.name,'custom_display_on_website':True},fields=["name","custom_item_group_display_name"],order_by="custom_item_group_display_name")
+                        %}
+                        {% for item_subcategory in item_subcategories %}
+                        <a href='/{{frappe.lang}}/products?search={{item_subcategory.name or ''}}&category={{parent_category  or ''}}' class="font-medium text-red-900 mb-3 text-sm block">{{_('Shop by')}}
+                            {{_(item_subcategory.custom_item_group_display_name)}}</a>
+                        <ul>
+                            {% with items = frappe.get_all('Item Group',
+                            filters={'parent_item_group':
+                            item_subcategory.name,'custom_display_on_website':True},fields=["name","custom_item_group_display_name"],order_by="custom_item_group_display_name")
+                            %}
+                            {% for item in items %}
+                            <li class="mb-2">
+                                <a href='/{{frappe.lang}}/products?subcategory={{item.name | urlencode}}&category={{parent_category | urlencode}}'
+                                    class="text-gray-600 flex items-center text-sm">
+                                    <div class="h-3 w-3 flex justify-center items-center me-2">
+                                        <img src="/assets/ls_shop/icons/arrow-right.svg" alt="">
+                                    </div>
+                                    <span class="truncate max-w-40 block"
+                                        title="{{ _(item.custom_item_group_display_name) }}">{{_(item.custom_item_group_display_name) }}</span>
+                                </a>
+                            </li>
+                            {% endfor %}
+                            {% endwith %}
+                            <li>
+                                <a href="/{{frappe.lang}}/products?search={{item_subcategory.name | urlencode}}&category={{parent_category | urlencode}}"
+                                    class="text-gray-600 flex items-center text-sm">
+                                    <div class="h-3 w-3 flex justify-center items-center me-2">
+                                        <img src="/assets/ls_shop/icons/arrow-right.svg" alt="">
+                                    </div>
+                                    <span class="mb-3">{{_('View all')}}</span>
+                                </a>
+                            </li>
+                        </ul>
+                        {% endfor %}
+                        {% endwith %}
+                        {% else %}
+                        <h4 class="font-medium text-red-900 mb-3 text-sm">{{_('Shop by category')}}</h4>
+                        <ul>
+                            {% set item_subcategories = frappe.get_all('Item Group', filters={'parent_item_group':
+                            item_category.name ,'custom_display_on_website':True},fields=["name","custom_item_group_display_name"]) %}
+                            {% for subcategory in item_subcategories %}
+                            <li class="mb-2">
+                                <a href='/{{frappe.lang}}/products?subcategory={{subcategory.name | urlencode}}&category={{parent_category | urlencode}}'
+                                    class="text-gray-600 flex items-center text-sm">
+                                    <div class="h-3 w-3 flex justify-center items-center me-2">
+                                        <img src="/assets/ls_shop/icons/arrow-right.svg" alt="">
+                                    </div>
+                                    <span class="truncate max-w-40 block" title="{{ _(subcategory.custom_item_group_display_name or subcategory.name) }}">{{
+                                       _(subcategory.custom_item_group_display_name or subcategory.name )}}</span>
+                                </a>
+                            </li>
+                            {% endfor %}
+                            <li>
+                                <a href="/{{frappe.lang}}/products?search={{parent_item_group | urlencode}}&category={{parent_category | urlencode}}"
+                                    class="text-gray-600 flex items-center text-sm">
+                                    <div class="h-3 w-3 flex justify-center items-center me-2">
+                                        <img src="/assets/ls_shop/icons/arrow-right.svg" alt="">
+                                    </div>
+                                    <span>{{_('View all')}}</span>
+                                </a>
+                            </li>
+                        </ul>
+                        {% endif %}
+                    </div>
+             
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="">
+            <a href="/{{frappe.lang}}/products?search={{parent_category|urlencode}}&category={{parent_category | urlencode}}&has_discount=1&sort_by=discount"
+                class="flex w-full items-center p-3 ps-8 text-sm ">
+                <span class="capitalize">{{_('sale')}}</span>
+            </a>
+            <a href="/{{frappe.lang}}/products?search={{parent_category|urlencode}}&category={{parent_category | urlencode}}"
+                class="flex w-full items-center p-3 ps-8 text-sm ">
+                <span>{{_('View all')}} {{_(parent_category)}}</span>
+            </a>
+        </div>
+    </div>
+</div>

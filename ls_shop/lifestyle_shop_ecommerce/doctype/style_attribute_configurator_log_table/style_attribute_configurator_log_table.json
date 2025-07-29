@@ -1,0 +1,49 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2025-06-28 09:45:31.247107",
+	"doctype": "DocType",
+	"editable_grid": 1,
+	"engine": "InnoDB",
+	"field_order": [
+		"style_attribute_configurator",
+		"column_break_fzet",
+		"variants_created"
+	],
+	"fields": [
+		{
+			"fieldname": "style_attribute_configurator",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Style Attribute Configurator",
+			"options": "Style Attribute Configurator",
+			"reqd": 1
+		},
+		{
+			"fieldname": "column_break_fzet",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "variants_created",
+			"fieldtype": "Int",
+			"in_list_view": 1,
+			"label": "Variants Created",
+			"non_negative": 1,
+			"reqd": 1
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"istable": 1,
+	"links": [],
+	"modified": "2025-06-28 09:46:18.969963",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Style Attribute Configurator Log Table",
+	"owner": "Administrator",
+	"permissions": [],
+	"row_format": "Dynamic",
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

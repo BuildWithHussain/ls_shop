@@ -1,0 +1,46 @@
+{% import "templates/macros/dropdown.html" as dropdown %}
+
+{%
+call dropdown.dropdown(
+id="cart",
+icon_src="/assets/ls_shop/icons/shopping-bag.svg",
+position="right",
+show_badge=true,
+badge_count="$store.cart.count",
+link='cart',
+)
+%}
+<div x-show="$store.cart.items.length === 0" class="text-center text-gray-600 py-2">
+    {{_('Cart is empty')}}
+</div>
+
+<!-- Cart items -->
+<template x-for="(cart_item, index) in $store.cart.items" :key="index">
+    <div class="flex gap-4 items-center border-b border-gray-200 pb-2 mb-2">
+        <div class="">
+            <img :src="cart_item.item?.images[0]?.image || '/assets/ls_shop/images/1.jpg'" alt="item_image"
+                class="object-cover rounded-lg w-11 h-11">
+        </div>
+        <div>
+            <p class="text-xs text-red-900" x-text="cart_item.brand"></p>
+            <div class="flex">
+                {% if frappe.lang == "en" %}
+                <p class="text-xs mt-1 text-gray-500" x-text="cart_item.variant.item_name"></p>
+                {% else %}
+                  <p class="text-xs mt-1 text-gray-500" x-text="cart_item.variant.item_name_ar || cart_item.variant.item_name"></p>
+                  {% endif %}
+                <p class="text-xs mt-1 text-gray-500 mx-1" x-show="cart_item && cart_item.variant"> - </p>
+                <p class="text-xs mt-1 text-gray-500" x-text="cart_item?.variant?.size"></p>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- See all link -->
+<a href="/{{frappe.lang}}/cart">
+    <div x-show="$store.cart.items.length > 0" class="text-center text-xs text-gray-500  hover:text-gray-700 capitalize">
+        {{_('checkout')}}
+    </div>
+</a>
+
+{% endcall %}

@@ -1,0 +1,49 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2025-05-23 16:54:17.835136",
+	"doctype": "DocType",
+	"editable_grid": 1,
+	"engine": "InnoDB",
+	"field_order": [
+		"original_item_group",
+		"column_break_xfzn",
+		"ecommerce_item_group"
+	],
+	"fields": [
+		{
+			"fieldname": "original_item_group",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Original Item Group",
+			"options": "Item Group",
+			"reqd": 1
+		},
+		{
+			"fieldname": "column_break_xfzn",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "ecommerce_item_group",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "eCommerce Item Group",
+			"options": "Item Group",
+			"reqd": 1
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"istable": 1,
+	"links": [],
+	"modified": "2025-05-23 16:57:47.891881",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Item Group Map",
+	"owner": "Administrator",
+	"permissions": [],
+	"row_format": "Dynamic",
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

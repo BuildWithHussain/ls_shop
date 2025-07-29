@@ -1,0 +1,119 @@
+<div x-data="{
+    all_options:{{country_list}},
+    options: [],
+    is_open: false,
+    opened_with_keyboard: false,
+    selected_option: {name:'Saudi Arabia', code:'sa'},
+    setselected_option(option) {
+        this.selected_option = option
+        this.is_open = false
+        this.opened_with_keyboard = false
+        this.$refs.hidden_text_filed.value = option.name
+    },
+    get_filtered_options(query) {
+        this.options = this.all_options.filter((option) =>
+            option.name.toLowerCase().includes(query.toLowerCase()),
+        )
+        if (this.options.length === 0) {
+            this.$refs.no_result_message.classList.remove('hidden')
+        } else {
+            this.$refs.no_result_message.classList.add('hidden')
+        }
+    },
+    handle_key_down_on_options(event) {
+        // if the user presses backspace or the alpha-numeric keys, focus on the search field
+        if ((event.keyCode >= 65 && event.keyCode <= 90) || (event.keyCode >= 48 && event.keyCode <= 57) || event.keyCode === 8) {
+            this.$refs.searchField.focus()
+        }
+    },
+    // Function to convert country code to flag emoji
+    getFlagEmoji(countryCode) {
+        if (!countryCode) return '🏳️';
+        const codePoints = countryCode
+            .toUpperCase()
+            .split('')
+            .map(char => 127397 + char.charCodeAt());
+        return String.fromCodePoint(...codePoints);
+    }
+}" 
+    class="flex w-full flex-col " x-on:keydown="handle_key_down_on_options($event)"
+    x-on:keydown.esc.window="is_open = false, opened_with_keyboard = false" x-init="options = all_options">
+    <label for="landmark" class="block text-xs font-normal text-gray-600 mb-3">
+        {{ _('Country') }}*
+    </label>
+    <div class="relative">
+
+        <!-- trigger button  -->
+        <button type="button"
+            class="inline-flex w-full items-center justify-between gap-2 border border-gray-300 rounded-md  px-4 py-2 text-sm font-medium tracking-wide text-gray-600 transition hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black  "
+            role="combobox" aria-controls="countriesList" aria-haspopup="listbox" x-on:click="is_open = ! is_open"
+            x-on:keydown.down.prevent="opened_with_keyboard = true"
+            x-on:keydown.enter.prevent="opened_with_keyboard = true"
+            x-on:keydown.space.prevent="opened_with_keyboard = true"
+            x-bind:aria-expanded="is_open || opened_with_keyboard"
+            x-bind:aria-label="selected_option ? selected_option.name : 'Please Select'">
+            <div class="flex items-center gap-2">
+                <!-- Selected Country Flag Emoji -->
+                <span class="text-lg" x-text="getFlagEmoji(selected_option?.code)"></span>
+                <span class="text-sm font-normal" x-text="selected_option ? selected_option.name : 'Please Select'"></span>
+            </div>
+            <!-- Chevron  -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5"
+                aria-hidden="true">
+                <path fill-rule="evenodd"
+                    d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                    clip-rule="evenodd" />
+            </svg>
+        </button>
+
+        <!-- Hidden Input To Grab The Selected Value  -->
+        <input id="{{id}}_country" name="{{id}}_country" autocomplete="off" x-ref="hidden_text_filed" hidden=""
+            value="Saudi Arabia" />
+        <div x-show="is_open || opened_with_keyboard" id="{{id}}_countriesList"
+            class="absolute left-0 top-11 z-10 w-full overflow-hidden rounded-md border border-gray-300 bg-white  "
+            role="listbox" aria-label="countries list"
+            x-on:click.outside="is_open = false, opened_with_keyboard = false"
+            x-on:keydown.down.prevent="$focus.wrap().next()" x-on:keydown.up.prevent="$focus.wrap().previous()"
+            x-transition x-trap="opened_with_keyboard">
+            <!-- Search  -->
+            <div class="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none"
+                    stroke-width="1.5" class="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-gray-600/50 "
+                    aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+                <input type="text"
+                    class="w-full border-b border-gray-300  py-2.5 pl-11 pr-4 text-sm text-gray-600 focus:outline-hidden focus-visible:border-black disabled:cursor-not-allowed disabled:opacity-75    "
+                    aria-label="Search" x-on:input="get_filtered_options($el.value)" x-ref="searchField"
+                    placeholder="Search" />
+            </div>
+            <!-- Options  -->
+            <ul class="flex max-h-44 flex-col overflow-y-auto">
+                <li class="hidden px-4 py-2 text-sm text-gray-600 " x-ref="no_result_message">
+                    <span>{{_('No matches found')}}</span>
+                </li>
+                <template x-for="(item, index) in options" x-bind:key="item.name">
+                    <li class="combobox-option inline-flex justify-between gap-6 bg-white px-4 py-2 text-sm text-gray-600 hover:bg-gray-900/5 hover:text-gray-900 focus-visible:bg-gray-900/5 focus-visible:text-gray-900 focus-visible:outline-hidden   "
+                        role="option" x-on:click="setselected_option(item)"
+                        x-on:keydown.enter="setselected_option(item)" x-bind:id="'option-' + index" tabindex="0">
+                        <div class="flex items-center gap-2">
+                            <!-- Flag Emoji -->
+                            <span class="text-lg" x-text="getFlagEmoji(item.code)"></span>
+                            <!-- Country name  -->
+                            <span x-bind:class="selected_option == item ? 'font-bold' : null" x-text="item.name"></span>
+                            <!-- Screen reader 'selected' indicator  -->
+                            <span class="sr-only" x-text="selected_option == item ? 'selected' : null"></span>
+                        </div>
+                        <!-- Checkmark  -->
+                        <svg x-cloak x-show="selected_option == item" xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" class="size-4"
+            aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5">
+                        </svg>
+                    </li>
+                </template>
+            </ul>
+        </div>
+    </div>
+</div>

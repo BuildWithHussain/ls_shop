@@ -1,0 +1,472 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2025-03-12 10:23:17.681538",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"banner_section",
+		"hero_banner",
+		"hero_banner_ar",
+		"section_break_uazs",
+		"gif_1",
+		"gif_3",
+		"column_break_hjwh",
+		"gif_url_1",
+		"gif_url_3",
+		"column_break_soxs",
+		"gif_2",
+		"gif_4",
+		"column_break_agii",
+		"gif_url_2",
+		"gif_url_4",
+		"gifs_ar_section",
+		"gif_1_ar",
+		"gif_3_ar",
+		"column_break_fscr",
+		"gif_url_1_ar",
+		"gif_url_3_ar",
+		"column_break_dcsh",
+		"gif_2_ar",
+		"gif_4_ar",
+		"column_break_qsaw",
+		"gif_url_2_ar",
+		"gif_url_4_ar",
+		"section_break_hdto",
+		"browse_by_brands",
+		"browse_by_brands_ar",
+		"new_arrivals",
+		"section_break_xmqq",
+		"banner_1",
+		"banner_url_1",
+		"column_break_gzsu",
+		"banner_2",
+		"banner_url_2",
+		"banner_ar_section",
+		"banner_1_ar",
+		"banner_url_1_ar",
+		"column_break_sbpz",
+		"banner_2_ar",
+		"banner_url_2_ar",
+		"section_break_dyhp",
+		"best_picks",
+		"section_break_dehn",
+		"banner_3",
+		"column_break_nzln",
+		"banner_url_3",
+		"banner_section_2_ar_section",
+		"banner_3_ar",
+		"column_break_pwrs",
+		"banner_url_3_ar",
+		"section_break_jqas",
+		"banner_4",
+		"banner_url_4",
+		"banner_4_ar",
+		"banner_url_4_ar",
+		"column_break_nbcp",
+		"other_products",
+		"section_break_tgjx",
+		"banner_5",
+		"column_break_mscz",
+		"banner_url_5",
+		"banner_section_4_ar_section",
+		"banner_5_ar",
+		"column_break_irta",
+		"banner_url_5_ar"
+	],
+	"fields": [
+		{
+			"fieldname": "hero_banner",
+			"fieldtype": "Table",
+			"label": "Hero Banner",
+			"options": "Landing Page Hero Banner"
+		},
+		{
+			"fieldname": "section_break_uazs",
+			"fieldtype": "Section Break",
+			"label": "GIFs"
+		},
+		{
+			"fieldname": "gif_1",
+			"fieldtype": "Attach",
+			"label": "GIF 1"
+		},
+		{
+			"fieldname": "gif_3",
+			"fieldtype": "Attach",
+			"label": "GIF 3"
+		},
+		{
+			"fieldname": "column_break_soxs",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "gif_2",
+			"fieldtype": "Attach",
+			"label": "GIF 2"
+		},
+		{
+			"fieldname": "gif_4",
+			"fieldtype": "Attach",
+			"label": "GIF 4"
+		},
+		{
+			"fieldname": "section_break_hdto",
+			"fieldtype": "Section Break"
+		},
+		{
+			"fieldname": "browse_by_brands",
+			"fieldtype": "Table",
+			"label": "Browse By Brands",
+			"options": "Website Slideshow Item"
+		},
+		{
+			"fieldname": "new_arrivals",
+			"fieldtype": "Table",
+			"label": "New Arrivals",
+			"options": "Recommended Variant"
+		},
+		{
+			"fieldname": "section_break_xmqq",
+			"fieldtype": "Section Break",
+			"label": "Banner Section 1"
+		},
+		{
+			"fieldname": "banner_1",
+			"fieldtype": "Attach Image",
+			"label": "Banner 1"
+		},
+		{
+			"fieldname": "banner_2",
+			"fieldtype": "Attach Image",
+			"label": "Banner 2"
+		},
+		{
+			"fieldname": "section_break_dyhp",
+			"fieldtype": "Section Break"
+		},
+		{
+			"fieldname": "best_picks",
+			"fieldtype": "Table",
+			"label": "Best Picks",
+			"options": "Recommended Variant"
+		},
+		{
+			"fieldname": "section_break_dehn",
+			"fieldtype": "Section Break",
+			"label": "Banner Section 2"
+		},
+		{
+			"fieldname": "banner_3",
+			"fieldtype": "Attach Image",
+			"label": "Banner 3"
+		},
+		{
+			"fieldname": "section_break_jqas",
+			"fieldtype": "Section Break",
+			"label": "Banner Section 3"
+		},
+		{
+			"fieldname": "banner_4",
+			"fieldtype": "Attach Image",
+			"label": "Banner 4"
+		},
+		{
+			"fieldname": "column_break_nbcp",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "section_break_tgjx",
+			"fieldtype": "Section Break",
+			"label": "Banner Section 4"
+		},
+		{
+			"fieldname": "banner_5",
+			"fieldtype": "Attach Image",
+			"label": "Banner 5"
+		},
+		{
+			"fieldname": "other_products",
+			"fieldtype": "Table",
+			"label": "Other Products",
+			"options": "Recommended Variant"
+		},
+		{
+			"fieldname": "column_break_hjwh",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "column_break_agii",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "/",
+			"fieldname": "gif_url_1",
+			"fieldtype": "Data",
+			"label": "GIF URL 1",
+			"options": "URL"
+		},
+		{
+			"default": "/",
+			"fieldname": "gif_url_3",
+			"fieldtype": "Data",
+			"label": "GIF URL 3",
+			"options": "URL"
+		},
+		{
+			"default": "/",
+			"fieldname": "gif_url_2",
+			"fieldtype": "Data",
+			"label": "GIF URL 2",
+			"options": "URL"
+		},
+		{
+			"default": "/",
+			"fieldname": "gif_url_4",
+			"fieldtype": "Data",
+			"label": "GIF URL 4",
+			"options": "URL"
+		},
+		{
+			"fieldname": "column_break_gzsu",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "/",
+			"fieldname": "banner_url_1",
+			"fieldtype": "Data",
+			"label": "Banner URL 1",
+			"options": "URL"
+		},
+		{
+			"default": "/",
+			"fieldname": "banner_url_2",
+			"fieldtype": "Data",
+			"label": "Banner URL 2",
+			"options": "URL"
+		},
+		{
+			"fieldname": "column_break_nzln",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "/",
+			"fieldname": "banner_url_3",
+			"fieldtype": "Data",
+			"label": "Banner URL 3",
+			"options": "URL"
+		},
+		{
+			"default": "/",
+			"fieldname": "banner_url_4",
+			"fieldtype": "Data",
+			"label": "Banner URL 4",
+			"options": "URL"
+		},
+		{
+			"fieldname": "column_break_mscz",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "/",
+			"fieldname": "banner_url_5",
+			"fieldtype": "Data",
+			"label": "Banner URL 5",
+			"options": "URL"
+		},
+		{
+			"fieldname": "hero_banner_ar",
+			"fieldtype": "Table",
+			"label": "Hero Banner AR",
+			"options": "Landing Page Hero Banner"
+		},
+		{
+			"fieldname": "banner_section",
+			"fieldtype": "Section Break",
+			"label": "Hero Banner"
+		},
+		{
+			"fieldname": "gif_1_ar",
+			"fieldtype": "Attach",
+			"label": "GIF 1 AR"
+		},
+		{
+			"fieldname": "gif_3_ar",
+			"fieldtype": "Attach",
+			"label": "GIF 3 AR"
+		},
+		{
+			"default": "/",
+			"fieldname": "gif_url_1_ar",
+			"fieldtype": "Data",
+			"label": "GIF URL 1 AR",
+			"options": "URL"
+		},
+		{
+			"default": "/",
+			"fieldname": "gif_url_3_ar",
+			"fieldtype": "Data",
+			"label": "GIF URL 3 AR",
+			"options": "URL"
+		},
+		{
+			"fieldname": "gif_2_ar",
+			"fieldtype": "Attach",
+			"label": "GIF 2 AR"
+		},
+		{
+			"fieldname": "gif_4_ar",
+			"fieldtype": "Attach",
+			"label": "GIF 4 AR"
+		},
+		{
+			"default": "/",
+			"fieldname": "gif_url_2_ar",
+			"fieldtype": "Data",
+			"label": "GIF URL 2 AR",
+			"options": "URL"
+		},
+		{
+			"default": "/",
+			"fieldname": "gif_url_4_ar",
+			"fieldtype": "Data",
+			"label": "GIF URL 4 AR",
+			"options": "URL"
+		},
+		{
+			"fieldname": "browse_by_brands_ar",
+			"fieldtype": "Table",
+			"label": "Browse By Brands AR",
+			"options": "Website Slideshow Item"
+		},
+		{
+			"fieldname": "gifs_ar_section",
+			"fieldtype": "Section Break",
+			"label": "GIFs AR"
+		},
+		{
+			"fieldname": "column_break_fscr",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "column_break_dcsh",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "column_break_qsaw",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "banner_ar_section",
+			"fieldtype": "Section Break",
+			"label": "Banner Section 1 AR"
+		},
+		{
+			"fieldname": "banner_1_ar",
+			"fieldtype": "Attach Image",
+			"label": "Banner 1 AR"
+		},
+		{
+			"default": "/",
+			"fieldname": "banner_url_1_ar",
+			"fieldtype": "Data",
+			"label": "Banner URL 1 AR",
+			"options": "URL"
+		},
+		{
+			"fieldname": "column_break_sbpz",
+			"fieldtype": "Column Break"
+		},
+		{
+			"fieldname": "banner_2_ar",
+			"fieldtype": "Attach Image",
+			"label": "Banner 2 AR"
+		},
+		{
+			"default": "/",
+			"fieldname": "banner_url_2_ar",
+			"fieldtype": "Data",
+			"label": "Banner URL 2 AR",
+			"options": "URL"
+		},
+		{
+			"fieldname": "banner_section_2_ar_section",
+			"fieldtype": "Section Break",
+			"label": "Banner Section 2 AR"
+		},
+		{
+			"fieldname": "banner_3_ar",
+			"fieldtype": "Attach Image",
+			"label": "Banner 3 AR"
+		},
+		{
+			"fieldname": "column_break_pwrs",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "/",
+			"fieldname": "banner_url_3_ar",
+			"fieldtype": "Data",
+			"label": "Banner URL 3 AR",
+			"options": "URL"
+		},
+		{
+			"fieldname": "banner_4_ar",
+			"fieldtype": "Attach Image",
+			"label": "Banner 4 AR"
+		},
+		{
+			"default": "/",
+			"fieldname": "banner_url_4_ar",
+			"fieldtype": "Data",
+			"label": "Banner URL 4 AR",
+			"options": "URL"
+		},
+		{
+			"fieldname": "banner_section_4_ar_section",
+			"fieldtype": "Section Break",
+			"label": "Banner Section 4 AR"
+		},
+		{
+			"fieldname": "banner_5_ar",
+			"fieldtype": "Attach Image",
+			"label": "Banner 5 AR"
+		},
+		{
+			"fieldname": "column_break_irta",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "/",
+			"fieldname": "banner_url_5_ar",
+			"fieldtype": "Data",
+			"label": "Banner URL 5 AR",
+			"options": "URL"
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2025-06-26 07:45:42.064761",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Landing Page Settings",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"print": 1,
+			"read": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"row_format": "Dynamic",
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

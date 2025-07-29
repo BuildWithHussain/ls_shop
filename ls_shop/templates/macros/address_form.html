@@ -1,0 +1,76 @@
+{% macro address_form(id='',country_list=[]) %}
+<div class="mt-5">
+    <!-- Personal Information -->
+    <h3 class="text-base font-medium capitalize">{{ _('personal information') }}</h3>
+    <div class="grid md:grid-cols-2 gap-4 mt-4">
+        <div>
+            <label for="{{id}}_first_name" class="block text-xs font-normal text-gray-600 mb-3">
+                {{ _('First name') }}*
+            </label>
+            <input type="text" id="{{id}}_first_name" name="{{id}}_first_name"
+                class="w-full border-gray-300 rounded-md border p-2 text-sm text-gray-600 focus:outline-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                x-bind:required="{{id}}_use_address === 'new_address' && show_billing_state === true">
+        </div>
+        <div>
+            <label for="{{id}}_last_name" class="block text-xs font-normal text-gray-600 mb-3">
+                {{ _('Last name') }}*
+            </label>
+            <input type="text" id="{{id}}_last_name" name="{{id}}_last_name"
+                class="w-full border-gray-300 rounded-md border p-2 text-sm text-gray-600 focus:outline-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                x-bind:required="{{id}}_use_address === 'new_address' && show_billing_state === true">
+        </div>
+        <div>
+            <label for="{{id}}_email" class="block text-xs font-normal text-gray-600 mb-3">
+                {{ _('Email') }}*
+            </label>
+            <input type="email" id="{{id}}_email" name="{{id}}_email"
+                class="w-full border-gray-300 rounded-md border p-2 text-sm text-gray-600 focus:outline-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                x-bind:required="{{id}}_use_address === 'new_address' && show_billing_state === true">
+        </div>
+        <div>
+            {% include 'templates/components/core/phone_number_input.html' %}
+        </div>
+    </div>
+
+    <!-- Address Section -->
+    <h3 class="text-base font-medium mt-6">{{ _('Address') }}</h3>
+    <div class="grid md:grid-cols-2 gap-4 mt-2">
+        <div class="col-span-2">
+            <label for="{{id}}_full_address" class="block text-xs font-normal text-gray-600 mb-3">
+                {{ _('Address line 1') }}*
+            </label>
+            <input type="text" id="{{id}}_full_address" name="{{id}}_full_address"
+                class="w-full border-gray-300 rounded-md border p-2 text-sm text-gray-600 focus:outline-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                x-bind:required="{{id}}_use_address === 'new_address' && show_billing_state === true">
+        </div>
+        <div class="col-span-2 md:col-span-1">
+            <label for="{{id}}_landmark" class="block text-xs font-normal text-gray-600 mb-3">
+                {{ _('Address line 2') }}*
+            </label>
+            <input type="text" id="{{id}}_landmark" name="{{id}}_landmark"
+                class="w-full border-gray-300 rounded-md border p-2 text-sm text-gray-600 focus:outline-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                x-bind:required="{{id}}_use_address === 'new_address' && show_billing_state === true">
+        </div>
+        <div class="col-span-2 md:col-span-1">
+            {% include 'templates/components/core/country_selector.html' %}
+        </div>
+        <div class="col-span-2 md:col-span-1">
+            <label for="{{id}}_city" class="block text-xs font-normal text-gray-600 mb-3">
+                {{ _('City') }}*
+            </label>
+            <input type="text" id="{{id}}_city" name="{{id}}_city"
+                class="w-full border-gray-300 rounded-md border p-2 text-sm text-gray-600 focus:outline-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                x-bind:required="{{id}}_use_address === 'new_address' && show_billing_state === true">
+        </div>
+        <div class="col-span-2 md:col-span-1">
+            <label for="{{id}}_po_box" class="block text-xs font-normal text-gray-600 mb-3">
+                {{ _('PO box')}}*
+            </label>
+            <input type="number" minlength="6" id="{{id}}_po_box" name="{{id}}_po_box"
+                class="w-full border-gray-300 rounded-md border p-2 text-sm text-gray-600 focus:outline-hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                x-bind:required="{{id}}_use_address === 'new_address' && show_billing_state === true">
+        </div>
+    </div>
+</div>
+
+{% endmacro %}

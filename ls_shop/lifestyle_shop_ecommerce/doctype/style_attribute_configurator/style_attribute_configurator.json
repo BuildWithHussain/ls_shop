@@ -1,0 +1,83 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"autoname": "format:{item_template} {item_attribute}",
+	"creation": "2025-03-16 15:29:45.749639",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"item_template",
+		"column_break_fqll",
+		"item_attribute",
+		"section_break_rtnj",
+		"recommended_items"
+	],
+	"fields": [
+		{
+			"fieldname": "item_template",
+			"fieldtype": "Link",
+			"in_list_view": 1,
+			"label": "Item Template",
+			"link_filters": "[[\"Item\",\"has_variants\",\"=\",1]]",
+			"options": "Item",
+			"reqd": 1,
+			"set_only_once": 1,
+			"unique": 1
+		},
+		{
+			"fieldname": "column_break_fqll",
+			"fieldtype": "Column Break"
+		},
+		{
+			"default": "Color",
+			"fieldname": "item_attribute",
+			"fieldtype": "Link",
+			"label": "Item Attribute",
+			"options": "Item Attribute",
+			"reqd": 1
+		},
+		{
+			"fieldname": "section_break_rtnj",
+			"fieldtype": "Section Break"
+		},
+		{
+			"fieldname": "recommended_items",
+			"fieldtype": "Table",
+			"label": "Recommended Items",
+			"options": "Recommended Variant"
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"links": [
+		{
+			"link_doctype": "Style Attribute Variant",
+			"link_fieldname": "configurator"
+		}
+	],
+	"modified": "2025-05-20 16:12:21.062049",
+	"modified_by": "Administrator",
+	"module": "Lifestyle Shop Ecommerce",
+	"name": "Style Attribute Configurator",
+	"naming_rule": "Expression",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"search_fields": "item_attribute",
+	"show_title_field_in_link": 1,
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": [],
+	"title_field": "item_template"
+}

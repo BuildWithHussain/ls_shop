@@ -1,0 +1,34 @@
+<script>
+    function mega_menu() {
+        return {
+            open: false,
+            hoverTimeout: null,
+            activeTab: "",
+
+            init() {
+                this.open = false;
+            },
+
+            on_parent_enter() {
+                clearTimeout(this.hoverTimeout);
+                this.open = true;
+            },
+
+            on_parent_leave() {
+                this.hoverTimeout = setTimeout(() => {
+                    this.open = false;
+                }, 150); // Delay to allow transition to submenu
+            },
+
+            on_submenu_enter() {
+                clearTimeout(this.hoverTimeout);
+            },
+
+            on_submenu_leave() {
+                this.hoverTimeout = setTimeout(() => {
+                    this.open = false;
+                }, 150);
+            }
+        }
+    }
+</script>

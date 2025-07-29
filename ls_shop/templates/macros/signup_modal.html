@@ -1,0 +1,367 @@
+{% macro signup_modal() %}
+
+<div x-data="{
+    is_open: false,
+    otp_sent: false,
+    first_name:'',
+    last_name:'',
+    otp: ['', '', '', '', '', ''],
+    email:'',
+    resend_timer: 0,
+    resend_interval: null,
+    }" class="w-full">
+
+    <button x-on:click="is_open = true" class="cursor-pointer w-full">
+        {{caller()}}
+    </button>
+    <div x-cloak x-show="is_open" x-transition.opacity.duration.200ms x-trap.inert.noscroll="is_open"
+        x-on:keydown.esc.window="is_open = false" x-on:click.self="is_open = false"
+        class="fixed inset-0 z-30 flex items-center justify-center bg-black/20 p-4 pb-8 backdrop-blur-md sm:items-center lg:p-8"
+        role="dialog" aria-modal="true" aria-labelledby="defaultModalTitle">
+        <!-- Modal Dialog -->
+        <div x-show="is_open"
+            x-transition:enter="transition ease-out duration-200 delay-100 motion-reduce:transition-opacity"
+            x-transition:enter-start="opacity-0 scale-50" x-transition:enter-end="opacity-100 scale-100"
+            class="flex flex-col overflow-hidden border border-gray-300 bg-white text-gray-400 rounded-lg max-w-md w-full">
+            <!-- Dialog Header -->
+            <div
+                class="flex items-center border-b border-gray-300 bg-gray-50/60 p-4 {% if header_alignment == 'left' %} justify-between {% else %} justify-center {% endif %}">
+                <h3 id="defaultModalTitle" class="font-medium tracking-wide text-lg text-gray-900">{{_("Let's get started")}}</h3>
+            </div>
+            <div x-data="{ selected_tab: 'login' }" class="w-full p-2 md:p-10 flex flex-col items-center">
+                <!-- Tabs are hidden when OTP verification is shown -->
+                <div x-show="!otp_sent" x-on:keydown.right.prevent="$focus.wrap().next()"
+                    x-on:keydown.left.prevent="$focus.wrap().previous()" class="flex w-fit bg-gray-200 rounded-lg p-1"
+                    role="tablist" aria-label="tab options">
+                    <button x-on:click="selected_tab = 'login'" x-bind:aria-selected="selected_tab === 'login'"
+                        x-bind:tabindex="selected_tab === 'login' ? '0' : '-1'"
+                        x-bind:class="selected_tab === 'login' ? ' text-white bg-red-900 rounded-lg  ' : 'text-gray-400'"
+                        class="h-min px-8 py-2 text-sm cursor-pointer" type="button" role="tab"
+                        aria-controls="tabpanellogin">{{_('Sign In')}}</button>
+                    <button x-on:click="selected_tab = 'sign_in'" x-bind:aria-selected="selected_tab === 'sign_in'"
+                        x-bind:tabindex="selected_tab === 'sign_in' ? '0' : '-1'"
+                        x-bind:class="selected_tab === 'sign_in' ? ' text-white bg-red-900 rounded-lg  ' : 'text-gray-400'"
+                        class="h-min px-8 py-2 text-sm cursor-pointer flex items-center " type="button" role="tab"
+                        aria-controls="tabpanelsign_in">{{_('Sign Up')}} </button>
+
+                </div>
+                <div class="px-2 py-4 mt-6 max-w-sm w-full">
+                    <!-- OTP Verification Form -->
+                    <div x-show="otp_sent" id="tabpanelOTP" role="tabpanel" aria-label="OTP Verification">
+                        <h3 class="text-center mb-4 font-medium">Enter the verification code sent to your email</h3>
+                        <form @submit.prevent="verify_otp($data,$refs)">
+                            <div class="flex justify-between mb-6">
+                                <!-- Individual OTP input fields -->
+                                <input type="text" x-model="otp[0]" x-ref="otp0"
+                                    @input="handle_digit_input($data,$refs,$event, 0)"
+                                    @keydown.backspace="handle_backspace($refs,$event, 0)"
+                                    @keydown.left="if(0 > 0) $refs.otp0.focus()" @keydown.right="$refs.otp1.focus()"
+                                    @paste="handle_paste($data,$refs,$event, 0)" maxlength="1"
+                                    class="w-12 h-12 text-center border border-gray-300 rounded-lg focus:outline-none focus:border-red-900 text-lg"
+                                    required>
+
+                                <input type="text" x-model="otp[1]" x-ref="otp1"
+                                    @input="handle_digit_input($data,$refs,$event, 1)"
+                                    @keydown.backspace="handle_backspace($refs,$event, 1)"
+                                    @keydown.left="$refs.otp0.focus()" @keydown.right="$refs.otp2.focus()"
+                                    @paste="handle_paste($data,$refs,$event, 1)" maxlength="1"
+                                    class="w-12 h-12 text-center border border-gray-300 rounded-lg focus:outline-none focus:border-red-900 text-lg"
+                                    required>
+
+                                <input type="text" x-model="otp[2]" x-ref="otp2"
+                                    @input="handle_digit_input($data,$refs,$event, 2)"
+                                    @keydown.backspace="handle_backspace($refs,$event, 2)"
+                                    @keydown.left="$refs.otp1.focus()" @keydown.right="$refs.otp3.focus()"
+                                    @paste="handle_paste($data,$refs,$event, 2)" maxlength="1"
+                                    class="w-12 h-12 text-center border border-gray-300 rounded-lg focus:outline-none focus:border-red-900 text-lg"
+                                    required>
+
+                                <input type="text" x-model="otp[3]" x-ref="otp3"
+                                    @input="handle_digit_input($data,$refs,$event, 3)"
+                                    @keydown.backspace="handle_backspace($refs,$event, 3)"
+                                    @keydown.left="$refs.otp2.focus()" @keydown.right="$refs.otp4.focus()"
+                                    @paste="handle_paste($data,$refs,$event, 3)" maxlength="1"
+                                    class="w-12 h-12 text-center border border-gray-300 rounded-lg focus:outline-none focus:border-red-900 text-lg"
+                                    required>
+
+                                <input type="text" x-model="otp[4]" x-ref="otp4"
+                                    @input="handle_digit_input($data,$refs,$event, 4)"
+                                    @keydown.backspace="handle_backspace($refs,$event, 4)"
+                                    @keydown.left="$refs.otp3.focus()" @keydown.right="$refs.otp5.focus()"
+                                    @paste="handle_paste($data,$refs,$event, 4)" maxlength="1"
+                                    class="w-12 h-12 text-center border border-gray-300 rounded-lg focus:outline-none focus:border-red-900 text-lg"
+                                    required>
+
+                                <input type="text" x-model="otp[5]" x-ref="otp5"
+                                    @input="handle_digit_input($data,$refs,$event, 5)"
+                                    @keydown.backspace="handle_backspace($refs,$event, 5)"
+                                    @keydown.left="$refs.otp4.focus()" @keydown.right="if(5 < 5) $refs.otp5.focus()"
+                                    @paste="handle_paste($data,$refs,$event, 5)" maxlength="1"
+                                    class="w-12 h-12 text-center border border-gray-300 rounded-lg focus:outline-none focus:border-red-900 text-lg"
+                                    required>
+                            </div>
+
+                            <button
+                                class="bg-gray-300 py-2 px-3 rounded-lg mt-2 w-full text-black cursor-pointer disabled:opacity-75 flex items-center justify-center"
+                                type="submit" x-ref="verify_otp_btn">{{_('Verify OTP')}}<div
+                                    class="hidden  animate-spin  size-4 border-3 border-current border-t-transparent  rounded-full ms-2"
+                                    role="status" aria-label="loading">
+                                </div></button>
+                            <div class=" mt-4 flex items-center justify-center">
+                                <p class="text-sm text-gray-500 me-1">{{_("Didn't receive code")}}?</p>
+                                <button type="button" :disabled="resend_timer > 0" @click="resend_otp($data, $refs)"
+                                    class="text-gray-900 text-sm font-medium cursor-pointer disabled:opacity-50">
+                                    <template x-if="resend_timer === 0">
+                                        <span>{{ _('Resend') }}</span>
+                                    </template>
+                                    <template x-if="resend_timer > 0">
+                                        <span>{{ _('Resend in') }} <span x-text="resend_timer"></span>s</span>
+                                    </template>
+                                </button>
+                            </div>
+                            <button type="button" @click="otp_sent = false"
+                                class="text-gray-500 text-sm w-full text-center mt-4">{{_('Go back')}}</button>
+                        </form>
+                    </div>
+
+                    <!-- Sign In Form -->
+                    <div x-cloak x-show="selected_tab === 'sign_in' && !otp_sent" id="tabpanelsign_in" role="tabpanel"
+                        aria-label="sign_in">
+                        <form @submit.prevent="sign_up_user($data,$refs)">
+                            <div class="mb-3">
+                                <label class="block text-xs font-normal text-gray-400 mb-1">
+                                    {{ _('Email') }}*
+                                </label>
+                                <input x-ref="sign_up_email" x-model="email" type="email"
+                                    class="w-full border focus:outline-none px-2 py-1 border-gray-300 text-gray-700 rounded-lg"
+                                    placeholder="Enter your email" required>
+
+                            </div>
+                            <div class="mb-3">
+                                <label class="block text-xs font-normal text-gray-400 mb-1">
+                                    {{ _('First Name') }}*
+                                </label>
+                                <input x-model="first_name" type="text"
+                                    class="w-full border focus:outline-none px-2 py-1 border-gray-300 text-gray-700 rounded-lg"
+                                    placeholder="Enter your name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="block text-xs font-normal text-gray-400 mb-1">
+                                    {{ _('Last Name') }}*
+                                </label>
+                                <input x-model="last_name" type="text"
+                                    class="w-full border focus:outline-none px-2 py-1 border-gray-300 text-gray-700 rounded-lg"
+                                    placeholder="Enter your name" required>
+                            </div>
+                            <button
+                                class="bg-gray-300 py-2 px-3 rounded-lg mt-6 w-full text-black cursor-pointer disabled:opacity-75 flex items-center justify-center"
+                                type="submit" x-ref="sign_in_btn">{{_('Sign Up')}}<div
+                                    class="hidden  animate-spin  size-4 border-3 border-current border-t-transparent  rounded-full ms-2"
+                                    role="status" aria-label="loading">
+                                </div> </button>
+                        </form>
+                    </div>
+
+                    <!-- Login Form -->
+                    <div x-cloak x-show="selected_tab === 'login' && !otp_sent" id="tabpanellogin" role="tabpanel"
+                        aria-label="login">
+                        <form @submit.prevent="login_user($data,$refs)">
+                            <div class="mb-3">
+                                <label class=" text-xs  text-gray-400 mb-1">
+                                    {{ _('Email') }}*
+                                </label>
+                                <input type="email"
+                                    class="w-full border focus:outline-none px-2 py-1 border-gray-300 text-gray-700 rounded-lg"
+                                    placeholder="Enter your email" required x-model="email">
+                                <button
+                                    class="bg-gray-300 py-2 px-3 rounded-lg mt-6 flex items-center justify-center w-full text-black disabled:opacity-75 cursor-pointer"
+                                    type="submit" x-ref="login_otp_btn">{{_('Sign In')}} <div
+                                        class="hidden  animate-spin  size-4 border-3 border-current border-t-transparent  rounded-full ms-2"
+                                        role="status" aria-label="loading">
+                                    </div>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function sign_up_user(signup_data, ref) {
+        const email = signup_data.email;
+        if (!email) {
+            toast("Please enter a valid email", { type: "warning" });
+            return;
+        }
+        const args = {
+            'email': email
+        };
+        const btn = ref.sign_in_btn
+        const spinner = btn.querySelector(".animate-spin");
+        btn.disabled = true;
+        spinner.classList.remove("hidden");
+        try {
+            const data = await frappe_call('/api/v2/method/ls_shop.api.signup.send_signup_otp', args);
+
+            toast("OTP sent successfully, please check you email.", { type: "success" });
+            signup_data.otp_sent = true;
+
+
+        } catch (error) {
+
+        }
+        finally {
+            btn.disabled = false;
+            spinner.classList.add("hidden");
+        }
+    }
+
+    function handle_digit_input(data, refs, event, index) {
+        // Allow only numbers
+        event.target.value = event.target.value.replace(/[^0-9]/g, '').substring(0, 1);
+
+        // Update the model
+        data.otp[index] = event.target.value;
+
+        // Auto-focus next input after entering a digit
+        if (event.target.value && index < 5) {
+            refs['otp' + (index + 1)].focus();
+        }
+    }
+
+    function handle_backspace(refs, event, index) {
+        // If current field is empty and there's a previous field, focus on it
+        if (!event.target.value && index > 0) {
+            refs['otp' + (index - 1)].focus();
+        }
+    }
+
+    function handle_paste(data, refs, event, startIndex) {
+        event.preventDefault();
+        const clipboardData = event.clipboardData || window.clipboardData;
+        const pastedData = clipboardData.getData('Text').trim();
+
+        // Check if pasted content contains only numbers
+        if (!/^\d+$/.test(pastedData)) return;
+
+        // Fill the OTP input fields with pasted data
+        for (let i = 0; i < 6; i++) {
+            if (i < pastedData.length) {
+                data.otp[i] = pastedData.charAt(i);
+            } else {
+                data.otp[i] = '';
+            }
+        }
+
+        // Focus on the appropriate field based on the length of pasted data
+        if (pastedData.length < 6) {
+            // Focus on the next empty field
+            refs['otp' + Math.min(startIndex + pastedData.length, 5)].focus();
+        } else {
+            // If all fields are filled, focus on the last field
+            refs.otp5.focus();
+        }
+    }
+
+    async function verify_otp(x_data, ref) {
+        const otpValue = x_data.otp.join('');
+        if (otpValue.length !== 6) {
+            toast("Please enter a valid 6-digit OTP", { type: "warning" });
+            return;
+        }
+        let url;
+        let args;
+        if (x_data.selected_tab === 'login') {
+            url = '/api/v2/method/ls_shop.api.signup.verify_login_otp';
+            args = {
+                'email': x_data.email,
+                'otp': otpValue,
+            };
+        } else {
+            url = '/api/v2/method/ls_shop.api.signup.verify_signup_otp';
+            args = {
+                'email': x_data.email,
+                'otp': otpValue,
+                'first_name': x_data.first_name,
+                'last_name': x_data.last_name
+
+            }
+        }
+        const btn = ref.verify_otp_btn
+        const spinner = btn.querySelector(".animate-spin");
+        btn.disabled = true;
+        spinner.classList.remove("hidden");
+        try {
+            const data = await frappe_call(url, args);
+            let message = "Logged in successfully"
+            if (url === '/api/v2/method/ls_shop.api.signup.verify_signup_otp') {
+                message = "Account created successfully"
+            }
+            toast(message, { type: "success" });
+            setTimeout(() => {
+                window.location.reload()
+            }, 1000);
+        } catch (error) {
+
+        }
+        finally {
+            btn.disabled = false;
+            spinner.classList.add("hidden");
+        }
+    }
+    function start_resend_timer(x_data) {
+        x_data.resend_timer = 15;
+        x_data.resend_interval = setInterval(() => {
+            if (x_data.resend_timer > 0) {
+                x_data.resend_timer--;
+            } else {
+                clearInterval(x_data.resend_interval);
+                x_data.resend_interval = null;
+            }
+        }, 1000);
+    }
+    function resend_otp(x_data, ref) {
+        if (x_data.resend_timer > 0) return;
+        start_resend_timer(x_data);
+        if (x_data.selected_tab === 'login') {
+            login_user(x_data, ref);
+        }
+        else {
+            sign_up_user(x_data, ref);
+        }
+    }
+
+    async function login_user(x_data, ref) {
+        const email = x_data.email;
+        if (!email) {
+            toast("Please enter a valid email", { type: "warning" });
+            return;
+        }
+        const args = {
+            'email': email
+        };
+        const btn = ref.login_otp_btn
+        const spinner = btn.querySelector(".animate-spin");
+        btn.disabled = true;
+        spinner.classList.remove("hidden");
+        try {
+            const data = await frappe_call('/api/v2/method/ls_shop.api.signup.send_login_otp', args);
+
+            // Show OTP verification screen
+            toast("OTP sent successfully, please check you email.", { type: "success" });
+            x_data.otp_sent = true;
+
+
+        } catch (error) {
+        }
+        finally {
+            btn.disabled = false;
+            spinner.classList.add("hidden");
+        }
+    }
+</script>
+
+{% endmacro %}
