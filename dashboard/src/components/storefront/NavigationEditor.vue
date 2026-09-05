@@ -1,6 +1,5 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useMediaQuery } from '@vueuse/core'
 import { Badge, Button, Dropdown, LoadingText, Tree, dialog, toast } from 'frappe-ui'
 import EmptyState from '../EmptyState.vue'
 import ChromePreview from './ChromePreview.vue'
@@ -8,6 +7,7 @@ import NavInspector from './NavInspector.vue'
 import { useNavMenu } from '../../data/navMenu'
 import { useAdminRead } from '../../data/api'
 import { errorMessage } from '../../data/errors'
+import { useIsMobile } from '../../utils/useIsMobile'
 
 const {
   menu,
@@ -24,7 +24,7 @@ const {
   revision,
 } = useNavMenu()
 
-const isMobile = useMediaQuery('(max-width: 639.98px)')
+const isMobile = useIsMobile()
 const previewCollapsed = ref(isMobile.value)
 
 const itemGroups = useAdminRead('navigation.get_link_options', {

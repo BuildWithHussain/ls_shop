@@ -13,7 +13,7 @@ const ring = (part, highlight) =>
   <div class="rounded-5 border border-outline-gray-1 bg-surface-gray-1 p-4">
     <div
       class="mx-auto overflow-hidden rounded-4 border border-outline-gray-2 bg-surface-base"
-      :class="device === 'mobile' ? 'w-[22rem]' : 'w-full'"
+      :class="device === 'mobile' ? 'w-[22rem] max-w-full' : 'w-full'"
     >
       <div
         class="flex items-center gap-2 border-b border-outline-gray-1 px-3 py-2"

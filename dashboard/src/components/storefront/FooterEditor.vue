@@ -6,12 +6,15 @@ import ChromePreview from './ChromePreview.vue'
 import FooterLinkDialog from './FooterLinkDialog.vue'
 import { useFooter } from '../../data/footerEditor'
 import { errorMessage } from '../../data/errors'
+import { useIsMobile } from '../../utils/useIsMobile'
 
 const { sections, pages, loadError, previewToken, loading, load, mutate, reordered } = useFooter()
 
 onMounted(load)
 
-const previewCollapsed = ref(false)
+// A 1440px preview scaled to ~26% is illegible on a phone, and real data weight.
+const isMobile = useIsMobile()
+const previewCollapsed = ref(isMobile.value)
 const linkDialogOpen = ref(false)
 const linkDialogSection = ref(null)
 const linkDialogLink = ref(null)

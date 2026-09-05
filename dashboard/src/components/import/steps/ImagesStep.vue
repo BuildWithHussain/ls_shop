@@ -65,7 +65,7 @@ const perDone = computed(() => perProduct.value.filter((p) => p.uploaded).length
 
 <template>
   <div class="space-y-6">
-    <div class="flex items-start gap-4">
+    <div class="flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
       <div class="min-w-0 flex-1">
         <h2 class="text-xl text-ink-gray-9">Add product photos</h2>
         <p class="mt-1 text-p-base text-ink-gray-6">

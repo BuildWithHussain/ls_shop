@@ -76,7 +76,7 @@ function back() {
         class="flex items-center gap-3 border-t border-outline-gray-1 bg-surface-gray-1 px-6 py-4"
       >
         <Button v-if="imp.step > 0" icon-left="lucide-arrow-left" label="Back" @click="back" />
-        <span class="text-sm text-ink-gray-5">Nothing is saved until the last step.</span>
+        <span class="hidden text-sm text-ink-gray-5 sm:inline">Nothing is saved until the last step.</span>
         <div class="ml-auto flex items-center gap-2">
           <Button v-if="imp.step === 3" variant="ghost" label="Do this later" @click="next" />
           <Button

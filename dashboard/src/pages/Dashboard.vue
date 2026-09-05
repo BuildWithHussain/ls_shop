@@ -141,7 +141,7 @@ const revenueByMonth = computed(() => revenueRequest.data?.months ?? [])
       </div>
       <div class="overflow-x-auto px-2 pb-2">
         <List
-          class="min-w-[34rem]"
+          class="min-w-[44rem]"
           :columns="['9rem', 'minmax(0,1fr)', '9rem', '7rem', '6rem']"
           :row-height="Math.max(ia.density, 48)"
         >
