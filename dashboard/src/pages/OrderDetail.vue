@@ -1,17 +1,20 @@
 <script setup>
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { Avatar, Badge, Button, Dropdown, ScrollArea, toast } from 'frappe-ui'
+import { Button, Dropdown, ScrollArea, toast } from 'frappe-ui'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import PageBody from '../components/PageBody.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import OrderProgress from '../components/OrderProgress.vue'
+import OrderCustomerPanel from '../components/OrderCustomerPanel.vue'
 import Thumb from '../components/Thumb.vue'
 import { useAdminRead, useAdminAction } from '../data/api'
 import { erpnextLink } from '../data/erpnext'
 import { longDate, money } from '../data/format'
+import { useIsMobile } from '../utils/useIsMobile'
 
 const route = useRoute()
+const isMobileViewport = useIsMobile()
 
 const orderRequest = useAdminRead('orders.get_order', {
   params: () => ({ sales_order: route.params.id }),
@@ -43,6 +46,21 @@ const moreActions = [
   },
 ]
 
+// On a phone the header only has room for the fulfil button and this menu, so
+// the actions hidden there are prepended rather than dropped.
+const mobileMoreActions = computed(() =>
+  isMobileViewport.value
+    ? [
+        {
+          label: 'View in ERP',
+          icon: 'lucide-external-link',
+          onClick: () => window.open(erpLink.value, '_blank', 'noopener'),
+        },
+        ...moreActions,
+      ]
+    : moreActions,
+)
+
 const fulfilAction = useAdminAction('orders.fulfil_order')
 
 async function fulfil() {
@@ -61,8 +79,10 @@ async function fulfil() {
       :breadcrumbs="[{ label: 'Orders', route: '/orders' }, { label: order.name }]"
     >
       <template #actions>
-        <Button label="View in ERP" icon-right="lucide-external-link" :link="erpLink" />
-        <Dropdown :options="moreActions">
+        <!-- Three full label+icon buttons do not fit a phone header, so this one
+             folds into the More menu that is already here. -->
+        <Button class="hidden sm:inline-flex" label="View in ERP" icon-right="lucide-external-link" :link="erpLink" />
+        <Dropdown :options="mobileMoreActions">
           <Button icon="lucide-ellipsis" label="More actions" />
         </Dropdown>
         <Button
@@ -145,47 +165,19 @@ async function fulfil() {
               </div>
             </div>
         </section>
+
+        <!-- Below lg there is no right rail, so the same panel stacks under the
+             items rather than the order losing its customer entirely. -->
+        <section class="rounded-5 border border-outline-gray-1 lg:hidden">
+          <OrderCustomerPanel :order="order" />
+        </section>
       </div>
         </PageBody>
       </ScrollArea>
 
       <aside class="hidden w-[19rem] shrink-0 flex-col border-l border-outline-gray-1 lg:flex">
         <ScrollArea class="min-h-0 flex-1">
-          <div class="divide-y divide-outline-gray-1">
-          <section class="px-4 py-4">
-            <p class="text-sm text-ink-gray-5">Customer</p>
-            <router-link :to="`/customers/${order.customer_id}`" class="mt-2 flex items-center gap-2.5">
-              <Avatar :label="order.customer" size="md" />
-              <div class="min-w-0">
-                <p class="truncate text-base text-ink-gray-8">{{ order.customer }}</p>
-                <p v-if="order.phone" class="truncate text-sm text-ink-gray-5">{{ order.phone }}</p>
-              </div>
-            </router-link>
-            <p v-if="order.email" class="mt-3 truncate text-sm text-ink-blue-link">{{ order.email }}</p>
-          </section>
-
-          <section class="px-4 py-4">
-            <p class="text-sm text-ink-gray-5">Shipping address</p>
-            <p class="mt-1.5 whitespace-pre-line text-p-base text-ink-gray-7">
-              {{ order.shipping_address || 'No shipping address on file.' }}
-            </p>
-          </section>
-
-          <section class="px-4 py-4">
-            <p class="text-sm text-ink-gray-5">Tags</p>
-            <div class="mt-1.5 flex flex-wrap gap-1.5">
-              <Badge v-for="tag in order.tags" :key="tag" :label="tag" variant="subtle" />
-              <span v-if="!order.tags.length" class="text-sm text-ink-gray-5">None</span>
-            </div>
-          </section>
-
-          <section class="px-4 py-4">
-            <p class="text-sm text-ink-gray-5">Note</p>
-            <!-- Sales Order carries no note/remarks field in this data model — always the empty
-                 state rather than a control that can never do anything. -->
-            <p class="mt-1.5 text-p-base text-ink-gray-4">No note on this order.</p>
-          </section>
-          </div>
+          <OrderCustomerPanel :order="order" />
         </ScrollArea>
       </aside>
     </div>

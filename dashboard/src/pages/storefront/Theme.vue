@@ -44,7 +44,7 @@ function activate(theme) {
 <template>
   <AppPageHeader title="Theme">
     <template #actions>
-      <Button label="Preview store" icon-left="lucide-external-link" />
+      <Button class="hidden sm:inline-flex" label="Preview store" icon-left="lucide-external-link" />
       <Button label="Publish" variant="solid" theme="gray" @click="toast.success('Theme published')" />
     </template>
   </AppPageHeader>

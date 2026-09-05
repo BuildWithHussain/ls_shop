@@ -69,7 +69,15 @@ function adjust() {
 <template>
   <AppPageHeader title="Stock">
     <template #actions>
-      <Button label="Adjustments" icon-left="lucide-history" route="/inventory/adjustments" />
+      <!-- A real destination, so it stays reachable on a phone — as its icon alone,
+           which frappe-ui gives the label as its accessible name. -->
+      <Button
+        class="hidden sm:inline-flex"
+        label="Adjustments"
+        icon-left="lucide-history"
+        route="/inventory/adjustments"
+      />
+      <Button class="sm:hidden" label="Adjustments" icon="lucide-history" route="/inventory/adjustments" />
       <Button
         label="Receive stock"
         icon-left="lucide-plus"

@@ -33,8 +33,14 @@ const rows = computed(() => customersRequest.data?.customers ?? [])
   <AppPageHeader title="Customers">
     <template #actions>
       <!-- Export has no backend concept in ls_shop — kept as an inert affordance in this
-           frozen layout rather than pointed at nothing. -->
-      <Button label="Export" icon-left="lucide-download" @click="() => toast.info('Export is coming soon')" />
+           frozen layout rather than pointed at nothing. Hidden on a phone, where the header
+           has room for one action and this one does nothing yet. -->
+      <Button
+        class="hidden sm:inline-flex"
+        label="Export"
+        icon-left="lucide-download"
+        @click="() => toast.info('Export is coming soon')"
+      />
       <!-- Staff never create a customer on someone's behalf — every customer is created the moment a
            shopper checks out (see ls_shop/core.py's _create_party_for_user) — kept inert rather than
            pointed at nothing. -->
@@ -53,37 +59,38 @@ const rows = computed(() => customersRequest.data?.customers ?? [])
 
     <p v-if="customersRequest.loading" class="mt-3 text-sm text-ink-gray-5">Loading customers…</p>
 
-    <List
-      v-else
-      class="mt-3 -mx-3 list-row-px-3"
-      :row-height="Math.max(ia.density, 44)"
-      :columns="['1fr', '9rem', '6rem', '8rem', '9rem']"
-    >
-      <ListHeader>
-        <ListHeaderCell>Customer</ListHeaderCell>
-        <ListHeaderCell>City</ListHeaderCell>
-        <ListHeaderCell>Orders</ListHeaderCell>
-        <ListHeaderCell>Spend</ListHeaderCell>
-        <ListHeaderCell>Customer since</ListHeaderCell>
-      </ListHeader>
-      <ListRows :items="rows" row-key="id" v-slot="{ item }">
-        <ListRow :to="`/customers/${item.id}`" :value="item.id">
-          <ListCell>
-            <div class="flex min-w-0 items-center gap-2.5">
-              <Avatar :label="item.name" size="sm" />
-              <div class="min-w-0">
-                <p class="truncate text-base text-ink-gray-8">{{ item.name }}</p>
-                <p class="truncate text-sm text-ink-gray-5">{{ item.email ?? '—' }}</p>
+    <div v-else class="mt-3 overflow-x-auto">
+      <List
+        class="min-w-[46rem]"
+        :row-height="Math.max(ia.density, 44)"
+        :columns="['1fr', '9rem', '6rem', '8rem', '9rem']"
+      >
+        <ListHeader>
+          <ListHeaderCell>Customer</ListHeaderCell>
+          <ListHeaderCell>City</ListHeaderCell>
+          <ListHeaderCell>Orders</ListHeaderCell>
+          <ListHeaderCell>Spend</ListHeaderCell>
+          <ListHeaderCell>Customer since</ListHeaderCell>
+        </ListHeader>
+        <ListRows :items="rows" row-key="id" v-slot="{ item }">
+          <ListRow :to="`/customers/${item.id}`" :value="item.id">
+            <ListCell>
+              <div class="flex min-w-0 items-center gap-2.5">
+                <Avatar :label="item.name" size="sm" />
+                <div class="min-w-0">
+                  <p class="truncate text-base text-ink-gray-8">{{ item.name }}</p>
+                  <p class="truncate text-sm text-ink-gray-5">{{ item.email ?? '—' }}</p>
+                </div>
               </div>
-            </div>
-          </ListCell>
-          <ListCell><span class="text-base text-ink-gray-7">{{ item.city ?? '—' }}</span></ListCell>
-          <ListCell><span class="text-base text-ink-gray-7 tabular-nums">{{ item.orders }}</span></ListCell>
-          <ListCell><span class="text-base text-ink-gray-8 tabular-nums">{{ money(item.spend) }}</span></ListCell>
-          <ListCell><span class="text-base text-ink-gray-5">{{ longDate(item.since) }}</span></ListCell>
-        </ListRow>
-      </ListRows>
-    </List>
+            </ListCell>
+            <ListCell><span class="text-base text-ink-gray-7">{{ item.city ?? '—' }}</span></ListCell>
+            <ListCell><span class="text-base text-ink-gray-7 tabular-nums">{{ item.orders }}</span></ListCell>
+            <ListCell><span class="text-base text-ink-gray-8 tabular-nums">{{ money(item.spend) }}</span></ListCell>
+            <ListCell><span class="text-base text-ink-gray-5">{{ longDate(item.since) }}</span></ListCell>
+          </ListRow>
+        </ListRows>
+      </List>
+    </div>
 
     <ListPagination v-if="total" v-model:page="page" v-model:page-size="pageSize" :total="total" />
   </PageBody>

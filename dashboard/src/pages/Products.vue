@@ -117,7 +117,8 @@ async function archiveSelected() {
 <template>
   <AppPageHeader title="Products">
     <template #actions>
-      <Button label="Import" icon-left="lucide-upload" @click="openImport" />
+      <Button class="hidden sm:inline-flex" label="Import" icon-left="lucide-upload" @click="openImport" />
+      <Button class="sm:hidden" label="Import" icon="lucide-upload" @click="openImport" />
       <Button label="Add product" icon-left="lucide-plus" variant="solid" theme="gray" @click="openAddProduct" />
     </template>
   </AppPageHeader>

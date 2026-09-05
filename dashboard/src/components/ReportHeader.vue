@@ -28,13 +28,23 @@ const RANGES = ['Last 7 days', 'Last 30 days', 'Last 12 months', 'All time']
       <Dropdown :options="RANGES.map((label) => ({ label, onClick: () => emit('update:range', label) }))">
         <Button :label="range" icon-right="lucide-chevron-down" />
       </Dropdown>
+      <!-- Three labelled actions plus the range starve the title on a phone, so
+           Compare drops to its icon and the still-unwired Export drops out. -->
       <Button
+        class="hidden sm:inline-flex"
         icon-left="lucide-git-compare"
         label="Compare"
         :variant="compare ? 'subtle' : 'ghost'"
         @click="emit('update:compare', !compare)"
       />
-      <Button icon-left="lucide-download" label="Export" />
+      <Button
+        class="sm:hidden"
+        icon="lucide-git-compare"
+        label="Compare"
+        :variant="compare ? 'subtle' : 'ghost'"
+        @click="emit('update:compare', !compare)"
+      />
+      <Button class="hidden sm:inline-flex" icon-left="lucide-download" label="Export" />
     </template>
   </AppPageHeader>
 </template>

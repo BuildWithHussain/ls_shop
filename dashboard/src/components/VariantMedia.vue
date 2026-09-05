@@ -65,8 +65,10 @@ async function remove(fileUrl) {
       >
         <img :src="image" class="size-full object-cover" alt="" />
         <Badge v-if="image === variant.images[0]" class="absolute inset-x-1 bottom-1" label="Cover" variant="subtle" />
+        <!-- Touch has no hover, so the only way to delete a photo has to be
+             visible from the start on a phone; hover-reveal is a desktop luxury. -->
         <Button
-          class="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100"
+          class="absolute right-1 top-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
           icon="lucide-x"
           label="Remove photo"
           @click="remove(image)"

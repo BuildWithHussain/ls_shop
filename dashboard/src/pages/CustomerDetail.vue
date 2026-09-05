@@ -32,7 +32,10 @@ const theirOrders = computed(() => customer.value?.recent_orders ?? [])
       :breadcrumbs="[{ label: 'Customers', route: '/customers' }, { label: customer.name }]"
     >
       <template #actions>
+        <!-- A Desk deep link is not a phone action, and two labelled buttons
+             leave the breadcrumb nothing — so it steps aside below sm. -->
         <Button
+          class="hidden sm:inline-flex"
           label="View in ERP"
           icon-right="lucide-external-link"
           :link="erpnextLink('Customer', customer.id)"
@@ -64,16 +67,18 @@ const theirOrders = computed(() => customer.value?.recent_orders ?? [])
         </div>
       </div>
 
-      <section class="mt-6 grid gap-y-4 grid-cols-3 divide-x divide-outline-gray-2">
-        <div class="pr-5">
+      <section
+        class="mt-6 grid grid-cols-2 rounded-5 border border-outline-gray-1 sm:grid-cols-3 sm:divide-x sm:divide-outline-gray-2"
+      >
+        <div class="px-4 py-3.5">
           <p class="text-sm text-ink-gray-5">Orders</p>
           <p class="mt-1 text-2xl text-ink-gray-9 tabular-nums">{{ customer.orders }}</p>
         </div>
-        <div class="px-5">
+        <div class="px-4 py-3.5">
           <p class="text-sm text-ink-gray-5">Lifetime spend</p>
           <p class="mt-1 text-2xl text-ink-gray-9 tabular-nums">{{ money(customer.spend) }}</p>
         </div>
-        <div class="px-5">
+        <div class="px-4 py-3.5">
           <p class="text-sm text-ink-gray-5">Average order</p>
           <p class="mt-1 text-2xl text-ink-gray-9 tabular-nums">
             {{ customer.orders ? money(customer.average_order) : '—' }}
@@ -86,30 +91,32 @@ const theirOrders = computed(() => customer.value?.recent_orders ?? [])
           <h2 class="text-lg-semibold text-ink-gray-8">Recent orders</h2>
           <span class="text-sm text-ink-gray-5">{{ customer.orders }} orders all time</span>
         </div>
-        <List class="mt-1 -mx-3 list-row-px-3" :row-height="Math.max(ia.density, 48)">
-          <ListRows :items="theirOrders" row-key="name" v-slot="{ item }">
-            <ListRow :to="`/orders/${item.name}`" :value="item.name">
-              <ListCell>
-                <span class="text-base text-ink-gray-4 tabular-nums">{{ item.name }}</span>
-              </ListCell>
-              <ListCell>
-                <div class="min-w-0">
-                  <p class="truncate text-base text-ink-gray-8">
-                    {{ item.item_count }} item{{ item.item_count > 1 ? 's' : '' }} · {{ money(item.total) }}
-                  </p>
-                  <p class="mt-1 text-sm text-ink-gray-5">{{ shortDate(item.placed_on) }}</p>
-                </div>
-              </ListCell>
-              <ListCell>
-                <div class="flex items-center gap-3">
-                  <StatusBadge :status="item.payment_state.key" :label="item.payment_state.label" />
-                  <StatusBadge :status="item.state.key" :label="item.state.label" />
-                  <span class="lucide-chevron-right size-4 text-ink-gray-4" aria-hidden="true" />
-                </div>
-              </ListCell>
-            </ListRow>
-          </ListRows>
-        </List>
+        <div class="mt-1 overflow-x-auto">
+          <List class="min-w-[34rem]" :row-height="Math.max(ia.density, 48)">
+            <ListRows :items="theirOrders" row-key="name" v-slot="{ item }">
+              <ListRow :to="`/orders/${item.name}`" :value="item.name">
+                <ListCell>
+                  <span class="text-base text-ink-gray-4 tabular-nums">{{ item.name }}</span>
+                </ListCell>
+                <ListCell>
+                  <div class="min-w-0">
+                    <p class="truncate text-base text-ink-gray-8">
+                      {{ item.item_count }} item{{ item.item_count > 1 ? 's' : '' }} · {{ money(item.total) }}
+                    </p>
+                    <p class="mt-1 text-sm text-ink-gray-5">{{ shortDate(item.placed_on) }}</p>
+                  </div>
+                </ListCell>
+                <ListCell>
+                  <div class="flex items-center gap-3">
+                    <StatusBadge :status="item.payment_state.key" :label="item.payment_state.label" />
+                    <StatusBadge :status="item.state.key" :label="item.state.label" />
+                    <span class="lucide-chevron-right size-4 text-ink-gray-4" aria-hidden="true" />
+                  </div>
+                </ListCell>
+              </ListRow>
+            </ListRows>
+          </List>
+        </div>
       </section>
     </PageBody>
   </template>

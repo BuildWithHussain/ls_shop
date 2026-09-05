@@ -49,36 +49,40 @@ async function resetToSuggested() {
 
     <Alert v-if="missing.length" theme="red" :title="'Still needed: ' + missing.map(labelFor).join(', ')" />
 
+    <!-- Three columns whose middle cell is a Select: below ~30rem they crush each
+         other rather than the row scrolling, so the card scrolls its own content. -->
     <div class="overflow-hidden rounded-5 border border-outline-gray-1">
-      <div
-        class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_6rem] gap-4 border-b border-outline-gray-1 bg-surface-gray-1 px-5 py-3"
-      >
-        <span class="text-sm text-ink-gray-5">Column in your file</span>
-        <span class="text-sm text-ink-gray-5">Goes into</span>
-        <span class="text-right text-sm text-ink-gray-5">Match</span>
-      </div>
-
-      <div class="divide-y divide-outline-gray-1">
+      <div class="overflow-x-auto">
         <div
-          v-for="h in imp.headers"
-          :key="h"
-          class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_6rem] items-center gap-4 px-5 py-3.5"
+          class="grid min-w-[30rem] grid-cols-[minmax(0,1fr)_minmax(0,1fr)_6rem] gap-4 border-b border-outline-gray-1 bg-surface-gray-1 px-5 py-3"
         >
-          <div class="min-w-0">
-            <div class="truncate text-base text-ink-gray-8">{{ h }}</div>
-          </div>
+          <span class="text-sm text-ink-gray-5">Column in your file</span>
+          <span class="text-sm text-ink-gray-5">Goes into</span>
+          <span class="text-right text-sm text-ink-gray-5">Match</span>
+        </div>
 
-          <div class="flex items-center gap-2">
-            <span class="lucide-arrow-right size-3.5 shrink-0 text-ink-gray-4" aria-hidden="true" />
-            <Select v-model="imp.mapping[h]" :options="TARGET_FIELDS" class="min-w-0 flex-1" />
-          </div>
+        <div class="min-w-[30rem] divide-y divide-outline-gray-1">
+          <div
+            v-for="h in imp.headers"
+            :key="h"
+            class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_6rem] items-center gap-4 px-5 py-3.5"
+          >
+            <div class="min-w-0">
+              <div class="truncate text-base text-ink-gray-8">{{ h }}</div>
+            </div>
 
-          <div class="flex justify-end">
-            <Badge
-              :label="imp.mapping[h] ? confidenceLabel[imp.confidence[h]] : 'Skipped'"
-              :theme="imp.mapping[h] ? confidenceTheme[imp.confidence[h]] : 'gray'"
-              variant="subtle"
-            />
+            <div class="flex items-center gap-2">
+              <span class="lucide-arrow-right size-3.5 shrink-0 text-ink-gray-4" aria-hidden="true" />
+              <Select v-model="imp.mapping[h]" :options="TARGET_FIELDS" class="min-w-0 flex-1" />
+            </div>
+
+            <div class="flex justify-end">
+              <Badge
+                :label="imp.mapping[h] ? confidenceLabel[imp.confidence[h]] : 'Skipped'"
+                :theme="imp.mapping[h] ? confidenceTheme[imp.confidence[h]] : 'gray'"
+                variant="subtle"
+              />
+            </div>
           </div>
         </div>
       </div>

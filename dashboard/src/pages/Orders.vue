@@ -100,8 +100,14 @@ async function markFulfilled() {
   <AppPageHeader title="Orders">
     <template #actions>
       <!-- Export and packing slip printing have no backend concept in ls_shop — kept as
-           inert affordances in this frozen layout rather than wired to nothing. -->
-      <Button label="Export" icon-left="lucide-download" @click="() => toast.info('Export is coming soon')" />
+           inert affordances in this frozen layout rather than wired to nothing. Hidden on a
+           phone, where the header has room for one action and this one does nothing yet. -->
+      <Button
+        class="hidden sm:inline-flex"
+        label="Export"
+        icon-left="lucide-download"
+        @click="() => toast.info('Export is coming soon')"
+      />
       <!-- Staff placing an order on a shopper's behalf isn't a supported flow in ls_shop (see the
            order-ownership rule in ls_shop/utils.py) — kept inert rather than pointed at nothing. -->
       <Button
