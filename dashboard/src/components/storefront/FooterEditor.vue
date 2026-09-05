@@ -336,3 +336,4 @@ function linkActions(section, columnIndex, link, linkIndex) {
     />
   </div>
 </template>
+

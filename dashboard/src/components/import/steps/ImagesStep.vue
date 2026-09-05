@@ -246,3 +246,4 @@ const perDone = computed(() => perProduct.value.filter((p) => p.uploaded).length
     </template>
   </div>
 </template>
+

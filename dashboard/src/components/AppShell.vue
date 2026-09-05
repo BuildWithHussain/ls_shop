@@ -4,10 +4,6 @@ import { useRoute } from 'vue-router'
 import { DesktopShell, ScrollArea, Sidebar, SidebarHeader } from 'frappe-ui'
 import { activeNavTarget, productName, sections } from '../ia/nav'
 import logoUrl from '../assets/commera.svg'
-import AppSettingsDialog from './settings/AppSettingsDialog.vue'
-import SearchPalette from './SearchPalette.vue'
-import ImportDialog from './import/ImportDialog.vue'
-import AddProductDialog from './AddProductDialog.vue'
 import { openSettings } from '../ia/settings'
 import NavSection from './NavSection.vue'
 
@@ -46,11 +42,5 @@ const headerMenu = [
       <slot />
     </DesktopShell>
   </div>
-
-  <!-- One instance for the whole app; opened from the workspace menu and the
-       sidebar footer. -->
-  <AppSettingsDialog />
-  <SearchPalette />
-  <ImportDialog />
-  <AddProductDialog />
 </template>
+

@@ -26,6 +26,11 @@ const routes = [
   { path: '/storefront/theme', name: 'StorefrontTheme', component: () => import('./pages/storefront/Theme.vue') },
   { path: '/storefront/navigation', name: 'StorefrontNavigation', component: () => import('./pages/storefront/Navigation.vue') },
   { path: '/storefront/pages', name: 'StorefrontPages', component: () => import('./pages/storefront/Pages.vue') },
+  // A Shop Web Page is named by its title, so the create path shadows a page
+  // literally titled "new" — rare enough to live with, and the editor is still
+  // reachable from the list row.
+  { path: '/storefront/pages/new', name: 'StorefrontPageNew', component: () => import('./pages/storefront/PageDetail.vue') },
+  { path: '/storefront/pages/:name', name: 'StorefrontPageDetail', component: () => import('./pages/storefront/PageDetail.vue') },
 ]
 
 export const router = createRouter({

@@ -88,8 +88,6 @@ export function buildProductActions(product, router, handlers = {}) {
       id: 'manage',
       label: 'Manage',
       items: [
-        { key: 'duplicate', label: 'Duplicate', icon: 'lucide-copy', onClick: () => toast.success('Duplicated as a draft') },
-        { key: 'export', label: 'Export as CSV', icon: 'lucide-download', onClick: () => toast.success('Export queued') },
         {
           key: 'archive',
           label: isArchived ? 'Restore from archive' : 'Archive',
@@ -126,14 +124,12 @@ export function buildProductActions(product, router, handlers = {}) {
     },
   ]
 
+  // Look an action up by key instead of a group/index pair, so removing or
+  // reordering entries above can't silently point `quick` at the wrong one.
+  const findAction = (key) => groups.flatMap((group) => group.items).find((item) => item.key === key)
+
   // The handful worth surfacing without opening a menu.
-  const quick = [
-    publish,
-    groups[2].items[0], // Adjust stock
-    groups[3].items[0], // Edit prices
-    groups[1].items[0], // Add an option / Split into variants
-    groups[5].items[0], // Duplicate
-  ]
+  const quick = [publish, findAction('adjust'), findAction('price'), findAction('option')]
 
   return { groups, quick }
 }
@@ -145,3 +141,4 @@ export function asDropdownOptions(groups) {
     options: group.items.map(({ label, icon, onClick, theme }) => ({ label, icon, onClick, theme })),
   }))
 }
+

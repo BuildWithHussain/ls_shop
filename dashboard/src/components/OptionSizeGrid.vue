@@ -76,3 +76,4 @@ function toggle(option, size, selected) {
     </div>
   </div>
 </template>
+

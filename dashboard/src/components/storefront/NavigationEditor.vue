@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useMediaQuery } from '@vueuse/core'
 import { Badge, Button, Dropdown, LoadingText, Tree, dialog, toast } from 'frappe-ui'
 import EmptyState from '../EmptyState.vue'
 import ChromePreview from './ChromePreview.vue'
@@ -23,7 +24,8 @@ const {
   revision,
 } = useNavMenu()
 
-const previewCollapsed = ref(false)
+const isMobile = useMediaQuery('(max-width: 639.98px)')
+const previewCollapsed = ref(isMobile.value)
 
 const itemGroups = useAdminRead('navigation.get_link_options', {
   params: () => ({ doctype: 'Item Group' }),
@@ -152,9 +154,51 @@ async function toggleVisible(node) {
   await mutate('set_visibility', { name: node.name, visible: node.visible ? 0 : 1 })
 }
 
+// Same shape Tree's own drag-end path uses (onDragEnd above) — the touch-friendly
+// fallback for reordering, since HTML5 drag-and-drop never fires on a phone.
+function locateNode(name, nodes = menu.value, parentName = '') {
+  for (let index = 0; index < nodes.length; index++) {
+    const node = nodes[index]
+    if (node.name === name) return { siblings: nodes, index, parentName }
+    const found = locateNode(name, node.children, node.name)
+    if (found) return found
+  }
+  return null
+}
+
+async function moveEntry(node, offset) {
+  const location = locateNode(node.name)
+  if (!location) return
+  const targetIndex = location.index + offset
+  if (targetIndex < 0 || targetIndex >= location.siblings.length) return
+
+  const moved = await mutate(
+    'move_node',
+    { name: String(node.name), to_parent: location.parentName, target_index: targetIndex },
+    location.parentName,
+  )
+  if (!moved) await load()
+}
+
 function rowActions(node) {
+  const location = locateNode(node.name)
+  const isFirst = !location || location.index === 0
+  const isLast = !location || location.index === location.siblings.length - 1
+
   return [
     { label: 'Add entry inside', icon: 'corner-down-right', onClick: () => addEntry(node.name) },
+    {
+      label: 'Move up',
+      icon: 'arrow-up',
+      disabled: isFirst,
+      onClick: () => moveEntry(node, -1),
+    },
+    {
+      label: 'Move down',
+      icon: 'arrow-down',
+      disabled: isLast,
+      onClick: () => moveEntry(node, 1),
+    },
     {
       label: node.visible ? 'Hide from menu' : 'Show in menu',
       icon: node.visible ? 'eye-off' : 'eye',
@@ -261,3 +305,4 @@ const menuActions = computed(() => [
     />
   </div>
 </template>
+

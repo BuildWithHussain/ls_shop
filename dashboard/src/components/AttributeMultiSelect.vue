@@ -79,3 +79,4 @@ function addTypedValue(query, setQuery) {
     </template>
   </MultiSelect>
 </template>
+

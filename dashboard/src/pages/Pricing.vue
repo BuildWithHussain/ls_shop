@@ -206,3 +206,4 @@ function bulkSetCompareAt() {
     <EmptyState v-if="!pricingRequest.loading && !rows.length" icon="lucide-tag" title="No sellable items yet" description="Add a product to start pricing it." />
   </PageBody>
 </template>
+

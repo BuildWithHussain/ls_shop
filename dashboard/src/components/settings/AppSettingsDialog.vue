@@ -14,10 +14,12 @@ import {
   SettingsRow,
   SettingsSidebar,
   Switch,
-  ThemeSwitcher,
   dialog,
   toast,
 } from 'frappe-ui'
+// ThemeSwitcher moved out of the frappe-ui root in beta.56 (#1094); the parked copy under
+// /experimental keeps the same props, so this is an import path change only.
+import { ThemeSwitcher } from 'frappe-ui/experimental'
 import BrandMark from './BrandMark.vue'
 import IntegrationsPanel from './IntegrationsPanel.vue'
 import { paymentIntegrations, shippingIntegrations } from '../../data/integrations'
@@ -339,3 +341,4 @@ function inviteUser() {
     </SettingsContent>
   </SettingsDialog>
 </template>
+

@@ -11,14 +11,16 @@ import { errorMessage } from './errors'
 // It must be the v2 path: useCall unwraps a response as `data.value?.data`, and reads a
 // failure as `errorResponse.errors[0]`. Only /api/v2/ answers in that shape — v1 replies
 // `{"message": ...}`, so every read and write silently resolved to null on every screen.
-const ADMIN_MODULE_PREFIX = '/api/v2/method/ls_shop.api.admin.'
+const METHOD_PREFIX = '/api/v2/method/'
+const ADMIN_MODULE = 'ls_shop.api.admin.'
 
-// A GET read. Every list/detail screen fetches the same way, and a failure
-// surfaces the same way — as a toast, not a silently empty screen.
-export function useAdminRead(path, options = {}) {
+// A GET read of any whitelisted method, by its full dotted path. Used where the
+// dashboard shares an endpoint with the Desk form rather than owning an admin
+// wrapper of its own (e.g. the Sales Order refund methods).
+export function useMethodRead(method, options = {}) {
   const { onError, ...rest } = options
   return useCall({
-    url: ADMIN_MODULE_PREFIX + path,
+    url: METHOD_PREFIX + method,
     method: 'GET',
     onError: (error) => {
       toast.error(errorMessage(error))
@@ -28,12 +30,11 @@ export function useAdminRead(path, options = {}) {
   })
 }
 
-// A POST write. `immediate` defaults to false — a write fires on `.submit()`,
-// never on mount — and a failure toasts here so no screen has to remember to.
-export function useAdminAction(path, options = {}) {
+// A POST write of any whitelisted method, by its full dotted path.
+export function useMethodAction(method, options = {}) {
   const { onError, ...rest } = options
   return useCall({
-    url: ADMIN_MODULE_PREFIX + path,
+    url: METHOD_PREFIX + method,
     method: 'POST',
     immediate: false,
     onError: (error) => {
@@ -42,4 +43,16 @@ export function useAdminAction(path, options = {}) {
     },
     ...rest,
   })
+}
+
+// A GET read. Every list/detail screen fetches the same way, and a failure
+// surfaces the same way — as a toast, not a silently empty screen.
+export function useAdminRead(path, options = {}) {
+  return useMethodRead(ADMIN_MODULE + path, options)
+}
+
+// A POST write. `immediate` defaults to false — a write fires on `.submit()`,
+// never on mount — and a failure toasts here so no screen has to remember to.
+export function useAdminAction(path, options = {}) {
+  return useMethodAction(ADMIN_MODULE + path, options)
 }

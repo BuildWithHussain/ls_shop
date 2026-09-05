@@ -195,3 +195,4 @@ const columns = ['minmax(7rem,1.3fr)', 'minmax(5rem,1fr)', '6.5rem', '5rem', '4.
        flow, flagged for the owner. -->
   <VariantImageImport v-model:open="showImageImport" :product="product" />
 </template>
+

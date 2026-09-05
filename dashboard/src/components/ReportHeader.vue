@@ -38,3 +38,4 @@ const RANGES = ['Last 7 days', 'Last 30 days', 'Last 12 months', 'All time']
     </template>
   </AppPageHeader>
 </template>
+

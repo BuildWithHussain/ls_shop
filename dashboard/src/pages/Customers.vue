@@ -88,3 +88,4 @@ const rows = computed(() => customersRequest.data?.customers ?? [])
     <ListPagination v-if="total" v-model:page="page" v-model:page-size="pageSize" :total="total" />
   </PageBody>
 </template>
+

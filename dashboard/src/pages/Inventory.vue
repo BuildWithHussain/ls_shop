@@ -149,3 +149,4 @@ function adjust() {
     <EmptyState v-if="!inventoryRequest.loading && !rows.length" icon="lucide-boxes" title="Nothing matches" description="Clear the filters to see all stock." />
   </PageBody>
 </template>
+

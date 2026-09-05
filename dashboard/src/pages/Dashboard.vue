@@ -207,3 +207,4 @@ const revenueByMonth = computed(() => revenueRequest.data?.months ?? [])
     </section>
   </PageBody>
 </template>
+
