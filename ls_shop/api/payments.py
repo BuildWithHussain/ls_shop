@@ -10,6 +10,7 @@ from frappe.utils import getdate
 from frappe.utils.data import flt
 
 from ls_shop.analytics.events import log_purchase, set_attribution_fields
+from ls_shop.api.cart import validate_stock_available
 from ls_shop.api.shipping import (
 	clear_delivery_option,
 	copy_delivery_option_to_order,
@@ -156,6 +157,20 @@ def system_user_session():
 		frappe.local.user_perms = None
 
 
+def save_cart_quotation(quotation):
+	"""Persist the shopper's own cart.
+
+	Saving a Quotation resolves the party's receivable account, and ERPNext's account_perm_check calls
+	frappe.has_permission("Account") directly - no ignore_permissions reaches it, and no storefront role
+	has Account read - so a shopper saving their own cart is refused. Only the save runs elevated: the
+	caller has already proved this cart belongs to the session user (_get_cart_quotation scopes on
+	contact_email), so nothing inside the window is reachable with a document the shopper does not own.
+	"""
+	with system_user_session():
+		quotation.flags.ignore_permissions = True
+		return quotation.save()
+
+
 def stamp_order_owner(sales_order, shopper: str) -> None:
 	"""Hand the order back to the shopper who bought it.
 
@@ -239,8 +254,10 @@ def fix_payment_schedule_dates(doc):
 
 @frappe.whitelist()
 def generate_quotation_for_cart(cart: dict):
+	cart = frappe.parse_json(cart)
 	if len(cart.get("items", [])) < 1:
 		frappe.throw(_("Can't checkout with empty cart"))
+	validate_stock_available(cart["items"])
 	quotation = _get_cart_quotation()
 	validate_cart_is_not_in_checkout(quotation.name)
 	cart_quotation = get_quotation_for_cart(cart, quotation)
@@ -265,11 +282,10 @@ def get_quotation_for_cart(cart: dict, unsaved_quotation_doc):
 				"warehouse": ecommerce_warehouse,
 			},
 		)
-	unsaved_quotation_doc.flags.ignore_permissions = True
-	unsaved_quotation_doc.save()
+	save_cart_quotation(unsaved_quotation_doc)
 	_remove_coupon_code(unsaved_quotation_doc)
 	set_charges(unsaved_quotation_doc)
-	return unsaved_quotation_doc.save()
+	return save_cart_quotation(unsaved_quotation_doc)
 
 
 def set_charges(quotation):
@@ -315,7 +331,7 @@ def update_quotation_address(address: dict):
 		quotation.custom_is_store_pickup = True
 		# A delivery option picked before store pickup would otherwise still be charged at payment time.
 		clear_delivery_option(quotation)
-		quotation.save(ignore_permissions=True)
+		save_cart_quotation(quotation)
 
 		return {"message": _("Addresses updated successfully")}
 	quotation.custom_is_store_pickup = False
@@ -351,7 +367,7 @@ def update_quotation_address(address: dict):
 		contact.append("phone_nos", {"phone": shipping_phone})
 
 	contact.save(ignore_permissions=True)
-	quotation.save(ignore_permissions=True)
+	save_cart_quotation(quotation)
 
 	return {"message": _("Addresses updated successfully")}
 
@@ -465,8 +481,7 @@ def apply_coupon_code(applied_code):
 	quotation = _get_cart_quotation()
 	validate_cart_is_not_in_checkout(quotation.name)
 	quotation.coupon_code = coupon_name
-	quotation.flags.ignore_permissions = True
-	quotation.save()
+	save_cart_quotation(quotation)
 	return {"message": _("Coupon code applied successfully")}
 
 
@@ -485,11 +500,10 @@ def _remove_coupon_code(quotation):
 		item.discount_amount = 0
 		item.distributed_discount_amount = 0
 		item.rate = item.price_list_rate
-	quotation.flags.ignore_permissions = True
 	quotation.calculate_taxes_and_totals()
-	quotation.save()
+	save_cart_quotation(quotation)
 	quotation.discount_amount = 0
-	quotation.save()
+	save_cart_quotation(quotation)
 
 
 def add_billing_address(party_name, address):
@@ -556,10 +570,10 @@ def update_delivery_charges(quotation):
 		quotation.shipping_rule = None
 		quotation.taxes = []
 		quotation.calculate_taxes_and_totals()
-		quotation.save(ignore_permissions=True)
+		save_cart_quotation(quotation)
 		return
 
 	# With no option chosen — or bwh_shipping absent — the flat Shipping Rule applies instead.
 	if not reprice_selected_option(quotation):
 		set_charges(quotation)
-	quotation.save(ignore_permissions=True)
+	save_cart_quotation(quotation)
