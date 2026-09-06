@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Button, Dropdown, ScrollArea, toast } from 'frappe-ui'
 import AppPageHeader from '../components/AppPageHeader.vue'
@@ -8,7 +8,8 @@ import StatusBadge from '../components/StatusBadge.vue'
 import OrderProgress from '../components/OrderProgress.vue'
 import OrderCustomerPanel from '../components/OrderCustomerPanel.vue'
 import Thumb from '../components/Thumb.vue'
-import { useAdminRead, useAdminAction } from '../data/api'
+import RefundDialog from '../components/RefundDialog.vue'
+import { useAdminRead, useAdminAction, useMethodRead } from '../data/api'
 import { erpnextLink, printUrl } from '../data/erpnext'
 import { longDate, money } from '../data/format'
 
@@ -20,14 +21,26 @@ const orderRequest = useAdminRead('orders.get_order', {
 })
 const order = computed(() => orderRequest.data)
 
+// The Sales Order form owns the refund math, so the dashboard reads the same
+// endpoint rather than a wrapper of its own.
+const refundStatusRequest = useMethodRead('ls_shop.api.orders.get_sales_order_refund_status', {
+  params: () => ({ order_id: route.params.id }),
+  refetch: true,
+})
+const refundStatus = computed(() => refundStatusRequest.data ?? {})
+const refundOpen = ref(false)
+
 watch(
   () => route.params.id,
-  () => orderRequest.reload(),
+  () => {
+    orderRequest.reload()
+    refundStatusRequest.reload()
+  },
 )
 
 const erpLink = computed(() => (order.value ? erpnextLink('Sales Order', order.value.name) : null))
 
-// Refund and admin-initiated cancel have no wired backend — see
+// Admin-initiated cancel has no wired backend — see
 // docs/commera-open-questions.md, "Order Detail — Refund and Cancel order".
 //
 // "View in ERP" is here unconditionally rather than only below `sm`: the
@@ -50,10 +63,13 @@ const moreActions = [
     condition: () => Boolean(order.value?.invoices?.length),
     onClick: () => window.open(printUrl('Sales Invoice', order.value.invoices), '_blank', 'noopener'),
   },
+  // Nothing is refundable on a COD, unpaid or already fully refunded order, so
+  // the row is not offered at all rather than offered and then apologised for.
   {
     label: 'Refund',
     icon: 'lucide-rotate-ccw',
-    onClick: () => toast.info('Refunds aren\'t available from the dashboard yet'),
+    condition: () => Boolean(refundStatus.value.can_refund),
+    onClick: () => (refundOpen.value = true),
   },
   {
     label: 'Cancel order',
@@ -69,6 +85,13 @@ async function fulfil() {
   if (fulfilAction.error) return
   toast.success('Fulfilment created')
   orderRequest.reload()
+}
+
+// A refund moves money and leaves a Payment Entry behind: both the order's
+// payment state and what is still refundable are stale the moment it lands.
+function reloadAfterRefund() {
+  orderRequest.reload()
+  refundStatusRequest.reload()
 }
 </script>
 
@@ -182,6 +205,13 @@ async function fulfil() {
         </ScrollArea>
       </aside>
     </div>
+
+    <RefundDialog
+      v-model:open="refundOpen"
+      :order-id="order.name"
+      :status="refundStatus"
+      @refunded="reloadAfterRefund"
+    />
   </template>
 </template>
 

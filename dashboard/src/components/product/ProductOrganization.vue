@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-import { MultiSelect, Select, TextInput } from 'frappe-ui'
-import { useAdminRead } from '../../data/api'
+import { MultiSelect, Select } from 'frappe-ui'
+import { useCollections } from '../../data/collections'
 
 const props = defineProps({
   product: { type: Object, required: true },
@@ -14,8 +14,8 @@ const statusOptions = [
   { label: 'Archived', value: 'archived' },
 ]
 
-const collectionsRequest = useAdminRead('catalog.get_collections')
-const collectionOptions = computed(() => (collectionsRequest.data ?? []).map((name) => ({ label: name, value: name })))
+const { collectionOptions, load: loadCollections } = useCollections()
+loadCollections()
 
 // Item.item_group is a single collection, not the mock's array of them — the
 // MultiSelect widget stays (it is the approved control), wrapped around one
@@ -39,16 +39,12 @@ const productCollections = computed({
            "Archive"/"Restore from archive" action (in the ⋯ menu) is the one real
            write path for it — a second editable control here would just race it. -->
       <Select :model-value="product.status" class="w-full" label="Status" :options="statusOptions" disabled />
-      <!-- ls_shop's Item has no vendor/brand field surfaced by the admin API. -->
-      <TextInput :model-value="product.vendor" class="w-full" label="Vendor" disabled />
-      <MultiSelect v-model="productCollections" class="w-full" label="Collections" :options="collectionOptions" />
-      <!-- No tag concept exposed by the admin API. -->
-      <TextInput
-        :model-value="(product.tags ?? []).join(', ')"
+      <MultiSelect
+        v-model="productCollections"
         class="w-full"
-        label="Tags"
         :class="layout === 'stacked' ? 'sm:col-span-2' : ''"
-        disabled
+        label="Collections"
+        :options="collectionOptions"
       />
     </div>
   </section>

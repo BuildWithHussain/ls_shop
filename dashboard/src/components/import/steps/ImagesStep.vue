@@ -75,10 +75,11 @@ async function addFiles(files, groupKey = '') {
       const result = await upload(file, { private: false })
       uploadedFiles.push({ file_name: result.file_name, file_url: result.file_url })
       if (groupKey) imp.imageChoices[result.file_url] = groupKey
+      // Counted inside the try: a file that failed is not one of "8 of 8 uploaded".
+      doneCount.value += 1
     } catch {
       toast.error(`Could not upload ${file.name}`)
     }
-    doneCount.value += 1
   }
 
   imp.imageFiles.push(...uploadedFiles)
@@ -155,7 +156,7 @@ onMounted(() => {
         <div class="flex items-center gap-3">
           <Spinner class="size-4" />
           <span class="text-base text-ink-gray-8">
-            {{ doneCount === chosenCount ? 'Matching photos to your products…' : 'Uploading photos' }}
+            {{ matchAction.loading ? 'Matching photos to your products…' : 'Uploading photos' }}
           </span>
           <span class="ml-auto text-sm tabular-nums text-ink-gray-5">{{ doneCount }} of {{ chosenCount }} uploaded</span>
         </div>
@@ -200,7 +201,7 @@ onMounted(() => {
         <div v-if="unplacedFiles.length" class="rounded-5 border border-outline-gray-1">
           <div class="flex items-center gap-2 border-b border-outline-gray-1 px-4 py-3">
             <span class="text-base-semibold text-ink-gray-8">Files we could not place</span>
-            <Badge :label="String(unplacedFiles.length)" theme="orange" variant="subtle" />
+            <Badge :label="String(unplacedFiles.length)" theme="amber" variant="subtle" />
           </div>
           <div class="max-h-72 divide-y divide-outline-gray-1 overflow-y-auto">
             <div v-for="file in unplacedFiles" :key="file.file_url" class="flex items-center gap-3 px-4 py-3">

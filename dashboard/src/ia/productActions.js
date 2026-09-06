@@ -1,5 +1,6 @@
 import { dialog, toast } from 'frappe-ui'
-import { useAdminAction, useAdminRead } from '../data/api'
+import { useAdminAction } from '../data/api'
+import { pickCollectionFor } from '../data/collections'
 
 // Every action a merchant can take from a product page, grouped by intent.
 // The `productActions` IA axis only changes where these are rendered — the set
@@ -11,12 +12,10 @@ import { useAdminAction, useAdminRead } from '../data/api'
 // touches the DOM or holds a copy of the request.
 
 // Module scope, not per call: buildProductActions re-runs on every product
-// reload, and a resource per rebuild would refetch the collection list each time.
+// reload, so a resource declared inside it would be rebuilt on every render.
 const deleteAction = useAdminAction('catalog.delete_product')
 const receiveStockAction = useAdminAction('inventory.receive_stock')
 const restockLevelAction = useAdminAction('catalog.set_restock_level')
-const collectionAction = useAdminAction('catalog.add_products_to_collection')
-const collectionsRequest = useAdminRead('catalog.get_collections', { immediate: false })
 
 // The storefront route lives per option, and only a published option is worth
 // showing off — but an unpublished one that already has a route still resolves,
@@ -40,7 +39,7 @@ export function buildProductActions(product, router, handlers = {}) {
     key: 'publish',
     label: isPublished ? 'Unpublish' : 'Publish to storefront',
     icon: isPublished ? 'lucide-eye-off' : 'lucide-globe',
-    onClick: handlers.onTogglePublish ?? (() => toast.success(isPublished ? 'Hidden from the storefront' : 'Published')),
+    onClick: handlers.onTogglePublish,
   }
 
   const groups = [
@@ -62,9 +61,15 @@ export function buildProductActions(product, router, handlers = {}) {
           key: 'link',
           label: 'Copy product link',
           icon: 'lucide-link',
+          // The clipboard is refused outright over plain http and in some embedded
+          // browsers, so the link is put in front of the merchant to copy by hand.
           onClick: async () => {
-            await navigator.clipboard.writeText(liveUrl)
-            toast.success('Link copied')
+            try {
+              await navigator.clipboard.writeText(liveUrl)
+              toast.success('Link copied')
+            } catch {
+              toast.error('Could not copy the link', { description: liveUrl })
+            }
           },
         },
         {
@@ -95,34 +100,12 @@ export function buildProductActions(product, router, handlers = {}) {
           key: 'collection',
           label: 'Add to collection',
           icon: 'lucide-layers',
-          onClick: async () => {
-            const collections = await collectionsRequest.fetch()
-            if (collectionsRequest.error) return
-            if (!collections?.length) {
-              toast.info('There are no collections yet — create one first.')
-              return
-            }
-            dialog.prompt({
-              title: `File ${product.title} under a collection`,
-              message: 'A product sits in one collection, so this replaces the one it is in now.',
-              fields: [
-                {
-                  name: 'collection',
-                  label: 'Collection',
-                  type: 'select',
-                  required: true,
-                  defaultValue: product.collection ?? '',
-                  options: collections.map((name) => ({ label: name, value: name })),
-                },
-              ],
-              onConfirm: async ({ values }) => {
-                await collectionAction.submit({ item_templates: [product.id], collection: values.collection })
-                if (collectionAction.error) return
-                toast.success(`Filed under ${values.collection}`)
-                handlers.onReload?.()
-              },
-            })
-          },
+          onClick: () =>
+            pickCollectionFor([product.id], {
+              label: product.title,
+              currentCollection: product.collection ?? '',
+              onDone: handlers.onReload,
+            }),
         },
       ],
     },
@@ -175,7 +158,9 @@ export function buildProductActions(product, router, handlers = {}) {
                 },
               ],
               onConfirm: async ({ values }) => {
-                const level = Math.max(0, Number(values.value) || 0)
+                // set_restock_level stores cint(level), which truncates: 2.7 is kept as 2.
+                // Truncating here too keeps the toast honest about what was stored.
+                const level = Math.max(0, Math.trunc(Number(values.value) || 0))
                 await restockLevelAction.submit({ item_template: product.id, level })
                 if (restockLevelAction.error) return
 
@@ -208,16 +193,21 @@ export function buildProductActions(product, router, handlers = {}) {
           key: 'archive',
           label: isArchived ? 'Restore from archive' : 'Archive',
           icon: isArchived ? 'lucide-archive-restore' : 'lucide-archive',
-          onClick: () =>
-            isArchived || !handlers.onToggleArchive
-              ? (handlers.onToggleArchive ?? (() => toast.success('Restored')))()
-              : dialog.confirm({
-                  title: 'Archive this product?',
-                  message: 'It leaves the storefront. Past orders keep their line items.',
-                  theme: 'red',
-                  confirmLabel: 'Archive',
-                  onConfirm: handlers.onToggleArchive,
-                }),
+          // Restoring is undoable and goes straight through; archiving takes the product
+          // off the storefront, so only that half asks first.
+          onClick: () => {
+            if (isArchived) {
+              handlers.onToggleArchive()
+              return
+            }
+            dialog.confirm({
+              title: 'Archive this product?',
+              message: 'It leaves the storefront. Past orders keep their line items.',
+              theme: 'red',
+              confirmLabel: 'Archive',
+              onConfirm: handlers.onToggleArchive,
+            })
+          },
         },
         {
           key: 'delete',

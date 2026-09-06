@@ -45,7 +45,7 @@ watch(
         </div>
         <Badge
           :label="location.disabled ? 'Disabled' : 'Fulfils online orders'"
-          :theme="location.disabled ? 'orange' : 'green'"
+          :theme="location.disabled ? 'amber' : 'green'"
           variant="subtle"
         />
       </div>

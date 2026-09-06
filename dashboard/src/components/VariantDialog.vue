@@ -90,12 +90,10 @@ async function save() {
 
       <section>
         <h3 class="text-base-semibold text-ink-gray-8">Identifiers</h3>
-        <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="mt-3">
           <!-- One SKU per size, not per option — ERPNext assigns these at
                creation and no admin endpoint renames them. -->
           <FormControl :model-value="skuList" label="SKU" disabled />
-          <!-- No barcode field surfaced by the admin API. -->
-          <FormControl model-value="" label="Barcode" disabled />
         </div>
       </section>
     </div>

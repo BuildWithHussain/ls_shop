@@ -70,7 +70,7 @@ async function submit() {
 
     <template v-else-if="advanced.data">
       <Alert
-        theme="orange"
+        theme="amber"
         title="These are setup values, not everyday settings"
         description="Changing one can break your storefront — edit only what you recognise."
       />

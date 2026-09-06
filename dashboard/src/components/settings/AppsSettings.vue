@@ -11,7 +11,6 @@ import { Button, LoadingText, SettingsBody, SettingsHeader, toast } from 'frappe
 import SettingsFieldRows from './SettingsFieldRows.vue'
 import { useAdminAction, useAdminRead } from '../../data/api'
 import { useSettingsDraft } from '../../data/useSettingsDraft'
-import { errorMessage } from '../../data/errors'
 
 const props = defineProps({
   active: { type: Boolean, default: false },
@@ -111,10 +110,12 @@ const groups = computed(() => [
 ])
 
 async function submit() {
-  const saved = await save.submit({ ...changes.value })
+  await save.submit({ ...changes.value })
   if (save.error) return
 
-  adoptSettings(saved)
+  // Whether a secret is stored is read off the loaded settings, not off the save's answer,
+  // so a freshly stored credential only stops reading as missing once these are re-read.
+  await analytics.reload()
   toast.success('Analytics saved')
 }
 </script>
@@ -138,10 +139,10 @@ async function submit() {
   </SettingsHeader>
 
   <SettingsBody>
-    <!-- These are site-wide credentials, so the server only opens them to a System Manager. A
-         refusal must read as "not yours to change", never as "nothing is connected". -->
+    <!-- The refusal itself is already toasted by useAdminRead. This says why the panel is
+         empty, so an empty screen never reads as "nothing is connected". -->
     <p v-if="analytics.error" class="py-6 text-base text-ink-gray-5">
-      {{ errorMessage(analytics.error, 'Only a System Manager can see these credentials.') }}
+      These credentials are only visible to a System Manager.
     </p>
 
     <LoadingText v-else-if="!analytics.data" class="py-10" />

@@ -31,9 +31,15 @@ const values = reactive(
 
 const enabled = ref(props.card.enabled)
 
+// The clipboard is refused outright over plain http and in some embedded browsers,
+// so the URL is put in front of the merchant to copy by hand.
 async function copyWebhookUrl() {
-  await navigator.clipboard.writeText(props.card.webhook_url)
-  toast.success('Webhook URL copied')
+  try {
+    await navigator.clipboard.writeText(props.card.webhook_url)
+    toast.success('Webhook URL copied')
+  } catch {
+    toast.error('Could not copy the webhook URL', { description: props.card.webhook_url })
+  }
 }
 </script>
 

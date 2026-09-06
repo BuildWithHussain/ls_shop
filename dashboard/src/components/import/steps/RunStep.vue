@@ -122,9 +122,11 @@ const NEXT = [
         <div class="rounded-5 border border-outline-gray-1 p-4">
           <div class="flex items-baseline gap-2">
             <span class="text-2xl tabular-nums text-ink-amber-7">{{ imp.runImageErrors.length }}</span>
-            <Badge v-if="imp.runImageErrors.length" label="Add from the product page" theme="orange" variant="subtle" />
+            <Badge v-if="imp.runImageErrors.length" label="Add from the product page" theme="amber" variant="subtle" />
           </div>
-          <div class="mt-0.5 text-sm text-ink-gray-5">photos that did not attach</div>
+          <!-- The server reports one entry per spreadsheet row of a group whose photos
+               failed, not one per photo, so this counts rows and says so. -->
+          <div class="mt-0.5 text-sm text-ink-gray-5">rows whose photos did not attach</div>
         </div>
       </div>
 
@@ -142,7 +144,7 @@ const NEXT = [
 
       <div v-if="imp.runImageErrors.length" class="rounded-5 border border-outline-gray-1">
         <div class="border-b border-outline-gray-1 px-4 py-3 text-base-semibold text-ink-gray-8">
-          Photos that did not attach
+          Rows whose photos did not attach
         </div>
         <div class="max-h-56 divide-y divide-outline-gray-1 overflow-y-auto">
           <div v-for="e in imp.runImageErrors" :key="e.row + e.message" class="flex items-start gap-3 px-4 py-2.5">
