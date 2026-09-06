@@ -1,7 +1,4 @@
-import { products } from '../data/mock'
 import { search } from './search'
-
-const activeProducts = products.filter((p) => p.status === 'active').length
 
 // The three reports. Overview carries the headline numbers, so none of them
 // repeats it: each answers a question the dashboard deliberately does not.
@@ -24,7 +21,7 @@ const ITEM = {
   // A parent with children is a disclosure, not a destination: /analytics
   // itself holds nothing, so opening it lands on the first report.
   analytics: { label: 'Analytics', icon: 'lucide-chart-line', to: '/analytics', children: REPORTS },
-  products: { label: 'Products', icon: 'lucide-package', to: '/products', suffix: String(activeProducts) },
+  products: { label: 'Products', icon: 'lucide-package', to: '/products' },
   collections: { label: 'Collections', icon: 'lucide-layers', to: '/collections' },
   attributes: { label: 'Attributes', icon: 'lucide-tags', to: '/attributes' },
   theme: { label: 'Theme', icon: 'lucide-palette', to: '/storefront/theme' },
@@ -52,7 +49,6 @@ export const sections = [
 // as far as the sidebar is concerned.
 const ALIASES = {
   '/pricing': '/products',
-  '/product-types': '/products',
   '/inventory': '/products',
   '/inventory/adjustments': '/products',
 }

@@ -1,7 +1,6 @@
 <script setup>
 import { computed } from 'vue'
 import { MultiSelect, Select, TextInput } from 'frappe-ui'
-import { productTypes } from '../../data/mock'
 import { useAdminRead } from '../../data/api'
 
 const props = defineProps({
@@ -9,7 +8,6 @@ const props = defineProps({
   layout: { type: String, default: 'stacked' },
 })
 
-const typeOptions = productTypes.map((t) => ({ label: t.name, value: t.id }))
 const statusOptions = [
   { label: 'Active', value: 'active' },
   { label: 'Draft', value: 'draft' },
@@ -41,9 +39,6 @@ const productCollections = computed({
            "Archive"/"Restore from archive" action (in the ⋯ menu) is the one real
            write path for it — a second editable control here would just race it. -->
       <Select :model-value="product.status" class="w-full" label="Status" :options="statusOptions" disabled />
-      <!-- Product Types has no backend model at all (see ProductTypeFields.vue) —
-           product.type is never set on a real product, so this stays disabled. -->
-      <Select :model-value="product.type" class="w-full" label="Product type" :options="typeOptions" disabled />
       <!-- ls_shop's Item has no vendor/brand field surfaced by the admin API. -->
       <TextInput :model-value="product.vendor" class="w-full" label="Vendor" disabled />
       <MultiSelect v-model="productCollections" class="w-full" label="Collections" :options="collectionOptions" />

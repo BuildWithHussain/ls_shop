@@ -5,7 +5,6 @@ import { List, ListCell, ListHeader, ListHeaderCell, ListRow, ListRows } from 'f
 import Thumb from './Thumb.vue'
 import EditableValue from './EditableValue.vue'
 import VariantDialog from './VariantDialog.vue'
-import VariantImageImport from './VariantImageImport.vue'
 import { useAdminAction } from '../data/api'
 import { stockTone } from '../data/format'
 import { ia } from '../ia/store'
@@ -19,7 +18,6 @@ const selection = ref([])
 // and you are usually working down the matrix, not away from it.
 const editing = ref(null)
 const showVariant = ref(false)
-const showImageImport = ref(false)
 
 function openVariant(variant) {
   editing.value = variant
@@ -71,15 +69,10 @@ const columns = ['minmax(7rem,1.3fr)', 'minmax(5rem,1fr)', '6.5rem', '5rem', '4.
 <template>
   <section class="space-y-5">
     <!-- The axis, first: the matrix below is nothing but its values. -->
-    <div class="rounded-5 border border-outline-gray-1">
-      <div class="flex items-center justify-between px-4 py-3">
-        <div>
-          <h2 class="text-lg-semibold text-ink-gray-8">Options</h2>
-          <p class="mt-1 text-p-sm text-ink-gray-5">{{ product.option_attribute ?? 'Option' }}, set at creation.</p>
-        </div>
-        <!-- No endpoint adds an axis to an existing product — create_product only
-             sets option_attribute/size_attribute once, at insert. -->
-        <Button label="Add option" icon-left="lucide-plus" disabled />
+    <div id="product-options" class="rounded-5 border border-outline-gray-1">
+      <div class="px-4 py-3">
+        <h2 class="text-lg-semibold text-ink-gray-8">Options</h2>
+        <p class="mt-1 text-p-sm text-ink-gray-5">{{ product.option_attribute ?? 'Option' }}, set at creation.</p>
       </div>
 
       <div v-if="optionValues.length" class="border-t border-outline-gray-1 px-4 py-3">
@@ -98,7 +91,7 @@ const columns = ['minmax(7rem,1.3fr)', 'minmax(5rem,1fr)', '6.5rem', '5rem', '4.
     </div>
 
     <!-- The matrix: one row per option, each with its own sizes underneath. -->
-    <div v-if="product.variants.length" class="rounded-5 border border-outline-gray-1">
+    <div v-if="product.variants.length" id="product-variants" class="rounded-5 border border-outline-gray-1">
       <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
         <h2 class="text-lg-semibold text-ink-gray-8">Variants</h2>
         <div class="flex items-center gap-2">
@@ -107,12 +100,6 @@ const columns = ['minmax(7rem,1.3fr)', 'minmax(5rem,1fr)', '6.5rem', '5rem', '4.
             <Button label="Set price" @click="bulkSetPrice" />
             <Button label="Clear" variant="ghost" @click="selection = []" />
           </template>
-          <Button
-            v-if="!selection.length"
-            label="Import photos"
-            icon-left="lucide-folder-archive"
-            @click="showImageImport = true"
-          />
         </div>
       </div>
 
@@ -190,9 +177,5 @@ const columns = ['minmax(7rem,1.3fr)', 'minmax(5rem,1fr)', '6.5rem', '5rem', '4.
   </section>
 
   <VariantDialog v-model:open="showVariant" :variant="editing" :product="product" @saved="emit('saved')" />
-  <!-- No bulk photo-import endpoint exists (a zip of SKU-named folders has
-       nothing server-side to post to) — left as the prototype's simulated
-       flow, flagged for the owner. -->
-  <VariantImageImport v-model:open="showImageImport" :product="product" />
 </template>
 

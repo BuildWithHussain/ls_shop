@@ -101,9 +101,6 @@ function adjust() {
 
     <BulkBar v-if="selecting" :count="selection.length" noun="line" @done="endSelecting">
       <Button label="Adjust quantity" @click="adjust" />
-      <!-- Single-warehouse shop — there is nowhere else to transfer stock to, so this stays
-           disabled rather than pretending a second location exists. -->
-      <Button label="Transfer" disabled />
     </BulkBar>
 
     <p v-if="inventoryRequest.loading" class="mt-3 text-sm text-ink-gray-5">Loading stock…</p>

@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { Avatar, Button, toast } from 'frappe-ui'
+import { Avatar, Button } from 'frappe-ui'
 import { List, ListCell, ListRow, ListRows } from 'frappe-ui/list'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import PageBody from '../components/PageBody.vue'
@@ -32,23 +32,7 @@ const theirOrders = computed(() => customer.value?.recent_orders ?? [])
       :breadcrumbs="[{ label: 'Customers', route: '/customers' }, { label: customer.name }]"
     >
       <template #actions>
-        <!-- A Desk deep link is not a phone action, and two labelled buttons
-             leave the breadcrumb nothing — so it steps aside below sm. -->
-        <Button
-          class="hidden sm:inline-flex"
-          label="View in ERP"
-          icon-right="lucide-external-link"
-          :link="erpnextLink('Customer', customer.id)"
-        />
-        <!-- No email address on this customer record has anything wired to send through yet — kept
-             inert rather than pointed at nothing. -->
-        <Button
-          label="Email customer"
-          icon-left="lucide-mail"
-          variant="solid"
-          theme="gray"
-          @click="() => toast.info('Emailing a customer isn\'t wired up yet')"
-        />
+        <Button label="View in ERP" icon-right="lucide-external-link" :link="erpnextLink('Customer', customer.id)" />
       </template>
     </AppPageHeader>
 

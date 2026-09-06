@@ -19,8 +19,12 @@ const canContinue = computed(() => {
   return true
 })
 
+const assignedPhotos = computed(() =>
+  Object.values(imp.imageAssignments).reduce((total, fileUrls) => total + fileUrls.length, 0),
+)
+
 const nextLabel = computed(() => {
-  if (imp.step === 3) return imp.imagesDone || imp.imagesMode !== 'bulk' ? 'Continue' : 'Skip photos for now'
+  if (imp.step === 3) return assignedPhotos.value ? 'Continue' : 'Skip photos for now'
   if (imp.step === 4) return `Import ${imp.counts.ready} product${imp.counts.ready === 1 ? '' : 's'}`
   return 'Continue'
 })
@@ -67,7 +71,7 @@ function back() {
       </div>
 
       <div class="min-h-0 flex-1 overflow-y-auto px-6 py-7">
-        <component :is="current" />
+        <component :is="current" @next="next" />
       </div>
 
       <!-- Nothing is committed until the last step, so the footer says so. -->

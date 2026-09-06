@@ -9,6 +9,7 @@ import StatusBadge from '../components/StatusBadge.vue'
 import EmptyState from '../components/EmptyState.vue'
 import BulkBar from '../components/BulkBar.vue'
 import { useAdminRead, useAdminAction } from '../data/api'
+import { printUrl } from '../data/erpnext'
 import { money, shortDate } from '../data/format'
 import { ia } from '../ia/store'
 
@@ -94,14 +95,38 @@ async function markFulfilled() {
   endSelecting()
   ordersRequest.reload()
 }
+
+// A packing slip is the Delivery Note, not the invoice: a prepaid order is
+// invoiced at payment time, long before anything is packed, so an order can be
+// fully invoiced and still have nothing to pack.
+function printDeliveryNotes() {
+  const ordersByName = new Map(rows.value.map((row) => [row.name, row]))
+  const deliveryNotes = []
+  const nothingToPrint = []
+
+  for (const name of selection.value) {
+    const deliveries = ordersByName.get(name)?.deliveries ?? []
+    if (deliveries.length) deliveryNotes.push(...deliveries)
+    else nothingToPrint.push(name)
+  }
+
+  // Named, not silently dropped — otherwise a mixed selection prints short and
+  // the merchant packs one parcel fewer than they selected.
+  if (nothingToPrint.length) {
+    toast.warning(`No delivery note yet for ${nothingToPrint.join(', ')} — nothing to print.`)
+  }
+  if (!deliveryNotes.length) return
+
+  window.open(printUrl('Delivery Note', deliveryNotes), '_blank', 'noopener')
+}
 </script>
 
 <template>
   <AppPageHeader title="Orders">
     <template #actions>
-      <!-- Export and packing slip printing have no backend concept in ls_shop — kept as
-           inert affordances in this frozen layout rather than wired to nothing. Hidden on a
-           phone, where the header has room for one action and this one does nothing yet. -->
+      <!-- Export has no backend concept in ls_shop — kept as an inert affordance in this
+           frozen layout rather than wired to nothing. Hidden on a phone, where the header
+           has room for one action and this one does nothing yet. -->
       <Button
         class="hidden sm:inline-flex"
         label="Export"
@@ -140,7 +165,7 @@ async function markFulfilled() {
 
     <BulkBar v-if="selecting" :count="selection.length" noun="order" @done="endSelecting">
       <Button label="Mark fulfilled" @click="markFulfilled" />
-      <Button label="Print packing slips" @click="() => toast.info('Printing is coming soon')" />
+      <Button label="Print delivery notes" @click="printDeliveryNotes" />
     </BulkBar>
 
     <p v-if="ordersRequest.loading" class="mt-3 text-sm text-ink-gray-5">Loading orders…</p>

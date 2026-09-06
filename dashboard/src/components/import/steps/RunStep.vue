@@ -13,7 +13,11 @@ async function run() {
   if (imp.running || imp.finished) return
   imp.running = true
 
-  await runImportAction.submit({ file_url: imp.fileUrl, column_mapping: { ...imp.mapping } })
+  await runImportAction.submit({
+    file_url: imp.fileUrl,
+    column_mapping: { ...imp.mapping },
+    image_assignments: { ...imp.imageAssignments },
+  })
   imp.running = false
   imp.finished = true
 
@@ -21,6 +25,8 @@ async function run() {
   const result = runImportAction.data
   imp.created = result.created
   imp.runRowErrors = result.row_errors
+  imp.imagesAttached = result.images_attached
+  imp.runImageErrors = result.image_errors
 }
 
 onMounted(run)
@@ -80,7 +86,11 @@ const NEXT = [
         </div>
         <h2 class="mt-4 text-2xl text-ink-gray-9">{{ imp.created.length }} products are live</h2>
         <p class="mx-auto mt-1.5 max-w-[460px] text-p-base text-ink-gray-6">
-          Your catalogue now has these products. Add photos from each product page to publish them.
+          {{
+            imp.imagesAttached
+              ? `Your catalogue now has these products, with ${imp.imagesAttached} photos already on them.`
+              : 'Your catalogue now has these products. Add photos from each product page to publish them.'
+          }}
         </p>
 
         <div v-if="imp.created.length" class="mt-5 flex flex-wrap justify-center gap-2">
@@ -105,6 +115,17 @@ const NEXT = [
           </div>
           <div class="mt-0.5 text-sm text-ink-gray-5">rows skipped</div>
         </div>
+        <div class="rounded-5 border border-outline-gray-1 p-4">
+          <div class="text-2xl tabular-nums text-ink-gray-9">{{ imp.imagesAttached }}</div>
+          <div class="mt-0.5 text-sm text-ink-gray-5">photos attached</div>
+        </div>
+        <div class="rounded-5 border border-outline-gray-1 p-4">
+          <div class="flex items-baseline gap-2">
+            <span class="text-2xl tabular-nums text-ink-amber-7">{{ imp.runImageErrors.length }}</span>
+            <Badge v-if="imp.runImageErrors.length" label="Add from the product page" theme="orange" variant="subtle" />
+          </div>
+          <div class="mt-0.5 text-sm text-ink-gray-5">photos that did not attach</div>
+        </div>
       </div>
 
       <div v-if="imp.runRowErrors.length" class="rounded-5 border border-outline-gray-1">
@@ -114,6 +135,18 @@ const NEXT = [
         <div class="max-h-56 divide-y divide-outline-gray-1 overflow-y-auto">
           <div v-for="e in imp.runRowErrors" :key="e.row" class="flex items-start gap-3 px-4 py-2.5">
             <span class="shrink-0 text-sm tabular-nums text-ink-gray-5">Row {{ e.row }}</span>
+            <span class="text-sm text-ink-gray-7">{{ e.message }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="imp.runImageErrors.length" class="rounded-5 border border-outline-gray-1">
+        <div class="border-b border-outline-gray-1 px-4 py-3 text-base-semibold text-ink-gray-8">
+          Photos that did not attach
+        </div>
+        <div class="max-h-56 divide-y divide-outline-gray-1 overflow-y-auto">
+          <div v-for="e in imp.runImageErrors" :key="e.row + e.message" class="flex items-start gap-3 px-4 py-2.5">
+            <span v-if="e.row" class="shrink-0 text-sm tabular-nums text-ink-gray-5">Row {{ e.row }}</span>
             <span class="text-sm text-ink-gray-7">{{ e.message }}</span>
           </div>
         </div>

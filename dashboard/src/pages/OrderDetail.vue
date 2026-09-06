@@ -9,7 +9,7 @@ import OrderProgress from '../components/OrderProgress.vue'
 import OrderCustomerPanel from '../components/OrderCustomerPanel.vue'
 import Thumb from '../components/Thumb.vue'
 import { useAdminRead, useAdminAction } from '../data/api'
-import { erpnextLink } from '../data/erpnext'
+import { erpnextLink, printUrl } from '../data/erpnext'
 import { longDate, money } from '../data/format'
 
 const route = useRoute()
@@ -42,8 +42,14 @@ const moreActions = [
     icon: 'lucide-external-link',
     onClick: () => window.open(erpLink.value, '_blank', 'noopener'),
   },
-  { label: 'Duplicate', icon: 'lucide-copy', onClick: () => toast.info('Duplicate is coming soon') },
-  { label: 'Print invoice', icon: 'lucide-printer', onClick: () => toast.info('Printing is coming soon') },
+  // An unpaid or uninvoiced order has no Sales Invoice to print, so the row is
+  // not offered at all rather than offered and then apologised for.
+  {
+    label: 'Print invoice',
+    icon: 'lucide-printer',
+    condition: () => Boolean(order.value?.invoices?.length),
+    onClick: () => window.open(printUrl('Sales Invoice', order.value.invoices), '_blank', 'noopener'),
+  },
   {
     label: 'Refund',
     icon: 'lucide-rotate-ccw',

@@ -9,17 +9,8 @@
  * file.
  */
 import { reactive, ref } from 'vue'
-import {
-  Badge,
-  Button,
-  Select,
-  SettingsBody,
-  SettingsHeader,
-  SettingsRow,
-  Switch,
-  TextInput,
-  toast,
-} from 'frappe-ui'
+import { Badge, Button, SettingsBody, SettingsHeader, SettingsRow, Switch, toast } from 'frappe-ui'
+import SettingsFieldRows from './SettingsFieldRows.vue'
 
 const props = defineProps({
   card: { type: Object, required: true },
@@ -27,8 +18,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['back', 'save'])
-
-const NUMERIC_FIELDTYPES = ['Int', 'Float', 'Currency', 'Percent']
 
 // A Password never arrives with its value — the server sends `is_set` and a null instead —
 // so a secret starts blank and staying blank keeps whatever is stored.
@@ -41,35 +30,6 @@ const values = reactive(
 )
 
 const enabled = ref(props.card.enabled)
-
-function inputType(field) {
-  if (field.is_secret) return 'password'
-  if (NUMERIC_FIELDTYPES.includes(field.fieldtype)) return 'number'
-  return 'text'
-}
-
-function selectOptions(field) {
-  return (field.options ?? '').split('\n').filter(Boolean)
-}
-
-// Docfield descriptions are authored as Desk HTML — <b>…</b>, and entities like &gt;. This row
-// interpolates its description as text, so the markup is unwrapped here rather than shown to the
-// owner literally. Parsed in a detached element and read back as text: nothing is ever injected.
-function plainText(html) {
-  if (!html) return undefined
-
-  const element = document.createElement('div')
-  element.innerHTML = html
-  return element.textContent.replace(/\s+/g, ' ').trim()
-}
-
-// A secret already stored is the one thing this screen cannot show, so it says so instead.
-function hint(field) {
-  if (field.is_secret && field.is_set) return 'Stored. Leave blank to keep it.'
-  if (field.is_secret) return 'Stored encrypted, never shown again.'
-  if (field.fieldtype === 'Link') return `Links to ${field.options}.`
-  return plainText(field.description)
-}
 
 async function copyWebhookUrl() {
   await navigator.clipboard.writeText(props.card.webhook_url)
@@ -105,30 +65,11 @@ async function copyWebhookUrl() {
         </div>
       </SettingsRow>
 
-      <template v-for="group in card.groups" :key="group.label">
-        <p class="pt-5 text-sm text-ink-gray-5">{{ group.label }}</p>
-        <SettingsRow
-          v-for="field in group.fields"
-          :key="field.fieldname"
-          :title="field.required ? `${field.label} *` : field.label"
-          :description="hint(field)"
-        >
-          <Switch v-if="field.fieldtype === 'Check'" v-model="values[field.fieldname]" size="sm" />
-          <Select
-            v-else-if="field.fieldtype === 'Select'"
-            v-model="values[field.fieldname]"
-            class="w-72"
-            :options="selectOptions(field)"
-          />
-          <TextInput
-            v-else
-            v-model="values[field.fieldname]"
-            class="w-72"
-            :type="inputType(field)"
-            :placeholder="field.is_secret && field.is_set ? '••••••••' : ''"
-          />
-        </SettingsRow>
-      </template>
+      <SettingsFieldRows
+        :groups="card.groups"
+        :values="values"
+        @update="(fieldname, value) => (values[fieldname] = value)"
+      />
     </div>
 
     <!-- The provider needs this URL in its own panel, and it is the one thing here that

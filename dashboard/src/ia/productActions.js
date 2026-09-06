@@ -1,20 +1,40 @@
 import { dialog, toast } from 'frappe-ui'
+import { useAdminAction, useAdminRead } from '../data/api'
 
 // Every action a merchant can take from a product page, grouped by intent.
 // The `productActions` IA axis only changes where these are rendered — the set
 // itself stays the same, so the variants stay comparable.
 //
-// `handlers` carries the real, wired actions ProductDetail.vue owns
-// (publish/unpublish across every option via catalog.set_product_published,
-// archive/restore via catalog.update_product). Everything else here has no
-// backend counterpart in ls_shop yet (bulk variant add/edit, a per-product
-// stock adjustment with a reason, duplicate, delete, CSV export, a saved
-// collection-rule picker, a per-product sales report) and stays a toast, the
-// same stub-and-flag treatment Products.vue already gave its own unbacked
-// actions in the prior wiring section.
+// Every row reaches a real endpoint. The ones that need the loaded page —
+// publish/unpublish, archive/restore, a reload after a write, and the three
+// "jump to a section" rows — arrive through `handlers`, so this module never
+// touches the DOM or holds a copy of the request.
+
+// Module scope, not per call: buildProductActions re-runs on every product
+// reload, and a resource per rebuild would refetch the collection list each time.
+const deleteAction = useAdminAction('catalog.delete_product')
+const receiveStockAction = useAdminAction('inventory.receive_stock')
+const restockLevelAction = useAdminAction('catalog.set_restock_level')
+const collectionAction = useAdminAction('catalog.add_products_to_collection')
+const collectionsRequest = useAdminRead('catalog.get_collections', { immediate: false })
+
+// The storefront route lives per option, and only a published option is worth
+// showing off — but an unpublished one that already has a route still resolves,
+// so it is a usable fallback rather than nothing.
+function storefrontUrl(product) {
+  const routed = product.variants.filter((variant) => variant.storefront_url)
+  return (routed.find((variant) => variant.is_published) ?? routed[0])?.storefront_url ?? null
+}
+
+function sizeItemCodes(product) {
+  return product.variants.flatMap((variant) => variant.sizes.map((size) => size.item_code)).filter(Boolean)
+}
+
 export function buildProductActions(product, router, handlers = {}) {
   const isArchived = product.status === 'archived'
   const isPublished = product.variants.some((variant) => variant.is_published)
+  const liveUrl = storefrontUrl(product)
+  const itemCodes = sizeItemCodes(product)
 
   const publish = {
     key: 'publish',
@@ -29,43 +49,141 @@ export function buildProductActions(product, router, handlers = {}) {
       label: 'Storefront',
       items: [
         publish,
-        { key: 'preview', label: 'Preview on storefront', icon: 'lucide-external-link', onClick: () => toast.info('Opens the live product page') },
-        { key: 'link', label: 'Copy product link', icon: 'lucide-link', onClick: () => toast.success('Link copied') },
-        { key: 'seo', label: 'Edit SEO listing', icon: 'lucide-search', onClick: () => toast.info('Jumps to the storefront section') },
+        // Both rows need a route to point at; a product whose options have
+        // never been published has none, so they are left out rather than
+        // offered and then apologised for.
+        liveUrl && {
+          key: 'preview',
+          label: 'Preview on storefront',
+          icon: 'lucide-external-link',
+          onClick: () => window.open(liveUrl, '_blank', 'noopener'),
+        },
+        liveUrl && {
+          key: 'link',
+          label: 'Copy product link',
+          icon: 'lucide-link',
+          onClick: async () => {
+            await navigator.clipboard.writeText(liveUrl)
+            toast.success('Link copied')
+          },
+        },
+        {
+          key: 'seo',
+          label: 'Edit SEO listing',
+          icon: 'lucide-search',
+          onClick: () => handlers.onScrollTo?.('product-storefront'),
+        },
       ],
     },
     {
       id: 'catalogue',
       label: 'Catalogue',
       items: [
-        { key: 'option', label: product.hasVariants ? 'Add an option' : 'Split into variants', icon: 'lucide-git-branch', onClick: () => toast.info('Options regenerate the variant matrix') },
-        { key: 'bulk', label: 'Bulk edit variants', icon: 'lucide-table-2', onClick: () => toast.info('Select variants to bulk edit') },
-        { key: 'type', label: 'Change product type', icon: 'lucide-shapes', onClick: () => router.push('/product-types') },
-        { key: 'collection', label: 'Add to collection', icon: 'lucide-layers', onClick: () => toast.info('Pick a collection') },
+        {
+          key: 'option',
+          label: product.hasVariants ? 'Add an option' : 'Split into variants',
+          icon: 'lucide-git-branch',
+          onClick: () => handlers.onScrollTo?.('product-options'),
+        },
+        {
+          key: 'bulk',
+          label: 'Bulk edit variants',
+          icon: 'lucide-table-2',
+          onClick: () => handlers.onScrollTo?.('product-variants'),
+        },
+        {
+          key: 'collection',
+          label: 'Add to collection',
+          icon: 'lucide-layers',
+          onClick: async () => {
+            const collections = await collectionsRequest.fetch()
+            if (collectionsRequest.error) return
+            if (!collections?.length) {
+              toast.info('There are no collections yet — create one first.')
+              return
+            }
+            dialog.prompt({
+              title: `File ${product.title} under a collection`,
+              message: 'A product sits in one collection, so this replaces the one it is in now.',
+              fields: [
+                {
+                  name: 'collection',
+                  label: 'Collection',
+                  type: 'select',
+                  required: true,
+                  defaultValue: product.collection ?? '',
+                  options: collections.map((name) => ({ label: name, value: name })),
+                },
+              ],
+              onConfirm: async ({ values }) => {
+                await collectionAction.submit({ item_templates: [product.id], collection: values.collection })
+                if (collectionAction.error) return
+                toast.success(`Filed under ${values.collection}`)
+                handlers.onReload?.()
+              },
+            })
+          },
+        },
       ],
     },
     {
       id: 'inventory',
       label: 'Inventory',
       items: [
-        {
+        // Same operation as the Stock screen's "Adjust quantity", so it is
+        // worded the same: ls_shop only exposes an additive receipt, there is
+        // no reason-coded adjustment and no "set on-hand to X".
+        itemCodes.length && {
           key: 'adjust',
-          label: 'Adjust stock',
+          label: 'Receive stock',
           icon: 'lucide-package-plus',
           onClick: () =>
             dialog.prompt({
-              title: 'Adjust stock',
-              message: `Recorded as an adjustment against ${product.title}.`,
-              fields: [
-                { name: 'qty', label: 'Change', required: true, description: 'Use a minus sign to remove stock.' },
-                { name: 'reason', label: 'Reason', type: 'select', options: ['Received', 'Damaged', 'Stock count', 'Theft'] },
-              ],
-              onConfirm: ({ values }) => toast.success(`Stock adjusted by ${values.qty}`),
+              title: `Receive stock on ${product.title}`,
+              message: `Adds this quantity to each of the ${itemCodes.length} sizes under this product. There is no way to set stock to an exact number here.`,
+              fields: [{ name: 'value', label: 'Quantity received', type: 'number', required: true }],
+              onConfirm: async ({ values }) => {
+                const quantity = Math.max(0, Number(values.value) || 0)
+                if (!quantity) return
+
+                await receiveStockAction.submit({
+                  received_quantities: Object.fromEntries(itemCodes.map((code) => [code, quantity])),
+                })
+                if (receiveStockAction.error) return
+
+                toast.success(`Received ${quantity} on ${itemCodes.length} sizes`)
+                handlers.onReload?.()
+              },
             }),
         },
-        { key: 'transfer', label: 'Transfer between locations', icon: 'lucide-arrow-left-right', onClick: () => toast.info('Pick a source and destination') },
-        { key: 'barcode', label: 'Print barcode labels', icon: 'lucide-printer', onClick: () => toast.info('Sent to the label printer') },
-        { key: 'restock', label: 'Set a restock alert', icon: 'lucide-bell', onClick: () => toast.success('You will be told below 5 units') },
+        {
+          key: 'restock',
+          label: 'Set the low-stock level',
+          icon: 'lucide-bell',
+          onClick: () =>
+            dialog.prompt({
+              title: 'Set the low-stock level',
+              message:
+                'Every size of this product reads as Low stock on the Stock screen at or below this number. Nobody is notified.',
+              fields: [
+                {
+                  name: 'value',
+                  label: 'Low-stock level',
+                  type: 'number',
+                  required: true,
+                  defaultValue: String(product.restock_level ?? ''),
+                },
+              ],
+              onConfirm: async ({ values }) => {
+                const level = Math.max(0, Number(values.value) || 0)
+                await restockLevelAction.submit({ item_template: product.id, level })
+                if (restockLevelAction.error) return
+
+                toast.success(`Low stock now reads at ${level} or below`)
+                handlers.onReload?.()
+              },
+            }),
+        },
       ],
     },
     {
@@ -73,14 +191,12 @@ export function buildProductActions(product, router, handlers = {}) {
       label: 'Pricing',
       items: [
         { key: 'price', label: 'Bulk edit prices across products', icon: 'lucide-indian-rupee', onClick: () => router.push('/pricing') },
-        { key: 'discount', label: 'Apply a discount', icon: 'lucide-percent', onClick: () => toast.info('Creates a price rule for this product') },
       ],
     },
     {
       id: 'insight',
       label: 'Reporting',
       items: [
-        { key: 'sales', label: 'View sales report', icon: 'lucide-chart-line', onClick: () => toast.info('30-day report for this product') },
         { key: 'orders', label: 'Orders with this product', icon: 'lucide-shopping-bag', onClick: () => router.push('/orders') },
       ],
     },
@@ -111,25 +227,29 @@ export function buildProductActions(product, router, handlers = {}) {
           onClick: () =>
             dialog.confirm({
               title: `Delete ${product.title}?`,
-              message: 'This cannot be undone, and it removes the product from every collection.',
+              message:
+                'This removes the product, its options and every size under it, for good. A product that has ever been ordered cannot be deleted — archive it instead, and its past orders keep their line items.',
               theme: 'red',
               confirmLabel: 'Delete',
-              onConfirm: () => {
-                toast.success('Deleted')
+              onConfirm: async () => {
+                await deleteAction.submit({ item_template: product.id })
+                if (deleteAction.error) return
+                toast.success(`${product.title} deleted`)
                 router.push('/products')
               },
             }),
         },
       ],
     },
-  ]
+  ].map((group) => ({ ...group, items: group.items.filter(Boolean) }))
 
   // Look an action up by key instead of a group/index pair, so removing or
   // reordering entries above can't silently point `quick` at the wrong one.
   const findAction = (key) => groups.flatMap((group) => group.items).find((item) => item.key === key)
 
-  // The handful worth surfacing without opening a menu.
-  const quick = [publish, findAction('adjust'), findAction('price'), findAction('option')]
+  // The handful worth surfacing without opening a menu. A product with no
+  // sizes yet has no Receive stock row, so the list is filtered, not padded.
+  const quick = [publish, findAction('adjust'), findAction('price'), findAction('option')].filter(Boolean)
 
   return { groups, quick }
 }
@@ -141,4 +261,3 @@ export function asDropdownOptions(groups) {
     options: group.items.map(({ label, icon, onClick, theme }) => ({ label, icon, onClick, theme })),
   }))
 }
-

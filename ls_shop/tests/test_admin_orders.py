@@ -3,7 +3,7 @@
 
 import frappe
 from frappe.tests import IntegrationTestCase, UnitTestCase
-from frappe.utils.data import add_days, get_year_ending, get_year_start, getdate
+from frappe.utils.data import add_days, cstr, get_year_ending, get_year_start, getdate
 
 from ls_shop.api.admin.orders import (
 	MAX_PAGE_LENGTH,
@@ -366,9 +366,22 @@ class TestOrderLifecycleReader(IntegrationTestCase):
 
 	def test_a_page_of_orders_costs_the_same_reads_as_a_single_one(self):
 		"""The whole point of the reader: the badge column must not scale with the page size."""
-		orders = frappe.get_all("Sales Order", limit=5, pluck="name")
+		# Every order here must carry a delivery note. An order with no paperwork skips the
+		# note and packing-slip reads entirely, so mixing the two shapes measures which orders
+		# were sampled rather than whether the reader scales.
+		orders = sorted(
+			{
+				cstr(row.against_sales_order)
+				for row in frappe.get_all(
+					"Delivery Note Item",
+					filters={"against_sales_order": ["!=", ""], "docstatus": ["<", 2]},
+					fields=["against_sales_order"],
+					limit=40,
+				)
+			}
+		)[:5]
 		if len(orders) < 2:
-			self.skipTest("needs at least two Sales Orders on this site")
+			self.skipTest("needs at least two Sales Orders with a delivery note on this site")
 
 		# Warm the doctype meta first: the first read of a doctype in a process pays for its schema.
 		read_order_lifecycles(orders)

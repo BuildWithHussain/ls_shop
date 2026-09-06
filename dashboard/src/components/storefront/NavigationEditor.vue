@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { Badge, Button, Dropdown, LoadingText, Tree, dialog, toast } from 'frappe-ui'
 import EmptyState from '../EmptyState.vue'
+import CascadePublishDialog from './CascadePublishDialog.vue'
 import ChromePreview from './ChromePreview.vue'
 import NavInspector from './NavInspector.vue'
 import { useNavMenu } from '../../data/navMenu'
@@ -154,6 +155,19 @@ async function toggleVisible(node) {
   await mutate('set_visibility', { name: node.name, visible: node.visible ? 0 : 1 })
 }
 
+const publishTarget = ref(null)
+const publishDialogOpen = ref(false)
+
+// Same preview-then-confirm shape as removeEntry: the server counts what would change, and the
+// dialog names that count before anything is written.
+async function publishProducts(node, publish) {
+  const preview = await call('get_publish_preview', { name: node.name, publish })
+  if (!preview) return
+
+  publishTarget.value = { name: node.name, label: preview.label, publish, count: preview.count }
+  publishDialogOpen.value = true
+}
+
 // Same shape Tree's own drag-end path uses (onDragEnd above) — the touch-friendly
 // fallback for reordering, since HTML5 drag-and-drop never fires on a phone.
 function locateNode(name, nodes = menu.value, parentName = '') {
@@ -203,6 +217,23 @@ function rowActions(node) {
       label: node.visible ? 'Hide from menu' : 'Show in menu',
       icon: node.visible ? 'eye-off' : 'eye',
       onClick: () => toggleVisible(node),
+    },
+    // A separate group because it acts on a different object: the rows above move and hide the
+    // menu entry, these two publish and unpublish the products filed under it.
+    {
+      group: 'Products under this entry',
+      options: [
+        {
+          label: 'Publish to the storefront',
+          icon: 'globe',
+          onClick: () => publishProducts(node, 1),
+        },
+        {
+          label: 'Take off the storefront',
+          icon: 'globe-lock',
+          onClick: () => publishProducts(node, 0),
+        },
+      ],
     },
     {
       group: 'Danger',
@@ -295,6 +326,8 @@ const menuActions = computed(() => [
         </aside>
       </div>
     </template>
+
+    <CascadePublishDialog v-model:open="publishDialogOpen" :target="publishTarget" />
 
     <ChromePreview
       v-model:collapsed="previewCollapsed"

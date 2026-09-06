@@ -1,7 +1,6 @@
-// The product import flow: shared state for one run of it. Upload/Review/Run read and write the
-// real ls_shop.api.admin.imports endpoints; Source and Images stay as they were — the spreadsheet
-// source is the only one that exists, and bulk photo matching is still out of scope (see
-// docs/commera-open-questions.md).
+// The product import flow: shared state for one run of it. Every step reads and writes the real
+// ls_shop.api.admin.imports endpoints — the spreadsheet is the only source that exists, and photos
+// are matched to a product colour by file name (imports.match_import_images).
 import { reactive } from 'vue'
 import { useAdminAction } from './api'
 
@@ -39,7 +38,12 @@ export const imp = reactive({
   fileUrl: null,
   parsing: false,
   parsed: false,
-  imagesDone: false,
+  // Photos: every file the browser has uploaded, the merchant's manual pick per file, what the
+  // server matched back, and the {group key: [file_url]} map handed to run_import.
+  imageFiles: [],
+  imageChoices: {},
+  imageMatch: null,
+  imageAssignments: {},
   running: false,
   finished: false,
   reviewFilter: 'all',
@@ -50,6 +54,8 @@ export const imp = reactive({
   counts: { total: 0, ready: 0, warnings: 0, errors: 0, products: 0 },
   created: [],
   runRowErrors: [],
+  runImageErrors: [],
+  imagesAttached: 0,
 })
 
 export function resetImport() {
@@ -61,7 +67,10 @@ export function resetImport() {
     fileUrl: null,
     parsing: false,
     parsed: false,
-    imagesDone: false,
+    imageFiles: [],
+    imageChoices: {},
+    imageMatch: null,
+    imageAssignments: {},
     running: false,
     finished: false,
     reviewFilter: 'all',
@@ -72,6 +81,8 @@ export function resetImport() {
     counts: { total: 0, ready: 0, warnings: 0, errors: 0, products: 0 },
     created: [],
     runRowErrors: [],
+    runImageErrors: [],
+    imagesAttached: 0,
   })
 }
 

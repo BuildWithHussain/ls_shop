@@ -7,7 +7,6 @@ import PageBody from '../components/PageBody.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import VariantEditor from '../components/VariantEditor.vue'
 import ProductBasics from '../components/product/ProductBasics.vue'
-import ProductTypeFields from '../components/product/ProductTypeFields.vue'
 import ProductPricing from '../components/product/ProductPricing.vue'
 import ProductStock from '../components/product/ProductStock.vue'
 import ProductOrganization from '../components/product/ProductOrganization.vue'
@@ -45,6 +44,7 @@ watch(
       // Item only carries a disabled flag — there is no "draft" state in the
       // catalog (same fact Products.vue's list screen already works around).
       status: data.disabled ? 'archived' : 'active',
+      restock_level: data.restock_level,
       sku: data.name,
       updated: data.updated,
       variants: data.variants,
@@ -80,9 +80,23 @@ async function toggleArchive() {
   productRequest.reload()
 }
 
+// The ⋯ menu's three "jump to a section" rows land here rather than reaching
+// into the DOM themselves. The sections sit inside a ScrollArea viewport, which
+// is a real overflow-scroll element, so scrollIntoView drives it. Instant, not
+// smooth: the dropdown closing restores focus to its trigger, which cancels a
+// smooth scroll still in flight and leaves the page where it started.
+function scrollToSection(sectionId) {
+  document.getElementById(sectionId)?.scrollIntoView({ behavior: 'instant', block: 'start' })
+}
+
 const actions = computed(() =>
   product.value
-    ? buildProductActions(product.value, router, { onTogglePublish: togglePublish, onToggleArchive: toggleArchive })
+    ? buildProductActions(product.value, router, {
+        onTogglePublish: togglePublish,
+        onToggleArchive: toggleArchive,
+        onScrollTo: scrollToSection,
+        onReload: () => productRequest.reload(),
+      })
     : { groups: [], quick: [] },
 )
 
@@ -137,7 +151,6 @@ watch(
 
           <div class="mt-6 space-y-11">
             <ProductBasics :product="product" />
-            <ProductTypeFields :product="product" />
             <ProductPricing :product="product" />
             <VariantEditor :product="product" @saved="productRequest.reload()" />
             <ProductStock :product="product" />

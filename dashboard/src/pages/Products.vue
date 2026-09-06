@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { Button, Select, TabButtons, TextInput, toast } from 'frappe-ui'
+import { Button, Select, TabButtons, TextInput, dialog, toast } from 'frappe-ui'
 import { List, ListCell, ListHeader, ListHeaderCell, ListHeaderCellSort, ListRow, ListRows } from 'frappe-ui/list'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import PageBody from '../components/PageBody.vue'
@@ -39,9 +39,12 @@ const page = ref(1)
 const pageSize = ref(20)
 
 const collectionsRequest = useAdminRead('catalog.get_collections')
+const collectionPickerOptions = computed(() =>
+  (collectionsRequest.data ?? []).map((name) => ({ label: name, value: name })),
+)
 const collectionOptions = computed(() => [
   { label: 'All collections', value: 'all' },
-  ...(collectionsRequest.data ?? []).map((name) => ({ label: name, value: name })),
+  ...collectionPickerOptions.value,
 ])
 
 // Item only carries a disabled flag — there is no "draft" state in the catalog,
@@ -113,6 +116,46 @@ async function archiveSelected() {
   endSelecting()
   productsRequest.reload()
 }
+
+const collectionAction = useAdminAction('catalog.add_products_to_collection')
+
+// Item.item_group holds one value, so filing a product under a collection takes it out of the
+// collection it was in — same wording as the single-product row in ia/productActions.js.
+function moveToCollection() {
+  const itemTemplates = [...selection.value]
+  if (!itemTemplates.length) return
+  if (!collectionPickerOptions.value.length) {
+    toast.info('There are no collections yet — create one first.')
+    return
+  }
+
+  dialog.prompt({
+    title: `File ${itemTemplates.length} product${itemTemplates.length > 1 ? 's' : ''} under a collection`,
+    message: 'A product sits in one collection, so this replaces the one it is in now.',
+    fields: [
+      {
+        name: 'collection',
+        label: 'Collection',
+        type: 'select',
+        required: true,
+        options: collectionPickerOptions.value,
+      },
+    ],
+    confirmLabel: 'Move',
+    onConfirm: async ({ values }) => {
+      const response = await collectionAction.submit({
+        item_templates: itemTemplates,
+        collection: values.collection,
+      })
+      if (collectionAction.error) return
+
+      const moved = response.updated.length
+      toast.success(`${moved} product${moved > 1 ? 's' : ''} moved to ${response.collection}`)
+      endSelecting()
+      productsRequest.reload()
+    },
+  })
+}
 </script>
 
 <template>
@@ -143,7 +186,11 @@ async function archiveSelected() {
     </div>
 
     <BulkBar v-if="selecting" :count="selection.length" noun="product" @done="endSelecting">
-      <Button label="Add to collection" />
+      <Button
+        label="Move to collection"
+        :loading="collectionAction.loading"
+        @click="moveToCollection"
+      />
       <Button
         label="Archive"
         theme="red"

@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { KeyboardShortcut, toast, useKeyboardShortcut } from 'frappe-ui'
+import { KeyboardShortcut, useKeyboardShortcut } from 'frappe-ui'
 import {
   CommandPalette,
   CommandPaletteEmpty,
@@ -16,6 +16,7 @@ import { money, priceRange } from '../data/format'
 import { openSettings } from '../ia/settings'
 import { search } from '../ia/search'
 import { openImport } from '../data/importFlow'
+import { openAddProduct } from '../data/addProduct'
 
 const LIMIT = 5
 
@@ -74,7 +75,6 @@ const GO_TO = [
   { id: 'go-products', label: 'Products', icon: 'lucide-package', keywords: ['catalogue', 'catalog'], run: () => router.push('/products') },
   { id: 'go-inventory', label: 'Inventory', icon: 'lucide-boxes', keywords: ['stock', 'warehouse'], run: () => router.push('/inventory') },
   { id: 'go-pricing', label: 'Bulk edit prices', icon: 'lucide-indian-rupee', keywords: ['price', 'margin', 'reprice'], run: () => router.push('/pricing') },
-  { id: 'go-types', label: 'Product types', icon: 'lucide-shapes', keywords: ['schema', 'fields'], run: () => router.push('/product-types') },
   { id: 'go-revenue', label: 'Revenue report', icon: 'lucide-banknote', keywords: ['analytics', 'sales', 'refunds'], run: () => router.push('/analytics/revenue') },
   { id: 'go-stock-report', label: 'Inventory report', icon: 'lucide-chart-line', keywords: ['analytics', 'dead stock', 'cover'], run: () => router.push('/analytics/inventory') },
   { id: 'go-storefront-report', label: 'Storefront report', icon: 'lucide-globe', keywords: ['analytics', 'sessions', 'funnel'], run: () => router.push('/analytics/storefront') },
@@ -82,7 +82,7 @@ const GO_TO = [
 ]
 
 const CREATE = [
-  { id: 'new-product', label: 'New product', icon: 'lucide-plus', keywords: ['add', 'create'], run: () => toast.info('Pick a product type first') },
+  { id: 'new-product', label: 'New product', icon: 'lucide-plus', keywords: ['add', 'create'], run: openAddProduct },
   { id: 'import', label: 'Import products from CSV', icon: 'lucide-upload', keywords: ['csv', 'bulk', 'shopify', 'migrate'], run: openImport },
   { id: 'receive', label: 'Receive stock', icon: 'lucide-package-plus', keywords: ['inward', 'grn'], run: () => router.push('/inventory') },
 ]
