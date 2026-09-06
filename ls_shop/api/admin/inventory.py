@@ -3,7 +3,10 @@
 
 import frappe
 from frappe import _
+from frappe.utils import create_batch
 from frappe.utils.data import cint, cstr, flt
+
+from ls_shop.utils import IN_CLAUSE_CHUNK_SIZE
 
 PAGE_LENGTH = 50
 LOW_STOCK_THRESHOLD = 5
@@ -48,14 +51,7 @@ def get_inventory(
 	# get_size_stock (catalog.py) already reads Bin actual_qty + reserved_qty in one batched
 	# query - reused rather than re-querying Bin a second way for the same numbers.
 	stock_by_item_code = get_size_stock(item_codes)
-	# Item.safety_stock is the per-product level set from the product screen (catalog.set_restock_level);
-	# where a size carries one it decides what "Low" means for that row instead of the store default.
-	low_level_by_item_code = {
-		cstr(row.name): cint(row.safety_stock)
-		for row in frappe.get_all(
-			"Item", filters={"name": ["in", item_codes]}, fields=["name", "safety_stock"]
-		)
-	}
+	low_level_by_item_code = get_low_stock_levels(item_codes)
 
 	# A dashboard-created variant never sets an Item.image, so the row falls back to its first
 	# option photo - same source and batching catalog.get_products uses for the same reason.
@@ -79,8 +75,7 @@ def get_inventory(
 
 		stock = stock_by_item_code.get(cstr(size.item_code), {})
 		quantity = stock.get("stock", 0)
-		stored_level = low_level_by_item_code.get(cstr(size.item_code), 0)
-		low_level = stored_level if stored_level > 0 else LOW_STOCK_THRESHOLD
+		low_level = low_level_by_item_code.get(cstr(size.item_code), LOW_STOCK_THRESHOLD)
 		rows.append(
 			{
 				"item_code": size.item_code,
@@ -119,6 +114,26 @@ def get_inventory(
 		"total": len(rows),
 		"low_stock_threshold": LOW_STOCK_THRESHOLD,
 	}
+
+
+def get_low_stock_levels(item_codes) -> dict:
+	"""The level each size is judged low at, keyed by item_code: Item.safety_stock where the product
+	screen set one (catalog.set_restock_level), the store default where it did not.
+
+	The single answer to "what counts as low for this size" - catalog.get_restock_level reads the
+	same map, so the product screen cannot report one number while the Stock list judges by another.
+	Read in chunks: every sellable size in the store goes into this IN (...).
+	"""
+	if not item_codes:
+		return {}
+
+	levels = {}
+	for item_code_chunk in create_batch(list(item_codes), IN_CLAUSE_CHUNK_SIZE):
+		for row in frappe.get_all(
+			"Item", filters={"name": ["in", item_code_chunk]}, fields=["name", "safety_stock"]
+		):
+			levels[cstr(row.name)] = cint(row.safety_stock) or LOW_STOCK_THRESHOLD
+	return levels
 
 
 def describe_availability(quantity, low_level: int = LOW_STOCK_THRESHOLD):

@@ -1,18 +1,16 @@
 # Copyright (c) 2026, company@bwhstudios.com and contributors
 # For license information, please see license.txt
 
-import re
-
 import frappe
 from frappe import _
 from frappe.query_builder import Case, Order
 from frappe.query_builder.functions import Count, Max, Sum
-from frappe.utils.data import add_days, cint, cstr, flt, formatdate, getdate, strip_html
+from frappe.utils.data import add_days, cint, cstr, flt, formatdate, getdate
 
 from ls_shop.api.admin.catalog import get_unpublishable_options
 from ls_shop.api.admin.inventory import get_inventory
 from ls_shop.api.shipping import DELIVERY_CHARGE_DESCRIPTION
-from ls_shop.utils import COD_CHARGE_DESCRIPTION
+from ls_shop.utils import COD_CHARGE_DESCRIPTION, get_address_lines
 
 PAGE_LENGTH = 20
 
@@ -161,14 +159,14 @@ def get_orders(
 
 	return {
 		"orders": [
-			build_order_row(row, lifecycles.get(cstr(row.name)), paid_orders, item_counts.get(row.name, 0))
+			get_order_row(row, lifecycles.get(cstr(row.name)), paid_orders, item_counts.get(row.name, 0))
 			for row in orders
 		],
 		"total": total,
 	}
 
 
-def build_order_row(order, lifecycle, paid_orders: set, item_count: float) -> dict:
+def get_order_row(order, lifecycle, paid_orders: set, item_count: float) -> dict:
 	"""One row of the Orders list."""
 	lifecycle = lifecycle or frappe._dict()
 	return {
@@ -230,7 +228,12 @@ def build_order_invoices_query():
 def read_order_invoices(order_name: str | int) -> list:
 	"""The submitted Sales Invoices raised against one order, newest first — the documents the order
 	screen prints an invoice from. `creation` is selected as well as ordered on because Postgres
-	rejects a SELECT DISTINCT ordered by a column it does not carry."""
+	rejects a SELECT DISTINCT ordered by a column it does not carry.
+
+	Credit notes are excluded. ERPNext's return mapper copies `sales_order` onto the return's lines,
+	so a refunded order's credit note joins here exactly like its invoice does — and "Print invoice"
+	handing the merchant a credit note is the wrong document. A refund is reported by the order's
+	payment state (see describe_payment), not by this list."""
 	sales_invoice_item = frappe.qb.DocType("Sales Invoice Item")
 	sales_invoice = frappe.qb.DocType("Sales Invoice")
 	rows = (
@@ -238,6 +241,7 @@ def read_order_invoices(order_name: str | int) -> list:
 		.select(sales_invoice.name, sales_invoice.creation)
 		.distinct()
 		.where(sales_invoice_item.sales_order == order_name)
+		.where(sales_invoice.is_return == 0)
 		.orderby(sales_invoice.creation, order=Order.desc)
 	).run(as_dict=True)
 	return [cstr(row.name) for row in rows]
@@ -352,18 +356,6 @@ def get_shipped_orders():
 		.groupby(shipping_request.ref_docname)
 		.having(newest_moved == Max(shipping_request.creation))
 	)
-
-
-def get_address_lines(address_display):
-	"""ERPNext builds address_display as HTML; the dashboard renders plain text, so <br> tags leak."""
-	if not address_display:
-		return None
-
-	lines = [
-		strip_html(part).strip()
-		for part in re.split(r"<br\s*/?>", cstr(address_display), flags=re.IGNORECASE)
-	]
-	return "\n".join(line for line in lines if line) or None
 
 
 def describe_state(order, lifecycle=None):
@@ -504,7 +496,9 @@ def read_order_lifecycles(order_names: list) -> dict:
 
 	Two delivery note lists, deliberately: `delivery_notes` is submitted notes only and is what the
 	fulfilment ladder is derived from, while `printable_delivery_notes` also carries the drafts —
-	a draft note is exactly what a merchant prints a packing slip from."""
+	a draft note is exactly what a merchant prints a packing slip from. Return notes are in neither
+	printable list: a sales return is paperwork for stock coming back, and printing it as part of a
+	bulk packing slip run would put a parcel that is being refunded back on the dispatch bench."""
 	if not order_names:
 		return {}
 
@@ -528,7 +522,8 @@ def read_order_lifecycles(order_names: list) -> dict:
 		):
 			for order_name in orders_by_delivery_note.get(cstr(note.name), ()):
 				lifecycle = lifecycles.setdefault(order_name, new_lifecycle())
-				lifecycle.printable_delivery_notes.append(cstr(note.name))
+				if not cint(note.is_return):
+					lifecycle.printable_delivery_notes.append(cstr(note.name))
 				if cint(note.docstatus) == 1:
 					lifecycle.delivery_notes.append(cstr(note.name))
 					if cint(note.is_return):

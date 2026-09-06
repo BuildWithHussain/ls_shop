@@ -5,7 +5,7 @@ import frappe
 from frappe.contacts.doctype.address.address import get_address_display, get_default_address
 from frappe.utils.data import cint, cstr, flt, getdate
 
-from ls_shop.api.admin.orders import get_address_lines
+from ls_shop.utils import get_address_lines
 
 SETTINGS_DOCTYPE = "Lifestyle Settings"
 BRANDING_DOCTYPE = "Website Settings"

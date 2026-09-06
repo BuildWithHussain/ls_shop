@@ -6,7 +6,7 @@ from erpnext.controllers.item_variant import create_variant
 from frappe import _
 from frappe.query_builder import Order
 from frappe.query_builder.functions import Count, Sum
-from frappe.utils import add_days, get_url, nowdate
+from frappe.utils import add_days, create_batch, get_url, nowdate
 from frappe.utils.data import cint, cstr, flt
 
 from ls_shop.api.variant_pricing import (
@@ -14,9 +14,29 @@ from ls_shop.api.variant_pricing import (
 	get_selling_price_lists,
 	set_variant_prices,
 )
+from ls_shop.utils import IN_CLAUSE_CHUNK_SIZE
 
 PAGE_LENGTH = 20
 BULK_PRODUCT_LIMIT = 100
+
+# Every doctype that makes a product historical, in the order a merchant would recognise. Storefront
+# Analytics Event is on the list because it is a plain Link to Item that hooks.py deliberately does
+# not ignore on delete, so a product a shopper merely viewed is link-blocked anyway - it earns a
+# sentence a merchant understands rather than a raw LinkExistsError.
+HISTORY_BLOCKERS = (
+	"Sales Order Item",
+	"Delivery Note Item",
+	"Sales Invoice Item",
+	"Packing Slip Item",
+	"Quotation Item",
+	"Material Request Item",
+	"Stock Ledger Entry",
+	"Storefront Analytics Event",
+)
+
+# ERPNext's Item.on_trash deletes these itself, before the framework's link check ever runs, so an
+# up-front check that counted them would refuse a product the real delete would have taken.
+CLEARED_ON_ITEM_TRASH = ("Bin", "Item Price")
 
 
 @frappe.whitelist()
@@ -252,14 +272,21 @@ def get_size_stock(item_codes):
 
 
 def get_restock_level(item_codes):
-	"""The level a product is called low at: the highest safety_stock its sizes carry, or None when
-	none of them sets one, in which case inventory.get_inventory() falls back to LOW_STOCK_THRESHOLD."""
+	"""The level this product is called low at, or None when its sizes do not share one.
+
+	The number the Stock screen actually judges each size by is inventory.get_low_stock_levels() —
+	safety_stock where the size carries one, LOW_STOCK_THRESHOLD where it does not — so this reads
+	the same map rather than a second rule. set_restock_level writes every size the same value, so
+	sizes only disagree when something else wrote safety_stock; there is then no single honest
+	product-level answer and the screen is told None rather than a number half the sizes ignore.
+	"""
+	from ls_shop.api.admin.inventory import get_low_stock_levels
+
 	if not item_codes:
 		return None
 
-	rows = frappe.get_all("Item", filters={"name": ["in", item_codes]}, fields=["safety_stock"])
-	highest = max((cint(row.safety_stock) for row in rows), default=0)
-	return highest or None
+	levels = set(get_low_stock_levels(item_codes).values())
+	return levels.pop() if len(levels) == 1 else None
 
 
 def get_product_chain(item_template: str | int):
@@ -290,6 +317,57 @@ def get_product_chain(item_template: str | int):
 		"variants": variant_names,
 		"item_codes": list({row.item_code for row in sizes if row.item_code}),
 	}
+
+
+def get_collection(collection: str) -> str:
+	"""The one answer to "is this a valid collection?", shared by every writer of Item.item_group.
+
+	A collection is a leaf Item Group (see list_collections), so a structural parent that groups
+	other collections is refused rather than silently accepted and then rendered as a category
+	page nothing can be filed under.
+	"""
+	item_group = frappe.db.get_value(
+		"Item Group", cstr(collection).strip(), ["name", "lft", "rgt"], as_dict=True
+	)
+	if not item_group:
+		frappe.throw(_("Collection {0} does not exist.").format(collection))
+	if item_group.rgt != item_group.lft + 1:
+		frappe.throw(
+			_("{0} holds other collections, so products cannot be filed under it.").format(item_group.name)
+		)
+	return item_group.name
+
+
+def get_variant_names(item_templates: list) -> list:
+	"""Every option of a set of products, in two queries however many products are passed."""
+	if not item_templates:
+		return []
+
+	configurators = frappe.get_all(
+		"Style Attribute Configurator", filters={"item_template": ["in", item_templates]}, pluck="name"
+	)
+	if not configurators:
+		return []
+	return frappe.get_all(
+		"Style Attribute Variant", filters={"configurator": ["in", configurators]}, pluck="name"
+	)
+
+
+def save_variant_collections(item_templates: list) -> None:
+	"""Re-file the options of these products under whatever collection the products now carry.
+
+	Style Attribute Variant keeps its own item_group, and that copy — not Item.item_group — is what
+	the storefront category pages and search/record_builder.py index. update_item_group() only fills
+	it while it is blank, so clearing it and saving re-derives it from the product through the same
+	Lifestyle Settings mapping, and fires the search.sync hooks that hang off the variant. Without
+	this the dashboard reports a move the storefront never made.
+	"""
+	for variant_name in get_variant_names(item_templates):
+		# ponytail: one save per option so update_item_group and the search sync hooks run; move to
+		# a background job if a store ever files more options at once than a request can carry.
+		variant = frappe.get_doc("Style Attribute Variant", variant_name)
+		variant.item_group = None
+		variant.save()
 
 
 @frappe.whitelist()
@@ -773,10 +851,10 @@ def create_collection(title: str):
 
 @frappe.whitelist(methods=["POST"])
 def add_products_to_collection(item_templates: list | str, collection: str):
-	"""File a selection of products under one collection.
+	"""File a selection of products under one collection, options included.
 
-	A collection is a leaf Item Group (see list_collections above), so a structural parent that
-	groups other collections is refused rather than silently accepted.
+	The options are re-filed too — see save_variant_collections for why the product's own
+	item_group is only half the move.
 	"""
 	frappe.has_permission("Item", ptype="write", throw=True)
 
@@ -786,15 +864,7 @@ def add_products_to_collection(item_templates: list | str, collection: str):
 	if len(item_templates) > BULK_PRODUCT_LIMIT:
 		frappe.throw(_("Add at most {0} products to a collection at a time.").format(BULK_PRODUCT_LIMIT))
 
-	item_group = frappe.db.get_value(
-		"Item Group", cstr(collection).strip(), ["name", "lft", "rgt"], as_dict=True
-	)
-	if not item_group:
-		frappe.throw(_("Collection {0} does not exist.").format(collection))
-	if item_group.rgt != item_group.lft + 1:
-		frappe.throw(
-			_("{0} holds other collections, so products cannot be filed under it.").format(item_group.name)
-		)
+	item_group = get_collection(collection)
 
 	updated = []
 	for item_template in item_templates:
@@ -802,11 +872,13 @@ def add_products_to_collection(item_templates: list | str, collection: str):
 		# store ever needs to file more than BULK_PRODUCT_LIMIT products in one go
 		item = frappe.get_doc("Item", item_template)
 		item.check_permission("write")
-		item.item_group = item_group.name
+		item.item_group = item_group
 		item.save()
 		updated.append(item.name)
 
-	return {"updated": updated, "collection": item_group.name}
+	save_variant_collections(updated)
+
+	return {"updated": updated, "collection": item_group}
 
 
 @frappe.whitelist()
@@ -1236,24 +1308,86 @@ def update_product(item_template: str, title=None, collection=None, description=
 			frappe.throw(_("Title is required."))
 		item.item_name = title
 	if collection is not None:
-		if not frappe.db.exists("Item Group", collection):
-			frappe.throw(_("Collection {0} does not exist.").format(collection))
-		item.item_group = collection
+		item.item_group = get_collection(collection)
 	if description is not None:
 		item.description = description
 	if disabled is not None:
 		item.disabled = cint(disabled)
 	item.save()
 
+	if collection is not None:
+		save_variant_collections([item.name])
+
 	return {"name": item.name}
+
+
+def check_product_has_no_history(title: str, item_codes: list) -> None:
+	"""Refuse a product any document still refers to, in one query per doctype however many sizes it
+	has, and in a merchant's words rather than a raw link error.
+
+	A cancelled order still carries its lines, so docstatus is deliberately not filtered on. Every
+	message offers Archive, because that is the honest answer for a product with a past: deleting it
+	would leave the history pointing at an item that no longer exists.
+	"""
+	messages = {
+		"Sales Order Item": _("{0} has been ordered before, so it cannot be deleted."),
+		"Delivery Note Item": _("{0} has been shipped before, so it cannot be deleted."),
+		"Sales Invoice Item": _("{0} has been invoiced before, so it cannot be deleted."),
+		"Packing Slip Item": _("{0} is on a packing slip, so it cannot be deleted."),
+		"Quotation Item": _("{0} has been quoted before, so it cannot be deleted."),
+		"Material Request Item": _("{0} is on a material request, so it cannot be deleted."),
+		"Stock Ledger Entry": _("{0} has stock movement against it, so it cannot be deleted."),
+		"Storefront Analytics Event": _("{0} has been viewed by shoppers, so it cannot be deleted."),
+	}
+	for doctype in HISTORY_BLOCKERS:
+		for item_code_chunk in create_batch(item_codes, IN_CLAUSE_CHUNK_SIZE):
+			if frappe.get_all(doctype, filters={"item_code": ["in", item_code_chunk]}, limit=1):
+				frappe.throw(
+					f"{messages[doctype].format(title)} {_('Archive it instead.')}",
+					title=_("This product has a history"),
+				)
+
+
+def check_product_chain_is_deletable(chain: dict, item_template: str | int) -> None:
+	"""Ask the framework whether every document in the chain may go, before any of them does.
+
+	frappe.delete_doc runs on_trash and deletes the document's attachments — the File rows AND the
+	JPEGs under them — before it checks whether the document is linked. The SQL of a refused delete
+	rolls back; the files on disk do not (File.on_rollback only restores what it uploaded in this
+	request). So the whole chain is proved deletable up front and nothing is destroyed until it is.
+
+	Two kinds of link are not blockers and are skipped, because the real delete would not stop on
+	them either: the chain's own documents, which point at each other and are all going, and the
+	rows ERPNext's Item.on_trash clears itself before the framework ever looks.
+	"""
+	from frappe.model.delete_doc import get_linked_docs, raise_link_exists_exception
+
+	documents = [
+		*(("Style Attribute Variant", name) for name in chain["variants"]),
+		*(("Style Attribute Configurator", name) for name in chain["configurators"]),
+		*(("Item", item_code) for item_code in chain["item_codes"]),
+		("Item", cstr(item_template)),
+	]
+	doomed = {(doctype, cstr(name)) for doctype, name in documents}
+
+	for doctype, name in documents:
+		# ponytail: one load per document because the framework's link reader takes a document, and
+		# delete_doc loads each of them again anyway; batch it if a product ever carries enough
+		# options that the double load shows up.
+		document = frappe.get_doc(doctype, name)
+		for link in get_linked_docs(document):
+			reference = (link["reference_doctype"], cstr(link["reference_docname"]))
+			if reference in doomed or link["reference_doctype"] in CLEARED_ON_ITEM_TRASH:
+				continue
+			raise_link_exists_exception(document, link["reference_doctype"], link["reference_docname"])
 
 
 @frappe.whitelist(methods=["POST"])
 def delete_product(item_template: str | int):
-	"""Remove a product that was never ordered, options and sellable sizes included.
+	"""Remove a product nothing refers to, options and sellable sizes included.
 
-	A product that has ever appeared on an order line stays: its history would lose the item it
-	refers to. Archiving (update_product with disabled=1) is the answer there, so the refusal says so.
+	A product with any history stays — see check_product_has_no_history for what counts and why
+	Archive (update_product with disabled=1) is offered instead.
 	"""
 	frappe.has_permission("Item", doc=item_template, ptype="delete", throw=True)
 
@@ -1262,20 +1396,11 @@ def delete_product(item_template: str | int):
 		frappe.throw(_("Product {0} not found").format(item_template))
 
 	chain = get_product_chain(item_template)
-	# A cancelled order still carries its lines, so docstatus is deliberately not filtered on.
-	ordered = frappe.get_all(
-		"Sales Order Item",
-		filters={"item_code": ["in", [item_template, *chain["item_codes"]]]},
-		limit=1,
-	)
-	if ordered:
-		frappe.throw(
-			_("{0} has been ordered before, so it cannot be deleted. Archive it instead.").format(title)
-		)
+	check_product_has_no_history(title, [cstr(item_template), *chain["item_codes"]])
+	check_product_chain_is_deletable(chain, item_template)
 
 	# Options first, then their configurators, then the sellable items, then the product itself -
-	# each link is deleted before the row it points at. ERPNext refuses an item that still has a
-	# stock ledger or other links, and that error is left to surface.
+	# each link is deleted before the row it points at.
 	for variant_name in chain["variants"]:
 		frappe.delete_doc("Style Attribute Variant", variant_name)
 	for configurator in chain["configurators"]:

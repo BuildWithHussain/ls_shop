@@ -1,3 +1,4 @@
+import re
 from functools import lru_cache
 from urllib.parse import quote
 
@@ -9,12 +10,25 @@ from frappe.geo.country_info import get_all
 from frappe.query_builder import Case, DocType
 from frappe.query_builder.functions import Count, Min, Sum
 from frappe.utils import add_days, create_batch, cstr, flt, get_datetime, now_datetime
+from frappe.utils.data import strip_html
 from pypika import Order
 
 from ls_shop.core import get_address_docs, get_party
 
 # Ceiling for any IN (...) list this app sends to MariaDB/Postgres.
 IN_CLAUSE_CHUNK_SIZE = 1000
+
+
+def get_address_lines(address_display):
+	"""ERPNext builds address_display as HTML; the dashboard renders plain text, so <br> tags leak."""
+	if not address_display:
+		return None
+
+	lines = [
+		strip_html(part).strip()
+		for part in re.split(r"<br\s*/?>", cstr(address_display), flags=re.IGNORECASE)
+	]
+	return "\n".join(line for line in lines if line) or None
 
 
 def validate_document_access(doctype: str, name: str):

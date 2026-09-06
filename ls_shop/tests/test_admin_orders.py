@@ -632,3 +632,88 @@ class TestOrderCharges(IntegrationTestCase):
 		self.assertEqual(order["cod_charge"], 0)
 		self.assertEqual(order["tax"], 0)
 		self.assertEqual(order["net_total"], order["grand_total"])
+
+
+def draft_delivery_note(sales_order):
+	"""A Delivery Note left unsubmitted - what a merchant prints a packing slip from before the
+	parcel is actually gone."""
+	try:
+		from erpnext.selling.doctype.sales_order.mapper import make_delivery_note
+	except ImportError:
+		from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
+
+	delivery_note = make_delivery_note(sales_order.name)
+	delivery_note.flags.ignore_permissions = True
+	delivery_note.insert()
+	return delivery_note
+
+
+def invoice_against_order(sales_order):
+	try:
+		from erpnext.selling.doctype.sales_order.mapper import make_sales_invoice
+	except ImportError:
+		from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
+
+	invoice = make_sales_invoice(sales_order.name)
+	invoice.flags.ignore_permissions = True
+	invoice.insert()
+	invoice.submit()
+	return invoice
+
+
+def credit_note_against_invoice(invoice):
+	"""ERPNext's return mapper copies `sales_order` onto the credit note's lines, so the credit note
+	joins an order exactly the way its invoice does."""
+	try:
+		from erpnext.accounts.doctype.sales_invoice.mapper import make_sales_return
+	except ImportError:
+		from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_sales_return
+
+	credit_note = make_sales_return(invoice.name)
+	credit_note.flags.ignore_permissions = True
+	credit_note.insert()
+	credit_note.submit()
+	return credit_note
+
+
+class TestPrintableDocuments(IntegrationTestCase):
+	"""What the order screen hands a merchant to print. Every one of these is a document that opens
+	under a button, so the wrong one in the list is a wrong sheet of paper."""
+
+	def setUp(self):
+		self.sales_order = make_test_sales_order()
+
+	def test_the_submitted_and_the_printable_note_lists_stay_apart(self):
+		"""They must not collapse back into one: the ladder is derived from submitted notes only,
+		while the printable list is deliberately wider so a draft can be printed."""
+		note = draft_delivery_note(self.sales_order)
+
+		lifecycle = read_order_lifecycles([self.sales_order.name])[self.sales_order.name]
+
+		self.assertEqual(lifecycle.delivery_notes, [])
+		self.assertEqual(lifecycle.printable_delivery_notes, [note.name])
+
+	def test_get_order_offers_the_draft_note_to_print(self):
+		note = draft_delivery_note(self.sales_order)
+
+		self.assertEqual(get_order(self.sales_order.name)["deliveries"], [note.name])
+
+	def test_a_return_note_is_never_offered_for_printing(self):
+		"""A sales return is paperwork for stock coming back; a bulk packing slip run that included
+		it would put a refunded parcel back on the dispatch bench."""
+		sales_return = return_against_order(self.sales_order)
+
+		lifecycle = read_order_lifecycles([self.sales_order.name])[self.sales_order.name]
+
+		self.assertIn(sales_return.name, lifecycle.delivery_notes)
+		self.assertNotIn(sales_return.name, lifecycle.printable_delivery_notes)
+		self.assertNotIn(sales_return.name, get_order(self.sales_order.name)["deliveries"])
+
+	def test_a_credit_note_is_not_offered_as_an_invoice(self):
+		invoice = invoice_against_order(self.sales_order)
+		credit_note = credit_note_against_invoice(invoice)
+
+		invoices = get_order(self.sales_order.name)["invoices"]
+
+		self.assertEqual(invoices, [invoice.name])
+		self.assertNotIn(credit_note.name, invoices)

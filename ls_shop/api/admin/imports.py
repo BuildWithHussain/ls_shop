@@ -15,11 +15,13 @@ import re
 
 import frappe
 from frappe import _
+from frappe.utils import create_batch
 from frappe.utils.csvutils import read_csv_content
-from frappe.utils.data import cstr, flt
+from frappe.utils.data import cint, cstr, flt
 from frappe.utils.xlsxutils import build_xlsx_response, read_xlsx_file_from_attached_file
 
 from ls_shop.api.admin.catalog import create_product
+from ls_shop.utils import IN_CLAUSE_CHUNK_SIZE
 
 TEMPLATE_HEADERS = [
 	"Product Title",
@@ -315,18 +317,43 @@ def match_files_to_groups(groups, uploaded_files):
 	return matched, unmatched
 
 
-def get_existing_file_urls(file_urls):
-	"""Which of these URLs still have a File record. Read in chunks — a single IN (...) of every
-	uploaded file falls apart once a merchant drags in a few thousand photos."""
+def validate_image_urls(file_urls, names_by_url: dict | None = None):
+	"""Every URL must still resolve to a File, and to a public one.
+
+	An import pins these onto a storefront page anyone can open, so a `/private/files/...` URL is
+	refused: Style Attribute Variant.add_images only checks that *some* File row carries the url,
+	which would let anyone holding Item-create publish a private attachment they do not own.
+
+	Read in chunks — a single IN (...) of every uploaded file falls apart once a merchant drags in a
+	few thousand photos.
+	"""
 	unique_urls = list(dict.fromkeys(file_urls))
-	existing = set()
-	for start in range(0, len(unique_urls), 500):
-		existing.update(
-			frappe.get_all(
-				"File", filters={"file_url": ["in", unique_urls[start : start + 500]]}, pluck="file_url"
+	if not unique_urls:
+		return
+
+	files = []
+	for url_chunk in create_batch(unique_urls, IN_CLAUSE_CHUNK_SIZE):
+		files += frappe.get_all(
+			"File", filters={"file_url": ["in", url_chunk]}, fields=["file_url", "is_private"]
+		)
+
+	names_by_url = names_by_url or {}
+	existing_urls = {row.file_url for row in files}
+	private_urls = {row.file_url for row in files if cint(row.is_private)}
+
+	missing = [names_by_url.get(url, url) for url in unique_urls if url not in existing_urls]
+	if missing:
+		frappe.throw(
+			_("These images are not on the server any more — upload them again: {0}").format(
+				", ".join(missing)
 			)
 		)
-	return existing
+
+	private = [names_by_url.get(url, url) for url in unique_urls if url in private_urls]
+	if private:
+		frappe.throw(
+			_("These images are private and cannot go on a storefront page: {0}").format(", ".join(private))
+		)
 
 
 def read_uploaded_image_files(image_files):
@@ -334,6 +361,9 @@ def read_uploaded_image_files(image_files):
 	still resolve to a File — the same guard Style Attribute Variant.add_images enforces, checked here
 	where a merchant can still re-upload rather than at the end of an import."""
 	entries = frappe.parse_json(image_files) or []
+	if not isinstance(entries, list):
+		frappe.throw(_("Images must be sent as a list of file names and file URLs"))
+
 	uploaded_files = []
 	for entry in entries:
 		if not isinstance(entry, dict):
@@ -345,18 +375,10 @@ def read_uploaded_image_files(image_files):
 			{"file_url": url, "file_name": cstr(entry.get("file_name")).strip() or url.rsplit("/", 1)[-1]}
 		)
 
-	existing_urls = get_existing_file_urls([uploaded_file["file_url"] for uploaded_file in uploaded_files])
-	missing = [
-		uploaded_file["file_name"]
-		for uploaded_file in uploaded_files
-		if uploaded_file["file_url"] not in existing_urls
-	]
-	if missing:
-		frappe.throw(
-			_("These images are not on the server any more — upload them again: {0}").format(
-				", ".join(missing)
-			)
-		)
+	validate_image_urls(
+		[uploaded_file["file_url"] for uploaded_file in uploaded_files],
+		{uploaded_file["file_url"]: uploaded_file["file_name"] for uploaded_file in uploaded_files},
+	)
 
 	return uploaded_files
 
@@ -394,14 +416,46 @@ def match_import_images(
 	}
 
 
+def read_image_assignments(image_assignments):
+	"""{group key: [file_url, ...]} as match_import_images returned it, plus whatever the merchant
+	reassigned by hand — validated the moment it arrives.
+
+	It is checked here rather than where it is used because run_import only reaches attach_group_images
+	after products exist: a payload that is a list, a string or a number would raise an AttributeError
+	past the per-group savepoints, roll the whole request back, and lose the products the savepoints
+	were there to protect.
+
+	The URLs go through the same File check match_import_images already applies — run_import used to
+	hand them straight to add_images, which only asks whether some File row carries the url.
+	"""
+	assignments = frappe.parse_json(image_assignments) or {}
+	if not isinstance(assignments, dict):
+		frappe.throw(_("Image assignments must be sent as a group name against its list of photos"))
+
+	file_urls_by_key = {}
+	for key, file_urls in assignments.items():
+		if not isinstance(file_urls, list):
+			frappe.throw(_("The photos for {0} must be sent as a list of file URLs").format(key))
+		urls = [cstr(file_url).strip() for file_url in file_urls]
+		if not all(urls):
+			frappe.throw(_("A photo assigned to {0} was sent without a file URL").format(key))
+		file_urls_by_key[cstr(key)] = urls
+
+	validate_image_urls([url for urls in file_urls_by_key.values() for url in urls])
+	return file_urls_by_key
+
+
 def attach_group_images(item_template, group, file_urls_by_key):
 	"""Hand one product's photos to the colour-level variants they were assigned to, and say how many
 	landed. Every write goes through Style Attribute Variant.add_images, which owns the child rows."""
 	file_urls_by_color = {}
 	for row in group["rows"]:
 		key = get_image_group_key(group["title"], row["color"])
-		if file_urls_by_key.get(key) and row["color"] not in file_urls_by_color:
-			file_urls_by_color[row["color"]] = file_urls_by_key[key]
+		# Keyed casefolded, exactly as the group key is: a CSV mixing "Black" and "black" describes
+		# one colour and one variant, and two entries here would attach its photos twice.
+		color = cstr(row["color"]).casefold()
+		if file_urls_by_key.get(key) and color not in file_urls_by_color:
+			file_urls_by_color[color] = file_urls_by_key[key]
 	if not file_urls_by_color:
 		return 0
 
@@ -413,7 +467,7 @@ def attach_group_images(item_template, group, file_urls_by_key):
 
 	attached = 0
 	for color, file_urls in file_urls_by_color.items():
-		variant_name = variant_by_option.get(color.casefold())
+		variant_name = variant_by_option.get(color)
 		if not variant_name:
 			frappe.throw(_("{0} has no {1} to put photos on").format(group["title"], color))
 		# ponytail: one get_doc per colour because add_images validates and saves the variant,
@@ -482,7 +536,7 @@ def run_import(
 	frappe.has_permission("Item", ptype="create", throw=True)
 	if isinstance(column_mapping, str):
 		column_mapping = frappe.parse_json(column_mapping)
-	file_urls_by_key = frappe.parse_json(image_assignments) or {}
+	file_urls_by_key = read_image_assignments(image_assignments)
 
 	if not frappe.db.exists("Item Attribute", OPTION_ATTRIBUTE):
 		frappe.throw(_('This store has no Item Attribute named "{0}" — create it first.').format(OPTION_ATTRIBUTE))
