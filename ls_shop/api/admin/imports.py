@@ -10,6 +10,9 @@ create_product-level concept (one price for the whole product, not per size), so
 product must agree on it.
 """
 
+import os
+import re
+
 import frappe
 from frappe import _
 from frappe.utils.csvutils import read_csv_content
@@ -257,6 +260,169 @@ def group_to_option_sizes(rows):
 	return [{"option": option, "sizes": sizes} for option, sizes in option_sizes.items()]
 
 
+def slugify(text):
+	"""Lowercase, with every run of non-alphanumeric characters collapsed to a single dash — the one
+	spelling both a product's title/colour and a photo's file name are reduced to before comparing."""
+	return re.sub(r"[^a-z0-9]+", "-", cstr(text).casefold()).strip("-")
+
+
+def get_image_group_key(title, color):
+	"""Photos hang off the colour-level Style Attribute Variant, not off a size, so the unit a photo
+	belongs to is one colour of one product group — group_valid_rows' own key plus the colour."""
+	return f"{cstr(title).casefold()}::{cstr(color).casefold()}"
+
+
+def get_image_groups(parsed_rows):
+	"""One entry per colour of every product group that validated clean — what a photo can land on."""
+	groups = {}
+	for group in group_valid_rows(parsed_rows):
+		for row in group["rows"]:
+			key = get_image_group_key(group["title"], row["color"])
+			if key not in groups:
+				groups[key] = {
+					"key": key,
+					"title": group["title"],
+					"color": row["color"],
+					"slug": f"{slugify(group['title'])}-{slugify(row['color'])}",
+				}
+	return list(groups.values())
+
+
+def match_files_to_groups(groups, uploaded_files):
+	"""A file lands on the group whose slug its own name either equals or starts with, dash-separated,
+	so oversized-tee-black-1.jpg and oversized-tee-black.jpg both mean the same colour. The longest
+	matching slug wins, so "tee-black" never steals a photo belonging to "tee-black-ribbed"."""
+	groups_by_slug_length = sorted(groups, key=lambda group: len(group["slug"]), reverse=True)
+
+	matched = []
+	unmatched = []
+	for uploaded_file in uploaded_files:
+		file_slug = slugify(os.path.splitext(uploaded_file["file_name"])[0])
+		group = next(
+			(
+				group
+				for group in groups_by_slug_length
+				if group["slug"] and (file_slug == group["slug"] or file_slug.startswith(group["slug"] + "-"))
+			),
+			None,
+		)
+		if group:
+			matched.append(
+				{**uploaded_file, "key": group["key"], "title": group["title"], "color": group["color"]}
+			)
+		else:
+			unmatched.append(dict(uploaded_file))
+	return matched, unmatched
+
+
+def get_existing_file_urls(file_urls):
+	"""Which of these URLs still have a File record. Read in chunks — a single IN (...) of every
+	uploaded file falls apart once a merchant drags in a few thousand photos."""
+	unique_urls = list(dict.fromkeys(file_urls))
+	existing = set()
+	for start in range(0, len(unique_urls), 500):
+		existing.update(
+			frappe.get_all(
+				"File", filters={"file_url": ["in", unique_urls[start : start + 500]]}, pluck="file_url"
+			)
+		)
+	return existing
+
+
+def read_uploaded_image_files(image_files):
+	"""The browser has already uploaded these through Frappe's own upload endpoint, so each one must
+	still resolve to a File — the same guard Style Attribute Variant.add_images enforces, checked here
+	where a merchant can still re-upload rather than at the end of an import."""
+	entries = frappe.parse_json(image_files) or []
+	uploaded_files = []
+	for entry in entries:
+		if not isinstance(entry, dict):
+			frappe.throw(_("Each image must be sent as a file name and a file URL"))
+		url = cstr(entry.get("file_url")).strip()
+		if not url:
+			frappe.throw(_("An image was sent without a file URL"))
+		uploaded_files.append(
+			{"file_url": url, "file_name": cstr(entry.get("file_name")).strip() or url.rsplit("/", 1)[-1]}
+		)
+
+	existing_urls = get_existing_file_urls([uploaded_file["file_url"] for uploaded_file in uploaded_files])
+	missing = [
+		uploaded_file["file_name"]
+		for uploaded_file in uploaded_files
+		if uploaded_file["file_url"] not in existing_urls
+	]
+	if missing:
+		frappe.throw(
+			_("These images are not on the server any more — upload them again: {0}").format(
+				", ".join(missing)
+			)
+		)
+
+	return uploaded_files
+
+
+@frappe.whitelist(methods=["POST"])
+def match_import_images(
+	file_url: str, column_mapping: dict | str | None = None, image_files: list | str | None = None
+):
+	"""Which uploaded photo belongs to which product colour, by file name. Nothing is written."""
+	frappe.has_permission("Item", ptype="create", throw=True)
+	if isinstance(column_mapping, str):
+		column_mapping = frappe.parse_json(column_mapping)
+
+	uploaded_files = read_uploaded_image_files(image_files)
+	result = parse_and_validate(file_url, column_mapping)
+	groups = get_image_groups(result["rows"])
+	matched, unmatched = match_files_to_groups(groups, uploaded_files)
+
+	image_count_by_key = {}
+	for match in matched:
+		image_count_by_key[match["key"]] = image_count_by_key.get(match["key"], 0) + 1
+
+	groups = [{**group, "image_count": image_count_by_key.get(group["key"], 0)} for group in groups]
+
+	return {
+		"matched": matched,
+		"unmatched": unmatched,
+		"groups": groups,
+		"counts": {
+			"matched": len(matched),
+			"unmatched": len(unmatched),
+			"groups": len(groups),
+			"groups_without_photo": sum(1 for group in groups if not group["image_count"]),
+		},
+	}
+
+
+def attach_group_images(item_template, group, file_urls_by_key):
+	"""Hand one product's photos to the colour-level variants they were assigned to, and say how many
+	landed. Every write goes through Style Attribute Variant.add_images, which owns the child rows."""
+	file_urls_by_color = {}
+	for row in group["rows"]:
+		key = get_image_group_key(group["title"], row["color"])
+		if file_urls_by_key.get(key) and row["color"] not in file_urls_by_color:
+			file_urls_by_color[row["color"]] = file_urls_by_key[key]
+	if not file_urls_by_color:
+		return 0
+
+	configurator = frappe.db.get_value("Style Attribute Configurator", {"item_template": item_template})
+	variants = frappe.get_all(
+		"Style Attribute Variant", filters={"configurator": configurator}, fields=["name", "attribute_value"]
+	)
+	variant_by_option = {cstr(variant.attribute_value).casefold(): variant.name for variant in variants}
+
+	attached = 0
+	for color, file_urls in file_urls_by_color.items():
+		variant_name = variant_by_option.get(color.casefold())
+		if not variant_name:
+			frappe.throw(_("{0} has no {1} to put photos on").format(group["title"], color))
+		# ponytail: one get_doc per colour because add_images validates and saves the variant,
+		# revisit if a single import ever carries more colours than a page of variants.
+		frappe.get_doc("Style Attribute Variant", variant_name).add_images(file_urls)
+		attached += len(file_urls)
+	return attached
+
+
 def receive_group_stock(item_template, rows):
 	"""Opening stock for a just-created product, one grouped read plus one receipt per colour —
 	not one query per row regardless of how many size rows the file had for this product."""
@@ -298,17 +464,25 @@ def validate_import(file_url: str, column_mapping: dict | str | None = None):
 
 
 @frappe.whitelist(methods=["POST"])
-def run_import(file_url: str, column_mapping: dict | str | None = None):
+def run_import(
+	file_url: str, column_mapping: dict | str | None = None, image_assignments: dict | str | None = None
+):
 	"""Commits every product group that validated clean.
 
 	Rows are validated in full before anything is written, so a bad row's product is never
 	attempted at all. A group that still fails while being created (rare, since it already
 	validated) is rolled back to its own savepoint, so one unlucky product never leaves orphaned
 	Items behind and never blocks the rest of the file.
+
+	image_assignments is {group key: [file_url, ...]} — what match_import_images returned, plus
+	whatever the merchant reassigned by hand. Photos are attached after their product exists and
+	inside their own savepoint, so a photo that will not attach costs the merchant a message, never
+	the products.
 	"""
 	frappe.has_permission("Item", ptype="create", throw=True)
 	if isinstance(column_mapping, str):
 		column_mapping = frappe.parse_json(column_mapping)
+	file_urls_by_key = frappe.parse_json(image_assignments) or {}
 
 	if not frappe.db.exists("Item Attribute", OPTION_ATTRIBUTE):
 		frappe.throw(_('This store has no Item Attribute named "{0}" — create it first.').format(OPTION_ATTRIBUTE))
@@ -320,8 +494,13 @@ def run_import(file_url: str, column_mapping: dict | str | None = None):
 
 	created = []
 	creation_errors = []
+	image_errors = []
+	images_attached = 0
+	used_image_keys = set()
 	for group in groups:
-		savepoint = frappe.generate_hash(length=10)
+		# MariaDB refuses "rollback to savepoint 6e2e6705d9" — a savepoint is an identifier, and a
+		# generated hash starts with a digit often enough, so every name here is given a letter first.
+		savepoint = f"product_{frappe.generate_hash(length=10)}"
 		try:
 			frappe.db.savepoint(savepoint)
 			created_product = create_product(
@@ -341,6 +520,32 @@ def run_import(file_url: str, column_mapping: dict | str | None = None):
 				creation_errors.append({"row": row["row"], "message": message})
 		else:
 			created.append({"item_template": created_product["name"], "title": group["title"]})
+			used_image_keys.update(get_image_group_key(group["title"], row["color"]) for row in group["rows"])
+			image_savepoint = f"images_{frappe.generate_hash(length=10)}"
+			try:
+				frappe.db.savepoint(image_savepoint)
+				images_attached += attach_group_images(created_product["name"], group, file_urls_by_key)
+			except Exception as error:
+				frappe.db.rollback(save_point=image_savepoint)
+				message = str(error)
+				for row in group["rows"]:
+					image_errors.append({"row": row["row"], "message": message})
+
+	row_number_by_key = {}
+	for row in result["rows"]:
+		row_number_by_key.setdefault(get_image_group_key(row["title"], row["color"]), row["row"])
+
+	for key, file_urls in file_urls_by_key.items():
+		if key in used_image_keys or not file_urls:
+			continue
+		image_errors.append(
+			{
+				"row": row_number_by_key.get(key),
+				"message": _("No product was created for {0}, so its {1} photos were not attached").format(
+					key, len(file_urls)
+				),
+			}
+		)
 
 	# Rows that never made it into a group at all kept their own validation message from the dry run.
 	validation_errors = [
@@ -354,4 +559,6 @@ def run_import(file_url: str, column_mapping: dict | str | None = None):
 		"created_count": len(created),
 		"row_errors": validation_errors + creation_errors,
 		"counts": result["counts"],
+		"images_attached": images_attached,
+		"image_errors": image_errors,
 	}

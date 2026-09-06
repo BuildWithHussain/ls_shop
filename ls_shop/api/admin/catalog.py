@@ -16,6 +16,7 @@ from ls_shop.api.variant_pricing import (
 )
 
 PAGE_LENGTH = 20
+BULK_PRODUCT_LIMIT = 100
 
 
 @frappe.whitelist()
@@ -250,6 +251,47 @@ def get_size_stock(item_codes):
 	return {cstr(row.item_code): {"stock": flt(row.actual_qty), "committed": flt(row.reserved_qty)} for row in rows}
 
 
+def get_restock_level(item_codes):
+	"""The level a product is called low at: the highest safety_stock its sizes carry, or None when
+	none of them sets one, in which case inventory.get_inventory() falls back to LOW_STOCK_THRESHOLD."""
+	if not item_codes:
+		return None
+
+	rows = frappe.get_all("Item", filters={"name": ["in", item_codes]}, fields=["safety_stock"])
+	highest = max((cint(row.safety_stock) for row in rows), default=0)
+	return highest or None
+
+
+def get_product_chain(item_template: str | int):
+	"""One product's configurators, options and sellable size item codes, in three batched queries -
+	the same traversal get_product() walks, shared by the whole-product operations below."""
+	configurators = frappe.get_all(
+		"Style Attribute Configurator", filters={"item_template": item_template}, pluck="name"
+	)
+	variant_names = (
+		frappe.get_all(
+			"Style Attribute Variant", filters={"configurator": ["in", configurators]}, pluck="name"
+		)
+		if configurators
+		else []
+	)
+	sizes = (
+		frappe.get_all(
+			"Color Size Item",
+			filters={"parent": ["in", variant_names], "parenttype": "Style Attribute Variant"},
+			fields=["item_code"],
+		)
+		if variant_names
+		else []
+	)
+
+	return {
+		"configurators": configurators,
+		"variants": variant_names,
+		"item_codes": list({row.item_code for row in sizes if row.item_code}),
+	}
+
+
 @frappe.whitelist()
 def get_pricing_rows(
 	search: str | None = None,
@@ -405,6 +447,7 @@ def get_product(item_template: str):
 	item_codes = [row.item_code for row in sizes if row.item_code]
 	prices_by_item_code = get_size_prices(item_codes)
 	stock_by_item_code = get_size_stock(item_codes)
+	restock_level = get_restock_level(item_codes)
 
 	sizes_by_variant = {}
 	for row in sizes:
@@ -436,6 +479,7 @@ def get_product(item_template: str):
 		"description": template.description,
 		"disabled": bool(template.disabled),
 		"updated": template.modified,
+		"restock_level": restock_level,
 		"option_attribute": configurators[0].item_attribute if configurators else None,
 		"variants": [
 			{
@@ -725,6 +769,44 @@ def create_collection(title: str):
 	collection.insert()
 
 	return {"name": collection.name}
+
+
+@frappe.whitelist(methods=["POST"])
+def add_products_to_collection(item_templates: list | str, collection: str):
+	"""File a selection of products under one collection.
+
+	A collection is a leaf Item Group (see list_collections above), so a structural parent that
+	groups other collections is refused rather than silently accepted.
+	"""
+	frappe.has_permission("Item", ptype="write", throw=True)
+
+	item_templates = frappe.parse_json(item_templates)
+	if not isinstance(item_templates, list) or not item_templates:
+		frappe.throw(_("Select at least one product."))
+	if len(item_templates) > BULK_PRODUCT_LIMIT:
+		frappe.throw(_("Add at most {0} products to a collection at a time.").format(BULK_PRODUCT_LIMIT))
+
+	item_group = frappe.db.get_value(
+		"Item Group", cstr(collection).strip(), ["name", "lft", "rgt"], as_dict=True
+	)
+	if not item_group:
+		frappe.throw(_("Collection {0} does not exist.").format(collection))
+	if item_group.rgt != item_group.lft + 1:
+		frappe.throw(
+			_("{0} holds other collections, so products cannot be filed under it.").format(item_group.name)
+		)
+
+	updated = []
+	for item_template in item_templates:
+		# ponytail: one save per product so Item validation runs, move to a background job if a
+		# store ever needs to file more than BULK_PRODUCT_LIMIT products in one go
+		item = frappe.get_doc("Item", item_template)
+		item.check_permission("write")
+		item.item_group = item_group.name
+		item.save()
+		updated.append(item.name)
+
+	return {"updated": updated, "collection": item_group.name}
 
 
 @frappe.whitelist()
@@ -1164,6 +1246,68 @@ def update_product(item_template: str, title=None, collection=None, description=
 	item.save()
 
 	return {"name": item.name}
+
+
+@frappe.whitelist(methods=["POST"])
+def delete_product(item_template: str | int):
+	"""Remove a product that was never ordered, options and sellable sizes included.
+
+	A product that has ever appeared on an order line stays: its history would lose the item it
+	refers to. Archiving (update_product with disabled=1) is the answer there, so the refusal says so.
+	"""
+	frappe.has_permission("Item", doc=item_template, ptype="delete", throw=True)
+
+	title = frappe.db.get_value("Item", item_template, "item_name")
+	if title is None:
+		frappe.throw(_("Product {0} not found").format(item_template))
+
+	chain = get_product_chain(item_template)
+	# A cancelled order still carries its lines, so docstatus is deliberately not filtered on.
+	ordered = frappe.get_all(
+		"Sales Order Item",
+		filters={"item_code": ["in", [item_template, *chain["item_codes"]]]},
+		limit=1,
+	)
+	if ordered:
+		frappe.throw(
+			_("{0} has been ordered before, so it cannot be deleted. Archive it instead.").format(title)
+		)
+
+	# Options first, then their configurators, then the sellable items, then the product itself -
+	# each link is deleted before the row it points at. ERPNext refuses an item that still has a
+	# stock ledger or other links, and that error is left to surface.
+	for variant_name in chain["variants"]:
+		frappe.delete_doc("Style Attribute Variant", variant_name)
+	for configurator in chain["configurators"]:
+		frappe.delete_doc("Style Attribute Configurator", configurator)
+	for item_code in chain["item_codes"]:
+		frappe.delete_doc("Item", item_code)
+	frappe.delete_doc("Item", item_template)
+
+	return {"deleted": item_template}
+
+
+@frappe.whitelist(methods=["POST"])
+def set_restock_level(item_template: str | int, level):
+	"""The stock level this product should start reading as low at.
+
+	Written to Item.safety_stock on every size, which get_inventory() reads per row instead of its
+	store-wide default. Deliberately not ERPNext's reorder/auto_indent - nothing here raises a
+	purchase, it only changes when the dashboard calls a size low.
+	"""
+	frappe.has_permission("Item", doc=item_template, ptype="write", throw=True)
+
+	level = cint(level)
+	if level < 0:
+		frappe.throw(_("A restock level cannot be negative."))
+
+	item_codes = get_product_chain(item_template)["item_codes"]
+	if not item_codes:
+		frappe.throw(_("This product has no sizes to watch yet."))
+
+	frappe.db.set_value("Item", {"name": ["in", item_codes]}, "safety_stock", level)
+
+	return {"item_codes": item_codes, "level": level}
 
 
 @frappe.whitelist(methods=["POST"])

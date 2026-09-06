@@ -2,7 +2,10 @@
 # For license information, please see license.txt
 
 import frappe
-from frappe.utils.data import cint, cstr, flt
+from frappe.contacts.doctype.address.address import get_address_display, get_default_address
+from frappe.utils.data import cint, cstr, flt, getdate
+
+from ls_shop.api.admin.orders import get_address_lines
 
 SETTINGS_DOCTYPE = "Lifestyle Settings"
 BRANDING_DOCTYPE = "Website Settings"
@@ -287,6 +290,74 @@ def get_link_options(doctype: str, search_text: str | None = None):
 	# down is reachable by typing; paginate if a doctype outgrows even a searched list
 	records = frappe.get_all(doctype, filters=filters, pluck="name", order_by="name asc", limit=100)
 	return [{"label": name, "value": name} for name in records]
+
+
+def read_company_address(company: str) -> str | None:
+	"""The company's default address as plain text. get_address_display renders the address template,
+	which is HTML, so it goes through the dashboard's own <br>-to-newline pass."""
+	address = get_default_address("Company", company)
+	return get_address_lines(get_address_display(address)) if address else None
+
+
+def read_fiscal_year(company: str) -> str | None:
+	"""The fiscal year today falls in. A site can be missing one entirely, hence raise_on_missing."""
+	from erpnext.accounts.utils import get_fiscal_year
+
+	fiscal_year = get_fiscal_year(getdate(), company=company, raise_on_missing=False)
+	return fiscal_year[0] if fiscal_year else None
+
+
+@frappe.whitelist()
+def get_company_profile():
+	"""The store's real accounting identity, read-only — edited in Desk, never here. None on a
+	half-configured site so the settings dialog still opens."""
+	frappe.has_permission(SETTINGS_DOCTYPE, ptype="read", throw=True)
+
+	company = frappe.get_cached_value(SETTINGS_DOCTYPE, SETTINGS_DOCTYPE, "company")
+	if not company:
+		return None
+
+	details = frappe.get_cached_value(
+		"Company", company, ["name", "abbr", "default_currency", "country", "tax_id"], as_dict=True
+	)
+	if not details:
+		return None
+
+	return {
+		"name": details.name,
+		"abbr": details.abbr,
+		"currency": details.default_currency,
+		"country": details.country,
+		"tax_id": details.tax_id,
+		"fiscal_year": read_fiscal_year(company),
+		"address": read_company_address(company),
+	}
+
+
+@frappe.whitelist()
+def get_locations():
+	"""The warehouse the storefront sells out of. This shop is single-warehouse, so the list is one
+	entry or none — it is a list only because the screen renders it as one."""
+	frappe.has_permission(SETTINGS_DOCTYPE, ptype="read", throw=True)
+
+	warehouse = frappe.get_cached_value(SETTINGS_DOCTYPE, SETTINGS_DOCTYPE, "ecommerce_warehouse")
+	if not warehouse:
+		return []
+
+	details = frappe.get_cached_value(
+		"Warehouse", warehouse, ["name", "warehouse_name", "company", "disabled"], as_dict=True
+	)
+	if not details:
+		return []
+
+	return [
+		{
+			"name": details.name,
+			"warehouse_name": details.warehouse_name,
+			"company": details.company,
+			"disabled": cint(details.disabled),
+		}
+	]
 
 
 PROFILE_FIELDS = ("first_name", "last_name", "user_image")

@@ -5,7 +5,7 @@ import re
 
 import frappe
 from frappe import _
-from frappe.query_builder import Case
+from frappe.query_builder import Case, Order
 from frappe.query_builder.functions import Count, Max, Sum
 from frappe.utils.data import add_days, cint, cstr, flt, formatdate, getdate, strip_html
 
@@ -161,21 +161,28 @@ def get_orders(
 
 	return {
 		"orders": [
-			{
-				"name": row.name,
-				"customer": row.customer_name or row.customer,
-				"placed_on": row.transaction_date,
-				"status": row.status,
-				"state": describe_state(row, lifecycles.get(cstr(row.name))),
-				"payment_state": describe_payment_state(row, paid_orders),
-				"total": flt(row.grand_total),
-				"currency": row.currency,
-				"item_count": item_counts.get(row.name, 0),
-				"payment_mode": row.custom_ecommerce_payment_mode,
-			}
+			build_order_row(row, lifecycles.get(cstr(row.name)), paid_orders, item_counts.get(row.name, 0))
 			for row in orders
 		],
 		"total": total,
+	}
+
+
+def build_order_row(order, lifecycle, paid_orders: set, item_count: float) -> dict:
+	"""One row of the Orders list."""
+	lifecycle = lifecycle or frappe._dict()
+	return {
+		"name": order.name,
+		"customer": order.customer_name or order.customer,
+		"placed_on": order.transaction_date,
+		"status": order.status,
+		"state": describe_state(order, lifecycle),
+		"payment_state": describe_payment_state(order, paid_orders),
+		"total": flt(order.grand_total),
+		"currency": order.currency,
+		"item_count": item_count,
+		"payment_mode": order.custom_ecommerce_payment_mode,
+		"deliveries": lifecycle.get("printable_delivery_notes") or [],
 	}
 
 
@@ -201,12 +208,9 @@ def get_closed_order_filters() -> list:
 	return [["name", "not in", still_open]]
 
 
-def build_paid_orders_query(order_names: list | None = None):
-	"""Sales Orders with at least one submitted, captured payment (a 'Receive' Payment Entry) — the
-	only unambiguous 'paid' signal this data model carries. Refund nuance (paid vs refunded vs
-	partly refunded) is resolved separately, per order, on the order detail screen — see
-	describe_payment. `order_names=None` scopes across every order, for the "unpaid" tab filter;
-	passing a page's worth of names scopes it to a single batched read instead.
+def build_order_invoices_query():
+	"""Submitted Sales Invoices joined to the Sales Order they were raised against, with nothing
+	selected yet — the one way this file gets from an order to its invoice.
 
 	A payment's Payment Entry Reference points at the Sales Invoice raised for the order, never at
 	the order itself — ls_shop's own checkout (payments.create_sales_invoice) always books payment
@@ -215,12 +219,42 @@ def build_paid_orders_query(order_names: list | None = None):
 	ERPNext's own make_sales_invoice mapper stamps on every line — to get from order to invoice."""
 	sales_invoice_item = frappe.qb.DocType("Sales Invoice Item")
 	sales_invoice = frappe.qb.DocType("Sales Invoice")
-	payment_entry_reference = frappe.qb.DocType("Payment Entry Reference")
-	payment_entry = frappe.qb.DocType("Payment Entry")
-	query = (
+	return (
 		frappe.qb.from_(sales_invoice_item)
 		.join(sales_invoice)
 		.on(sales_invoice_item.parent == sales_invoice.name)
+		.where(sales_invoice.docstatus == 1)
+	)
+
+
+def read_order_invoices(order_name: str | int) -> list:
+	"""The submitted Sales Invoices raised against one order, newest first — the documents the order
+	screen prints an invoice from. `creation` is selected as well as ordered on because Postgres
+	rejects a SELECT DISTINCT ordered by a column it does not carry."""
+	sales_invoice_item = frappe.qb.DocType("Sales Invoice Item")
+	sales_invoice = frappe.qb.DocType("Sales Invoice")
+	rows = (
+		build_order_invoices_query()
+		.select(sales_invoice.name, sales_invoice.creation)
+		.distinct()
+		.where(sales_invoice_item.sales_order == order_name)
+		.orderby(sales_invoice.creation, order=Order.desc)
+	).run(as_dict=True)
+	return [cstr(row.name) for row in rows]
+
+
+def build_paid_orders_query(order_names: list | None = None):
+	"""Sales Orders with at least one submitted, captured payment (a 'Receive' Payment Entry) — the
+	only unambiguous 'paid' signal this data model carries. Refund nuance (paid vs refunded vs
+	partly refunded) is resolved separately, per order, on the order detail screen — see
+	describe_payment. `order_names=None` scopes across every order, for the "unpaid" tab filter;
+	passing a page's worth of names scopes it to a single batched read instead."""
+	sales_invoice_item = frappe.qb.DocType("Sales Invoice Item")
+	sales_invoice = frappe.qb.DocType("Sales Invoice")
+	payment_entry_reference = frappe.qb.DocType("Payment Entry Reference")
+	payment_entry = frappe.qb.DocType("Payment Entry")
+	query = (
+		build_order_invoices_query()
 		.join(payment_entry_reference)
 		.on(
 			(payment_entry_reference.reference_doctype == "Sales Invoice")
@@ -230,7 +264,6 @@ def build_paid_orders_query(order_names: list | None = None):
 		.on(payment_entry_reference.parent == payment_entry.name)
 		.select(sales_invoice_item.sales_order.as_("order_name"))
 		.distinct()
-		.where(sales_invoice.docstatus == 1)
 		.where(payment_entry.docstatus == 1)
 		.where(payment_entry.payment_type == "Receive")
 	)
@@ -460,13 +493,22 @@ def keep_latest(lifecycle, field: str, value) -> None:
 		lifecycle[field] = value
 
 
+def new_lifecycle():
+	"""An order's blank lifecycle, so every reader can append to the lists without a guard."""
+	return frappe._dict(delivery_notes=[], printable_delivery_notes=[])
+
+
 def read_order_lifecycles(order_names: list) -> dict:
 	"""The fulfilment paperwork behind a page of orders, in a fixed number of queries. Keyed by
-	`cstr(name)`: an autoincrement-named Sales Order is an int here and a string from the request."""
+	`cstr(name)`: an autoincrement-named Sales Order is an int here and a string from the request.
+
+	Two delivery note lists, deliberately: `delivery_notes` is submitted notes only and is what the
+	fulfilment ladder is derived from, while `printable_delivery_notes` also carries the drafts —
+	a draft note is exactly what a merchant prints a packing slip from."""
 	if not order_names:
 		return {}
 
-	lifecycles = {cstr(name): frappe._dict(delivery_notes=[]) for name in order_names}
+	lifecycles = {cstr(name): new_lifecycle() for name in order_names}
 
 	delivery_note_links = frappe.get_all(
 		"Delivery Note Item",
@@ -485,7 +527,8 @@ def read_order_lifecycles(order_names: list) -> dict:
 			fields=["name", "docstatus", "is_return", "creation", "posting_date"],
 		):
 			for order_name in orders_by_delivery_note.get(cstr(note.name), ()):
-				lifecycle = lifecycles.setdefault(order_name, frappe._dict(delivery_notes=[]))
+				lifecycle = lifecycles.setdefault(order_name, new_lifecycle())
+				lifecycle.printable_delivery_notes.append(cstr(note.name))
 				if cint(note.docstatus) == 1:
 					lifecycle.delivery_notes.append(cstr(note.name))
 					if cint(note.is_return):
@@ -511,6 +554,7 @@ def read_order_lifecycles(order_names: list) -> dict:
 
 	for lifecycle in lifecycles.values():
 		lifecycle.delivery_notes = sorted(set(lifecycle.delivery_notes))
+		lifecycle.printable_delivery_notes = sorted(set(lifecycle.printable_delivery_notes))
 	return lifecycles
 
 
@@ -680,7 +724,8 @@ def get_order(sales_order: str):
 			}
 			for row in items
 		],
-		"deliveries": lifecycle.get("delivery_notes") or [],
+		"deliveries": lifecycle.get("printable_delivery_notes") or [],
+		"invoices": read_order_invoices(order.name),
 	}
 
 

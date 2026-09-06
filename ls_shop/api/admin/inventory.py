@@ -48,6 +48,14 @@ def get_inventory(
 	# get_size_stock (catalog.py) already reads Bin actual_qty + reserved_qty in one batched
 	# query - reused rather than re-querying Bin a second way for the same numbers.
 	stock_by_item_code = get_size_stock(item_codes)
+	# Item.safety_stock is the per-product level set from the product screen (catalog.set_restock_level);
+	# where a size carries one it decides what "Low" means for that row instead of the store default.
+	low_level_by_item_code = {
+		cstr(row.name): cint(row.safety_stock)
+		for row in frappe.get_all(
+			"Item", filters={"name": ["in", item_codes]}, fields=["name", "safety_stock"]
+		)
+	}
 
 	# A dashboard-created variant never sets an Item.image, so the row falls back to its first
 	# option photo - same source and batching catalog.get_products uses for the same reason.
@@ -71,6 +79,8 @@ def get_inventory(
 
 		stock = stock_by_item_code.get(cstr(size.item_code), {})
 		quantity = stock.get("stock", 0)
+		stored_level = low_level_by_item_code.get(cstr(size.item_code), 0)
+		low_level = stored_level if stored_level > 0 else LOW_STOCK_THRESHOLD
 		rows.append(
 			{
 				"item_code": size.item_code,
@@ -83,7 +93,8 @@ def get_inventory(
 				"stock": quantity,
 				"committed": stock.get("committed", 0),
 				"is_published": bool(variant.is_published),
-				"availability": describe_availability(quantity),
+				"low_stock_level": low_level,
+				"availability": describe_availability(quantity, low_level),
 			}
 		)
 
@@ -110,10 +121,10 @@ def get_inventory(
 	}
 
 
-def describe_availability(quantity):
+def describe_availability(quantity, low_level: int = LOW_STOCK_THRESHOLD):
 	if quantity <= 0:
 		return "Out of stock"
-	if quantity <= LOW_STOCK_THRESHOLD:
+	if quantity <= low_level:
 		return "Low"
 	return "In stock"
 
