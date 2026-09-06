@@ -5,6 +5,7 @@ import { List, ListCell, ListHeader, ListHeaderCell, ListHeaderCellSort, ListRow
 import AppPageHeader from '../components/AppPageHeader.vue'
 import PageBody from '../components/PageBody.vue'
 import ListPagination from '../components/ListPagination.vue'
+import ResponsiveButton from '../components/ResponsiveButton.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import Thumb from '../components/Thumb.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -117,8 +118,7 @@ async function archiveSelected() {
 <template>
   <AppPageHeader title="Products">
     <template #actions>
-      <Button class="hidden sm:inline-flex" label="Import" icon-left="lucide-upload" @click="openImport" />
-      <Button class="sm:hidden" label="Import" icon="lucide-upload" @click="openImport" />
+      <ResponsiveButton label="Import" icon="lucide-upload" @click="openImport" />
       <Button label="Add product" icon-left="lucide-plus" variant="solid" theme="gray" @click="openAddProduct" />
     </template>
   </AppPageHeader>

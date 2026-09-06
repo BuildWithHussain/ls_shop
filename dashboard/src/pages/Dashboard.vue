@@ -140,6 +140,10 @@ const revenueByMonth = computed(() => revenueRequest.data?.months ?? [])
         <Button variant="ghost" label="View all" icon-right="lucide-arrow-right" route="/orders" />
       </div>
       <div class="overflow-x-auto px-2 pb-2">
+        <!-- Four of the five tracks are fixed at 31rem between them, so the
+             floor is not about the table's own width: below 44rem the only
+             flexible track, the customer name, is starved to a few characters.
+             The wrapper scrolls horizontally instead. -->
         <List
           class="min-w-[44rem]"
           :columns="['9rem', 'minmax(0,1fr)', '9rem', '7rem', '6rem']"

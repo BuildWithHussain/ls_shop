@@ -11,6 +11,7 @@
     "test:e2e": "node tests/e2e/check-build.js && node --test --test-concurrency=1 tests/e2e/*.spec.js"
   },
   "dependencies": {
+    "@vueuse/core": "^14.4.0",
     "frappe-ui": "^1.0.0-beta.55",
     "vue": "^3.5.15",
     "vue-router": "^4.4.5"

@@ -14,7 +14,9 @@ const state = (i) => (i < imp.step ? 'done' : i === imp.step ? 'current' : 'todo
 
 <template>
   <div class="space-y-2">
-    <div class="flex items-baseline gap-2">
+    <!-- Not items-baseline: the label and hint truncate, and a scroll container
+         synthesizes its baseline from the border box instead of its text. -->
+    <div class="flex items-center gap-2">
       <span class="min-w-0 truncate text-base-semibold text-ink-gray-8">{{ STEPS[imp.step].label }}</span>
       <span class="hidden min-w-0 truncate text-sm text-ink-gray-5 sm:inline">{{ STEPS[imp.step].hint }}</span>
       <span class="ml-auto shrink-0 text-sm text-ink-gray-5 tabular-nums">

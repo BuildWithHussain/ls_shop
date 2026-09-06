@@ -5,6 +5,7 @@ import { List, ListCell, ListHeader, ListHeaderCell, ListRow, ListRows } from 'f
 import AppPageHeader from '../components/AppPageHeader.vue'
 import PageBody from '../components/PageBody.vue'
 import Thumb from '../components/Thumb.vue'
+import ResponsiveButton from '../components/ResponsiveButton.vue'
 import EmptyState from '../components/EmptyState.vue'
 import BulkBar from '../components/BulkBar.vue'
 import { useAdminRead, useAdminAction } from '../data/api'
@@ -73,15 +74,8 @@ function adjust() {
 <template>
   <AppPageHeader title="Stock">
     <template #actions>
-      <!-- A real destination, so it stays reachable on a phone — as its icon alone,
-           which frappe-ui gives the label as its accessible name. -->
-      <Button
-        class="hidden sm:inline-flex"
-        label="Adjustments"
-        icon-left="lucide-history"
-        route="/inventory/adjustments"
-      />
-      <Button class="sm:hidden" label="Adjustments" icon="lucide-history" route="/inventory/adjustments" />
+      <!-- A real destination, so it stays reachable on a phone rather than dropping out. -->
+      <ResponsiveButton label="Adjustments" icon="lucide-history" route="/inventory/adjustments" />
       <Button
         label="Receive stock"
         icon-left="lucide-plus"

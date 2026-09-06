@@ -5,7 +5,8 @@
  * behind the screen you are on.
  */
 import { computed } from 'vue'
-import { Button, Select } from 'frappe-ui'
+import { Select } from 'frappe-ui'
+import ResponsiveButton from './ResponsiveButton.vue'
 
 const props = defineProps({
   page: { type: Number, required: true },
@@ -32,6 +33,7 @@ function setSize(size) {
     <div class="ml-auto flex items-center gap-2">
       <Select
         :model-value="String(pageSize)"
+        aria-label="Rows per page"
         size="sm"
         class="w-32"
         :options="[
@@ -41,31 +43,16 @@ function setSize(size) {
         ]"
         @update:model-value="setSize"
       />
-      <Button
-        class="hidden sm:inline-flex"
-        icon-left="lucide-chevron-left"
+      <ResponsiveButton
         label="Previous"
-        :disabled="page <= 1"
-        @click="emit('update:page', page - 1)"
-      />
-      <Button
-        class="sm:hidden"
         icon="lucide-chevron-left"
-        label="Previous"
         :disabled="page <= 1"
         @click="emit('update:page', page - 1)"
       />
-      <Button
-        class="hidden sm:inline-flex"
-        icon-right="lucide-chevron-right"
+      <ResponsiveButton
         label="Next"
-        :disabled="page >= pageCount"
-        @click="emit('update:page', page + 1)"
-      />
-      <Button
-        class="sm:hidden"
         icon="lucide-chevron-right"
-        label="Next"
+        icon-position="right"
         :disabled="page >= pageCount"
         @click="emit('update:page', page + 1)"
       />

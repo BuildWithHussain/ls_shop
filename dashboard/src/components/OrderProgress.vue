@@ -58,16 +58,20 @@ const reached = (step) => Boolean(step) && REACHED.includes(step.tone)
 <template>
   <div class="rounded-5 border border-outline-gray-1 px-5 py-4">
     <!-- Six steps across a 375px screen leave ~55px each, which truncates every
-         label to nonsense. Below sm they wrap to two rows of three; the connectors
-         go with them, since a rail that runs off the end of a row reads as broken. -->
-    <ol class="mx-auto flex max-w-2xl flex-wrap items-start gap-y-4 sm:flex-nowrap sm:gap-y-0">
+         label to nonsense. Below sm they wrap to rows of three; the connectors
+         go with them, since a rail that runs off the end of a row reads as broken.
+         describe_progress returns 2 to 7 steps, so the last row is often short —
+         centred, that reads as deliberate rather than as a row that ran out. -->
+    <ol class="mx-auto flex max-w-2xl flex-wrap items-start justify-center gap-y-4 sm:flex-nowrap sm:gap-y-0">
       <li
         v-for="(step, index) in steps"
         :key="step.key"
         class="flex min-w-0 basis-1/3 flex-col items-center text-center sm:flex-1 sm:basis-0"
       >
-        <!-- The connectors carry the reading: filled up to where the order got. -->
-        <div class="flex w-full items-center">
+        <!-- The connectors carry the reading: filled up to where the order got.
+             Below sm they are display:none, leaving the dot as the row's only child —
+             so the row has to centre it to keep it over its own label. -->
+        <div class="flex w-full items-center justify-center sm:justify-start">
           <span
             class="hidden h-px flex-1 sm:block"
             :class="index === 0 ? 'bg-transparent' : reached(step) ? 'bg-surface-gray-5' : 'bg-surface-gray-3'"
@@ -89,7 +93,7 @@ const reached = (step) => Boolean(step) && REACHED.includes(step.tone)
           />
         </div>
 
-        <!-- Six steps never leave room for "Confirmation pending" on one line, at
+        <!-- A column never leaves room for "Confirmation pending" on one line, at
              any width — wrapping reads better than an ellipsis that hides the word
              carrying the meaning. -->
         <p class="mt-2 max-w-full text-balance text-base" :class="LABEL[step.tone]">{{ step.label }}</p>

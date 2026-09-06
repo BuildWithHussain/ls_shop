@@ -52,6 +52,7 @@ declare module 'vue' {
     RefundDialog: typeof import('./src/components/RefundDialog.vue')['default']
     ReportHeader: typeof import('./src/components/ReportHeader.vue')['default']
     ReportStats: typeof import('./src/components/ReportStats.vue')['default']
+    ResponsiveButton: typeof import('./src/components/ResponsiveButton.vue')['default']
     ReviewStep: typeof import('./src/components/import/steps/ReviewStep.vue')['default']
     RichTextField: typeof import('./src/components/RichTextField.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

@@ -6,6 +6,7 @@
  */
 import { Button, Dropdown } from 'frappe-ui'
 import AppPageHeader from './AppPageHeader.vue'
+import ResponsiveButton from './ResponsiveButton.vue'
 
 defineProps({
   title: { type: String, required: true },
@@ -30,17 +31,9 @@ const RANGES = ['Last 7 days', 'Last 30 days', 'Last 12 months', 'All time']
       </Dropdown>
       <!-- Three labelled actions plus the range starve the title on a phone, so
            Compare drops to its icon and the still-unwired Export drops out. -->
-      <Button
-        class="hidden sm:inline-flex"
-        icon-left="lucide-git-compare"
+      <ResponsiveButton
         label="Compare"
-        :variant="compare ? 'subtle' : 'ghost'"
-        @click="emit('update:compare', !compare)"
-      />
-      <Button
-        class="sm:hidden"
         icon="lucide-git-compare"
-        label="Compare"
         :variant="compare ? 'subtle' : 'ghost'"
         @click="emit('update:compare', !compare)"
       />

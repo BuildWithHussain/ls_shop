@@ -29,16 +29,16 @@ watch(
   () => props.variant,
   (variant) => {
     if (!variant) return
-    const first = variant.sizes[0]
+    const first = variant.sizes?.[0]
     compareAt.value = first?.default_rate ?? null
     price.value = first?.sale_rate ?? first?.default_rate ?? 0
   },
   { immediate: true },
 )
 
-const onHand = computed(() => props.variant?.sizes.reduce((sum, size) => sum + (size.stock ?? 0), 0) ?? 0)
-const committed = computed(() => props.variant?.sizes.reduce((sum, size) => sum + (size.committed ?? 0), 0) ?? 0)
-const skuList = computed(() => props.variant?.sizes.map((size) => size.item_code).join(', ') ?? '')
+const onHand = computed(() => props.variant?.sizes?.reduce((sum, size) => sum + (size.stock ?? 0), 0) ?? 0)
+const committed = computed(() => props.variant?.sizes?.reduce((sum, size) => sum + (size.committed ?? 0), 0) ?? 0)
+const skuList = computed(() => props.variant?.sizes?.map((size) => size.item_code).join(', ') ?? '')
 
 const priceAction = useAdminAction('catalog.set_variant_price')
 

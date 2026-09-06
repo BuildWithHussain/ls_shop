@@ -11,10 +11,8 @@ import Thumb from '../components/Thumb.vue'
 import { useAdminRead, useAdminAction } from '../data/api'
 import { erpnextLink } from '../data/erpnext'
 import { longDate, money } from '../data/format'
-import { useIsMobile } from '../utils/useIsMobile'
 
 const route = useRoute()
-const isMobileViewport = useIsMobile()
 
 const orderRequest = useAdminRead('orders.get_order', {
   params: () => ({ sales_order: route.params.id }),
@@ -31,7 +29,19 @@ const erpLink = computed(() => (order.value ? erpnextLink('Sales Order', order.v
 
 // Refund and admin-initiated cancel have no wired backend — see
 // docs/commera-open-questions.md, "Order Detail — Refund and Cancel order".
+//
+// "View in ERP" is here unconditionally rather than only below `sm`: the
+// labelled button hides at `sm` (min-width: 640px) but a viewport-reactive
+// menu would have to match that boundary exactly, and a fractional width in
+// (639.98, 640) — reachable under browser zoom — would hide both copies and
+// leave the action unreachable. The menu is the one route that always works;
+// the labelled button is a desktop convenience on top of it.
 const moreActions = [
+  {
+    label: 'View in ERP',
+    icon: 'lucide-external-link',
+    onClick: () => window.open(erpLink.value, '_blank', 'noopener'),
+  },
   { label: 'Duplicate', icon: 'lucide-copy', onClick: () => toast.info('Duplicate is coming soon') },
   { label: 'Print invoice', icon: 'lucide-printer', onClick: () => toast.info('Printing is coming soon') },
   {
@@ -45,21 +55,6 @@ const moreActions = [
     onClick: () => toast.info('Cancelling from the dashboard isn\'t available yet'),
   },
 ]
-
-// On a phone the header only has room for the fulfil button and this menu, so
-// the actions hidden there are prepended rather than dropped.
-const mobileMoreActions = computed(() =>
-  isMobileViewport.value
-    ? [
-        {
-          label: 'View in ERP',
-          icon: 'lucide-external-link',
-          onClick: () => window.open(erpLink.value, '_blank', 'noopener'),
-        },
-        ...moreActions,
-      ]
-    : moreActions,
-)
 
 const fulfilAction = useAdminAction('orders.fulfil_order')
 
@@ -80,9 +75,9 @@ async function fulfil() {
     >
       <template #actions>
         <!-- Three full label+icon buttons do not fit a phone header, so this one
-             folds into the More menu that is already here. -->
+             drops out below `sm` and the More menu's own entry carries it. -->
         <Button class="hidden sm:inline-flex" label="View in ERP" icon-right="lucide-external-link" :link="erpLink" />
-        <Dropdown :options="mobileMoreActions">
+        <Dropdown :options="moreActions">
           <Button icon="lucide-ellipsis" label="More actions" />
         </Dropdown>
         <Button

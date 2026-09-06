@@ -121,9 +121,18 @@ function bulkSetCompareAt() {
   >
     <template #actions>
       <!-- No price-rule engine and no export endpoint exist in ls_shop — left exactly as
-           unwired as the prototype had them, just made honestly inert. -->
+           unwired as the prototype had them, just made honestly inert. Both drop out below
+           sm: a phone header showing nothing but a dead control reads as a broken page,
+           where an empty header simply reads as a screen without actions. -->
       <Button class="hidden sm:inline-flex" label="Price rules" icon-left="lucide-percent" disabled />
-      <Button label="Export prices" icon-left="lucide-download" variant="solid" theme="gray" disabled />
+      <Button
+        class="hidden sm:inline-flex"
+        label="Export prices"
+        icon-left="lucide-download"
+        variant="solid"
+        theme="gray"
+        disabled
+      />
     </template>
   </AppPageHeader>
 

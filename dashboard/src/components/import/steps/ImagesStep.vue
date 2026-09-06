@@ -72,9 +72,11 @@ const perDone = computed(() => perProduct.value.filter((p) => p.uploaded).length
           Products sell far better with a photo. You can also skip this and add them later.
         </p>
       </div>
+      <!-- The three tabs are 321px of unbreakable content, wider than the dialog body
+           on a phone. Scroll the strip in place rather than letting it push the body. -->
       <TabButtons
         v-model="imp.imagesMode"
-        class="shrink-0"
+        class="max-w-full overflow-x-auto sm:shrink-0 sm:overflow-visible"
         :options="[
           { label: 'Drop a folder', value: 'bulk' },
           { label: 'From a URL column', value: 'url' },
