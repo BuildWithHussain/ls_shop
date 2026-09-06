@@ -42,13 +42,29 @@ function setSize(size) {
         @update:model-value="setSize"
       />
       <Button
+        class="hidden sm:inline-flex"
         icon-left="lucide-chevron-left"
         label="Previous"
         :disabled="page <= 1"
         @click="emit('update:page', page - 1)"
       />
       <Button
+        class="sm:hidden"
+        icon="lucide-chevron-left"
+        label="Previous"
+        :disabled="page <= 1"
+        @click="emit('update:page', page - 1)"
+      />
+      <Button
+        class="hidden sm:inline-flex"
         icon-right="lucide-chevron-right"
+        label="Next"
+        :disabled="page >= pageCount"
+        @click="emit('update:page', page + 1)"
+      />
+      <Button
+        class="sm:hidden"
+        icon="lucide-chevron-right"
         label="Next"
         :disabled="page >= pageCount"
         @click="emit('update:page', page + 1)"

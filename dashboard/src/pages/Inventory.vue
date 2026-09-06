@@ -35,6 +35,10 @@ const inventoryRequest = useAdminRead('inventory.get_inventory', {
 
 const rows = computed(() => inventoryRequest.data?.rows ?? [])
 
+function availableStock(item) {
+  return item.stock - item.committed
+}
+
 const receiveAction = useAdminAction('inventory.receive_stock')
 
 // ls_shop only exposes receiving stock in (Style Attribute Variant.receive_stock, additive) —
@@ -132,15 +136,26 @@ function adjust() {
               <Thumb :image="item.image" size="size-7" />
               <div class="min-w-0">
                 <p class="truncate text-base text-ink-gray-8">{{ item.product }}</p>
-                <p class="truncate text-sm text-ink-gray-5">{{ item.option }} · {{ item.size }}</p>
+                <!-- The Available column sits off-screen in the horizontal scroller on a phone,
+                     so the number this page exists for rides along on the variant line. It stays
+                     on this line rather than a third one because --list-row-height is fixed. -->
+                <p class="flex min-w-0 items-center text-sm text-ink-gray-5">
+                  <span class="truncate">{{ item.option }} · {{ item.size }}</span>
+                  <span
+                    class="shrink-0 tabular-nums sm:hidden"
+                    :class="stockTone(availableStock(item))"
+                  >
+                    &nbsp;· {{ availableStock(item) }} available
+                  </span>
+                </p>
               </div>
             </div>
           </ListCell>
           <ListCell><span class="truncate text-base text-ink-gray-5">{{ item.item_code }}</span></ListCell>
           <ListCell><span class="text-base text-ink-gray-5 tabular-nums">{{ item.committed }}</span></ListCell>
           <ListCell>
-            <span class="text-base tabular-nums" :class="stockTone(item.stock - item.committed)">
-              {{ item.stock - item.committed }}
+            <span class="text-base tabular-nums" :class="stockTone(availableStock(item))">
+              {{ availableStock(item) }}
             </span>
           </ListCell>
           <ListCell>

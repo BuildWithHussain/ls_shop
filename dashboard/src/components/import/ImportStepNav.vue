@@ -15,8 +15,8 @@ const state = (i) => (i < imp.step ? 'done' : i === imp.step ? 'current' : 'todo
 <template>
   <div class="space-y-2">
     <div class="flex items-baseline gap-2">
-      <span class="text-base-semibold text-ink-gray-8">{{ STEPS[imp.step].label }}</span>
-      <span class="text-sm text-ink-gray-5">{{ STEPS[imp.step].hint }}</span>
+      <span class="min-w-0 truncate text-base-semibold text-ink-gray-8">{{ STEPS[imp.step].label }}</span>
+      <span class="hidden min-w-0 truncate text-sm text-ink-gray-5 sm:inline">{{ STEPS[imp.step].hint }}</span>
       <span class="ml-auto shrink-0 text-sm text-ink-gray-5 tabular-nums">
         Step {{ imp.step + 1 }} of {{ STEPS.length }}
       </span>

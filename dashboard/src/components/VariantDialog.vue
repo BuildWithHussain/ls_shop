@@ -98,19 +98,23 @@ async function save() {
           <FormControl model-value="" label="Barcode" disabled />
         </div>
       </section>
+    </div>
 
-      <div class="flex items-center gap-2 pt-2">
+    <!-- Slot omitted entirely while there is no variant, so the dialog does not
+         render an empty action band over an empty body. -->
+    <template v-if="variant" #actions>
+      <div class="flex w-full items-center justify-between gap-2">
         <Button
           label="Open full page"
           icon-left="lucide-external-link"
           :route="`/products/${product.id}/variants/${encodeURIComponent(variant.name)}`"
         />
-        <div class="ml-auto flex gap-2">
+        <div class="flex gap-2">
           <Button label="Cancel" @click="open = false" />
           <Button label="Save variant" variant="solid" theme="gray" @click="save" />
         </div>
       </div>
-    </div>
+    </template>
   </Dialog>
 </template>
 
