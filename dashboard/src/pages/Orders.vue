@@ -122,28 +122,9 @@ function printDeliveryNotes() {
 </script>
 
 <template>
-  <AppPageHeader title="Orders">
-    <template #actions>
-      <!-- Export has no backend concept in ls_shop — kept as an inert affordance in this
-           frozen layout rather than wired to nothing. Hidden on a phone, where the header
-           has room for one action and this one does nothing yet. -->
-      <Button
-        class="hidden sm:inline-flex"
-        label="Export"
-        icon-left="lucide-download"
-        @click="() => toast.info('Export is coming soon')"
-      />
-      <!-- Staff placing an order on a shopper's behalf isn't a supported flow in ls_shop (see the
-           order-ownership rule in ls_shop/utils.py) — kept inert rather than pointed at nothing. -->
-      <Button
-        label="Create order"
-        icon-left="lucide-plus"
-        variant="solid"
-        theme="gray"
-        @click="() => toast.info('Creating an order from the dashboard isn\'t supported yet')"
-      />
-    </template>
-  </AppPageHeader>
+  <!-- No header actions: a shopper places their own order (the ownership rule in
+       ls_shop/utils.py), and there is no export endpoint. -->
+  <AppPageHeader title="Orders" />
 
   <PageBody>
     <div class="flex flex-wrap items-center gap-2">

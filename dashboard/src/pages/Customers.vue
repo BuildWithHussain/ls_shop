@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { Avatar, Button, TextInput, toast } from 'frappe-ui'
+import { Avatar, TextInput } from 'frappe-ui'
 import { List, ListCell, ListHeader, ListHeaderCell, ListRow, ListRows } from 'frappe-ui/list'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import PageBody from '../components/PageBody.vue'
@@ -30,29 +30,9 @@ const rows = computed(() => customersRequest.data?.customers ?? [])
 </script>
 
 <template>
-  <AppPageHeader title="Customers">
-    <template #actions>
-      <!-- Export has no backend concept in ls_shop — kept as an inert affordance in this
-           frozen layout rather than pointed at nothing. Hidden on a phone, where the header
-           has room for one action and this one does nothing yet. -->
-      <Button
-        class="hidden sm:inline-flex"
-        label="Export"
-        icon-left="lucide-download"
-        @click="() => toast.info('Export is coming soon')"
-      />
-      <!-- Staff never create a customer on someone's behalf — every customer is created the moment a
-           shopper checks out (see ls_shop/core.py's _create_party_for_user) — kept inert rather than
-           pointed at nothing. -->
-      <Button
-        label="Add customer"
-        icon-left="lucide-plus"
-        variant="solid"
-        theme="gray"
-        @click="() => toast.info('A customer record is created automatically at checkout')"
-      />
-    </template>
-  </AppPageHeader>
+  <!-- No header actions: a customer record is created the moment a shopper checks out
+       (ls_shop/core.py's _create_party_for_user), and there is no export endpoint. -->
+  <AppPageHeader title="Customers" />
 
   <PageBody>
     <TextInput v-model="query" class="w-56" placeholder="Search customers" icon-left="lucide-search" />
