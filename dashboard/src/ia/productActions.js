@@ -72,10 +72,12 @@ export function buildProductActions(product, router, handlers = {}) {
             }
           },
         },
+        // Named for what the section holds: the generated per-option addresses, read-only.
+        // ls_shop has no per-product SEO field to edit, here or in Desk.
         {
           key: 'seo',
-          label: 'Edit SEO listing',
-          icon: 'lucide-search',
+          label: 'See storefront addresses',
+          icon: 'lucide-link',
           onClick: () => handlers.onScrollTo?.('product-storefront'),
         },
       ],
@@ -84,9 +86,11 @@ export function buildProductActions(product, router, handlers = {}) {
       id: 'catalogue',
       label: 'Catalogue',
       items: [
+        // The axis is fixed at creation and no endpoint adds another, so the section it
+        // scrolls to only names the one this product has — the row says exactly that.
         {
           key: 'option',
-          label: product.hasVariants ? 'Add an option' : 'Split into variants',
+          label: 'See options',
           icon: 'lucide-git-branch',
           onClick: () => handlers.onScrollTo?.('product-options'),
         },
@@ -182,7 +186,9 @@ export function buildProductActions(product, router, handlers = {}) {
       id: 'insight',
       label: 'Reporting',
       items: [
-        { key: 'orders', label: 'Orders with this product', icon: 'lucide-shopping-bag', onClick: () => router.push('/orders') },
+        // orders.get_orders searches order name and customer name only — there is no
+        // product filter to send, so the row promises no more than the trip it makes.
+        { key: 'orders', label: 'Open the orders list', icon: 'lucide-shopping-bag', onClick: () => router.push('/orders') },
       ],
     },
     {
@@ -239,7 +245,7 @@ export function buildProductActions(product, router, handlers = {}) {
 
   // The handful worth surfacing without opening a menu. A product with no
   // sizes yet has no Receive stock row, so the list is filtered, not padded.
-  const quick = [publish, findAction('adjust'), findAction('price'), findAction('option')].filter(Boolean)
+  const quick = [publish, findAction('adjust'), findAction('price'), findAction('bulk')].filter(Boolean)
 
   return { groups, quick }
 }

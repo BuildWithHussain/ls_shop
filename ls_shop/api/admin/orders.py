@@ -877,6 +877,12 @@ def get_overview(order_status: str | None = None):
 		"Style Attribute Variant", {"is_published": 1, "creation": [">=", window_start]}
 	)
 
+	# Both panels show five rows and both tiles count the whole store, so the totals travel with the
+	# preview rather than being inferred from its length. Neither costs an extra query: get_inventory
+	# already returns the filtered total, and limit=0 counts in the pass that builds the preview.
+	running_low = get_inventory(availability="low", page_length=OVERVIEW_PANEL_LENGTH)
+	unpublishable = get_unpublishable_options(limit=0)
+
 	return {
 		"currency": get_reporting_currency(),
 		"window_days": OVERVIEW_WINDOW_DAYS,
@@ -914,8 +920,10 @@ def get_overview(order_status: str | None = None):
 			},
 		],
 		"recent_orders": get_orders(status=order_status, page_length=OVERVIEW_PANEL_LENGTH)["orders"],
-		"running_low": get_inventory(availability="low", page_length=OVERVIEW_PANEL_LENGTH)["rows"],
-		"needs_attention": get_unpublishable_options(limit=OVERVIEW_PANEL_LENGTH),
+		"running_low": running_low["rows"],
+		"running_low_total": running_low["total"],
+		"needs_attention": unpublishable[:OVERVIEW_PANEL_LENGTH],
+		"needs_attention_total": len(unpublishable),
 	}
 
 

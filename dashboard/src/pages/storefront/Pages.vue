@@ -37,7 +37,7 @@ function detailRoute(name) {
         icon-left="lucide-plus"
         variant="solid"
         theme="gray"
-        to="/storefront/pages/new"
+        route="/storefront/pages/new"
       />
     </template>
   </AppPageHeader>
@@ -62,7 +62,7 @@ function detailRoute(name) {
       title="No pages yet"
       description="Add one to tell shoppers about your store, your shipping or your returns."
     >
-      <Button variant="subtle" theme="gray" label="Add page" to="/storefront/pages/new" />
+      <Button variant="subtle" theme="gray" label="Add page" route="/storefront/pages/new" />
     </EmptyState>
 
     <template v-else>

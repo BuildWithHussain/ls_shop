@@ -149,14 +149,13 @@ function bulkSetCompareAt() {
       class="min-w-[50rem]"
       :selectable="selecting"
       :row-height="Math.max(ia.density, 44)"
-      :columns="['1fr', '11rem', '7rem', '8rem', '6rem']"
+      :columns="['1fr', '11rem', '7rem', '8rem']"
     >
       <ListHeader>
         <ListHeaderCell>Item</ListHeaderCell>
         <ListHeaderCell>SKU</ListHeaderCell>
         <ListHeaderCell>Price</ListHeaderCell>
         <ListHeaderCell>Compare at</ListHeaderCell>
-        <ListHeaderCell>Margin</ListHeaderCell>
       </ListHeader>
       <ListRows :items="rows" row-key="name" v-slot="{ item }">
         <ListRow :value="item.name">
@@ -182,14 +181,6 @@ function bulkSetCompareAt() {
             <span class="text-base tabular-nums" :class="item.compareAt ? 'text-ink-gray-7' : 'text-ink-gray-4'">
               {{ item.compareAt ? money(item.compareAt) : '—' }}
             </span>
-          </ListCell>
-          <ListCell>
-            <!-- Inert: ls_shop has no cost/margin field anywhere (confirmed in
-                 docs/comera-wiring-map.md) — the mock's 55%-assumed-COGS margin was a pure
-                 client-side fabrication, never a stored value. See
-                 docs/commera-open-questions.md, "Pricing: cost and margin — needs a product
-                 decision" for the real options; none of them are picked here. -->
-            <span class="text-base text-ink-gray-4 tabular-nums">—</span>
           </ListCell>
         </ListRow>
       </ListRows>

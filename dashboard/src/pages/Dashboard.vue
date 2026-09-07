@@ -41,8 +41,10 @@ const kpiTiles = computed(() =>
 const attention = computed(() => {
   if (!overview.value) return []
   const toFulfil = overview.value.stats.find((stat) => stat.key === 'to_fulfil')
-  const lowStockCount = overview.value.running_low.length
-  const needsAttentionCount = overview.value.needs_attention.length
+  // The panels below carry five rows each; these tiles count the whole store, so they read the
+  // totals the endpoint sends rather than the length of the preview.
+  const lowStockCount = overview.value.running_low_total
+  const needsAttentionCount = overview.value.needs_attention_total
   return [
     {
       icon: 'lucide-package-open',

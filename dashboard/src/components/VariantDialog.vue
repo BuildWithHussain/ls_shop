@@ -36,6 +36,14 @@ watch(
   { immediate: true },
 )
 
+// A product whose configurator is gone carries no attribute name, so the badge names the value
+// on its own rather than prefixing it with nothing.
+const optionLabel = computed(() =>
+  props.product.option_attribute && props.variant
+    ? `${props.product.option_attribute} · ${props.variant.option}`
+    : (props.variant?.option ?? ''),
+)
+
 const onHand = computed(() => props.variant?.sizes?.reduce((sum, size) => sum + (size.stock ?? 0), 0) ?? 0)
 const committed = computed(() => props.variant?.sizes?.reduce((sum, size) => sum + (size.committed ?? 0), 0) ?? 0)
 const skuList = computed(() => props.variant?.sizes?.map((size) => size.item_code).join(', ') ?? '')
@@ -60,7 +68,7 @@ async function save() {
   <Dialog v-model:open="open" size="2xl" :title="variant ? variant.option : 'Variant'">
     <div v-if="variant" class="space-y-6">
       <div class="flex flex-wrap items-center gap-1.5">
-        <Badge :label="`${product.option_attribute} · ${variant.option}`" variant="subtle" />
+        <Badge :label="optionLabel" variant="subtle" />
         <span class="text-sm text-ink-gray-5">of {{ product.title }}</span>
       </div>
 

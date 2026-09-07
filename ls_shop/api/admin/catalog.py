@@ -1498,6 +1498,13 @@ def set_variant_price(style_attribute_variant: str, default_rate=None, sale_rate
 	(save_product_prices/save_size_prices above edits those individually); this is the bulk form,
 	built on the same set_variant_prices() the create-product flow uses.
 	"""
+	# set_variant_prices() reads a non-positive rate as "leave that price list alone" - the sentinel
+	# the create-product flow needs. An editor asking for zero means it, so it is refused here rather
+	# than dropped inside a call that would report nothing wrong.
+	for rate in (default_rate, sale_rate):
+		if rate is not None and flt(rate) <= 0:
+			frappe.throw(_("Enter a price above zero. A price cannot be removed once it is set."))
+
 	variant = frappe.get_doc("Style Attribute Variant", style_attribute_variant)
 	variant.check_permission("write")
 
@@ -1587,7 +1594,11 @@ def get_ready_variant_names(variant_names):
 
 
 def get_unpublishable_options(limit: int = 5):
-	"""Options that cannot go live yet, with the reason, across the whole catalogue."""
+	"""Options that cannot go live yet, with the reason, across the whole catalogue.
+
+	`limit=0` returns every one of them, so a caller that shows a preview can still count the rest
+	without a second pass over the catalogue.
+	"""
 	variants = frappe.get_all(
 		"Style Attribute Variant",
 		filters={"is_published": 0},
@@ -1655,7 +1666,7 @@ def get_unpublishable_options(limit: int = 5):
 				"blockers": blockers,
 			}
 		)
-		if len(blocked) >= cint(limit):
+		if cint(limit) and len(blocked) >= cint(limit):
 			break
 
 	return blocked

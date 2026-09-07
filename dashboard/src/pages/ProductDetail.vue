@@ -48,6 +48,7 @@ watch(
       sku: data.name,
       updated: data.updated,
       variants: data.variants,
+      option_attribute: data.option_attribute,
       hasVariants: data.variants.length > 0,
       recent_sales: data.recent_sales,
     }

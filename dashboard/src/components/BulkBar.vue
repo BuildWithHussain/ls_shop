@@ -18,7 +18,11 @@ const emit = defineEmits(['done'])
     </span>
     <span v-if="!count" class="text-sm text-ink-gray-5">Rows pick instead of opening while this is on.</span>
     <div class="ml-auto flex flex-wrap gap-2">
-      <slot :count="count" />
+      <!-- A fieldset so every action a screen slots in is inert with nothing selected, whatever it
+           is: each handler already returns early on an empty selection, which read as a dead click. -->
+      <fieldset :disabled="!count" class="flex flex-wrap gap-2 disabled:opacity-50">
+        <slot :count="count" />
+      </fieldset>
       <Button label="Done" icon-left="lucide-check" @click="emit('done')" />
     </div>
   </div>

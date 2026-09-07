@@ -30,6 +30,9 @@ const routes = [
   // reachable from the list row.
   { path: '/storefront/pages/new', name: 'StorefrontPageNew', component: () => import('./pages/storefront/PageDetail.vue') },
   { path: '/storefront/pages/:name', name: 'StorefrontPageDetail', component: () => import('./pages/storefront/PageDetail.vue') },
+  // Last, so it only catches what nothing above claimed: without it an unknown path rendered the
+  // shell with an empty content area, which reads as a screen that failed to load.
+  { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('./pages/NotFound.vue') },
 ]
 
 export const router = createRouter({

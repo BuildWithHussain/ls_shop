@@ -114,7 +114,11 @@ const companyLink = computed(() =>
         />
       </div>
 
-      <p v-if="!company.data" class="mt-4 text-base text-ink-gray-5">
+      <!-- Gated on isFinished, not on data: an in-flight request has no data either, and saying
+           there is no company while still asking for one states the opposite of the truth. -->
+      <LoadingText v-if="!company.isFinished" class="mt-4" />
+
+      <p v-else-if="!company.data" class="mt-4 text-base text-ink-gray-5">
         No company is set for this store yet, so there is nothing to show. Set one on Lifestyle
         Settings in Desk and orders will book against it.
       </p>
