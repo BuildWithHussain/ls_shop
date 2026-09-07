@@ -8,14 +8,17 @@
  */
 import { SettingsRow } from 'frappe-ui'
 import SettingsFieldControl from './SettingsFieldControl.vue'
+import IntegrationLogo from '../integrations/IntegrationLogo.vue'
 
-defineProps({
+const props = defineProps({
   groups: { type: Array, required: true },
   values: { type: Object, required: true },
   linkOptionsPath: { type: String, default: '' },
 })
 
-const emit = defineEmits(['update'])
+// `update` is every edit; `commit` is the value settled, for a screen that saves each field
+// on its own rather than behind a Save button.
+const emit = defineEmits(['update', 'commit'])
 
 // Docfield descriptions are authored as Desk HTML — <b>…</b>, and entities like &gt;. A row
 // interpolates its description as text, so the markup is unwrapped here rather than shown to the
@@ -26,6 +29,19 @@ function plainText(html) {
   const element = document.createElement('div')
   element.innerHTML = html
   return element.textContent.replace(/\s+/g, ' ').trim()
+}
+
+// A group led by a switch — an analytics service the store either reports to or does not —
+// keeps its fields hidden until it is on: ids and credentials are only worth asking for once
+// the thing that uses them is switched on.
+function groupFields(group) {
+  if (group.toggle && !isOn(group.toggle)) return []
+  return group.fields
+}
+
+function isOn(field) {
+  const value = props.values[field.fieldname]
+  return Boolean(value) && value !== '0'
 }
 
 // A secret already stored is the one thing this screen cannot show, so it says so instead.
@@ -39,9 +55,27 @@ function hint(field) {
 
 <template>
   <template v-for="group in groups" :key="group.label">
-    <p v-if="group.label" class="pt-5 text-sm text-ink-gray-5">{{ group.label }}</p>
+    <!-- A group naming a provider shows its plate, the same registry the payment and
+         shipping rows read; a group without one keeps the plain heading. -->
+    <!-- No rule above a group heading: the plate and the space already separate the groups,
+         and the parent's divide-y would draw a second line right under the one before it. -->
+    <div v-if="group.logo || group.toggle" class="flex items-center gap-2 pt-5 !border-t-0">
+      <IntegrationLogo v-if="group.logo" :slug="group.logo" :label="group.label" size="sm" />
+      <p class="text-sm text-ink-gray-5">{{ group.label }}</p>
+      <!-- The switch belongs beside the name it switches, not in a row of its own under it. -->
+      <div v-if="group.toggle" class="ml-auto flex items-center">
+        <SettingsFieldControl
+          :field="group.toggle"
+          :model-value="values[group.toggle.fieldname]"
+          :aria-label="group.toggle.label"
+          @update:model-value="emit('update', group.toggle.fieldname, $event)"
+          @change="emit('commit', group.toggle.fieldname, $event, group.toggle.label)"
+        />
+      </div>
+    </div>
+    <p v-else-if="group.label" class="pt-5 text-sm text-ink-gray-5 !border-t-0">{{ group.label }}</p>
     <SettingsRow
-      v-for="field in group.fields"
+      v-for="field in groupFields(group)"
       :key="field.fieldname"
       :title="field.required ? `${field.label} *` : field.label"
       :description="hint(field)"
@@ -51,6 +85,7 @@ function hint(field) {
         :model-value="values[field.fieldname]"
         :link-options-path="linkOptionsPath"
         @update:model-value="emit('update', field.fieldname, $event)"
+        @change="emit('commit', field.fieldname, $event, field.label)"
       />
     </SettingsRow>
   </template>

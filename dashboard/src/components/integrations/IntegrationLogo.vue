@@ -14,7 +14,12 @@ import { escapeXml } from './logos'
 const props = defineProps({
   slug: { type: String, required: true },
   label: { type: String, default: '' },
+  // A provider row carries the full plate; a group heading inside a form wants a
+  // smaller one, so the plate is not louder than the heading it belongs to.
+  size: { type: String, default: 'md', validator: (value) => ['sm', 'md'].includes(value) },
 })
+
+const plateClass = computed(() => (props.size === 'sm' ? 'h-7 w-[4.5rem]' : 'h-9 w-24'))
 
 const markup = computed(() => {
   const { plate } = brandFor(props.slug)
@@ -24,7 +29,8 @@ const markup = computed(() => {
 
 <template>
   <div
-    class="h-9 w-24 shrink-0 overflow-hidden rounded-5 border border-outline-gray-2"
+    class="shrink-0 overflow-hidden rounded-5 border border-outline-gray-2"
+    :class="plateClass"
     v-html="markup"
   />
 </template>

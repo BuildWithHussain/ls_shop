@@ -15,6 +15,7 @@ import {
 import { ThemeSwitcher } from 'frappe-ui/experimental'
 import AdvancedSettings from './AdvancedSettings.vue'
 import AppsSettings from './AppsSettings.vue'
+import CashOnDeliverySettings from './CashOnDeliverySettings.vue'
 import DeliveryOptionsPanel from './DeliveryOptionsPanel.vue'
 import GeneralSettings from './GeneralSettings.vue'
 import IntegrationsPanel from './IntegrationsPanel.vue'
@@ -80,8 +81,8 @@ watch(
 
       <SettingsNavGroup label="Connections">
         <SettingsNavItem value="apps">
-          <template #prefix><span class="lucide-plug size-4" aria-hidden="true" /></template>
-          Apps and channels
+          <template #prefix><span class="lucide-chart-line size-4" aria-hidden="true" /></template>
+          Analytics
         </SettingsNavItem>
         <SettingsNavItem value="advanced">
           <template #prefix><span class="lucide-sliders-horizontal size-4" aria-hidden="true" /></template>
@@ -90,43 +91,63 @@ watch(
       </SettingsNavGroup>
     </SettingsSidebar>
 
-    <SettingsContent>
-      <SettingsPanel value="general">
+    <!-- min-w-0 on the content column and every panel: frappe-ui gives them `flex-1`
+         with no min-width, so a flex item's `auto` floor keeps the column at its
+         min-content width (530px here) and the surplus is clipped by the dialog's
+         own overflow-hidden. Below roughly 780px of viewport that cut the right-hand
+         controls — Configure, Save, the theme cards — clean off the edge. -->
+    <SettingsContent class="min-w-0">
+      <SettingsPanel value="general" class="min-w-0">
         <GeneralSettings :active="settings.open && settings.tab === 'general'" />
       </SettingsPanel>
 
-      <SettingsPanel value="locations">
+      <SettingsPanel value="locations" class="min-w-0">
         <LocationsSettings :active="settings.open && settings.tab === 'locations'" />
       </SettingsPanel>
 
       <!-- Light and dark are a property of this browser, not of the store, so
            Appearance sits with the other personal settings and nowhere near
            the storefront theme. -->
-      <SettingsPanel value="appearance">
-        <SettingsHeader title="Appearance" description="How Commera looks on this device." />
+      <SettingsPanel value="appearance" class="min-w-0">
+        <!-- The default slot rather than the title prop: the subtitle told the owner nothing the
+             three cards do not, but its height is kept so this tab's header sits level with the
+             others in the dialog. -->
+        <SettingsHeader>
+          <div class="flex min-w-0 flex-col gap-1">
+            <h2 class="text-lg font-semibold text-ink-gray-8">Appearance</h2>
+            <p class="text-base" aria-hidden="true">&nbsp;</p>
+          </div>
+        </SettingsHeader>
         <SettingsBody>
-          <ThemeSwitcher name="Commera" label="" description="" />
-          <p class="mt-3 text-p-sm text-ink-gray-5">
-            Saved on this device. The storefront's own look is set under Storefront → Theme.
-          </p>
+          <!-- The store's own name adds nothing here: these cards are light, dark and system.
+               Dropping it also shortens the light and dark previews, so the previews are held
+               to the height the system card's two clipped frames already sit at. -->
+          <div class="[&_[data-slot=option]>*:first-child]:h-[78px] [&_[data-slot=option]>*:first-child]:overflow-hidden">
+            <ThemeSwitcher name="" label="" description="" />
+          </div>
         </SettingsBody>
       </SettingsPanel>
 
       <!-- Payments: several gateways can run side by side, each with its own
            keys and environment. Only the checkout default is exclusive. -->
-      <SettingsPanel value="payments">
-        <IntegrationsPanel
-          :store="paymentIntegrations"
-          :active="settings.tab === 'payments'"
-          title="Payments"
-          description="Turn on as many providers as you like. Each keeps its own keys."
-        />
+      <SettingsPanel value="payments" class="min-w-0">
+        <!-- Same two-step story as Shipping: the gateways a store connects, then the one
+             method it settles itself. The tail padding goes for the same reason. -->
+        <div class="flex shrink-0 flex-col [&_[data-slot=scroll-area-viewport]]:pb-0">
+          <IntegrationsPanel
+            :store="paymentIntegrations"
+            :active="settings.tab === 'payments'"
+            title="Payments"
+            description="Turn on as many providers as you like. Each keeps its own keys."
+          />
+        </div>
+        <CashOnDeliverySettings :active="settings.open && settings.tab === 'payments'" />
       </SettingsPanel>
 
       <!-- Shipping reads as one story in two steps: connect a carrier, then say what
            shoppers may pick from it. The carrier list is short and fixed, so it takes
            only the height it needs and the options below get the rest of the scroll. -->
-      <SettingsPanel value="shipping">
+      <SettingsPanel value="shipping" class="min-w-0">
         <!-- The carrier list is the first of two sections rather than a whole panel, so its
              body drops the 4rem of tail padding a panel ends on; the section below supplies
              its own top spacing. Reached through frappe-ui's own data-slot, which is the
@@ -142,11 +163,11 @@ watch(
         <DeliveryOptionsPanel :active="settings.open && settings.tab === 'shipping'" />
       </SettingsPanel>
 
-      <SettingsPanel value="apps">
+      <SettingsPanel value="apps" class="min-w-0">
         <AppsSettings :active="settings.open && settings.tab === 'apps'" />
       </SettingsPanel>
 
-      <SettingsPanel value="advanced">
+      <SettingsPanel value="advanced" class="min-w-0">
         <AdvancedSettings :active="settings.open && settings.tab === 'advanced'" />
       </SettingsPanel>
     </SettingsContent>

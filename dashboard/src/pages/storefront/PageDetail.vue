@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Button, Dropdown, FormControl, LoadingText, Switch, TabButtons, TextInput, dialog, toast } from 'frappe-ui'
+import { Button, Dropdown, FormControl, LoadingText, Switch, TextInput, dialog, toast } from 'frappe-ui'
 import AppPageHeader from '../../components/AppPageHeader.vue'
 import PageBody from '../../components/PageBody.vue'
 import EmptyState from '../../components/EmptyState.vue'
@@ -14,17 +14,15 @@ const route = useRoute()
 const router = useRouter()
 const { getPage, savePage, removePage } = usePages()
 
-const LANGUAGES = [
-  { label: 'English', value: 'en' },
-  { label: 'Arabic', value: 'ar' },
-]
-
 function blankPage() {
   return {
     name: '',
     route: '',
     published: true,
     content: '',
+    // Not edited here any more, but still round-tripped through load and save so a page
+    // that already carries Arabic content keeps it instead of being blanked on the next
+    // save. The storefront still serves it (shop_web_page.py get_content).
     content_ar: '',
     meta_title: '',
     meta_description: '',
@@ -50,7 +48,6 @@ function openStorefront() {
 }
 
 const form = ref(blankPage())
-const language = ref('en')
 const loading = ref(false)
 const loadError = ref(null)
 const saving = ref(false)
@@ -224,30 +221,14 @@ function remove() {
       </section>
 
       <section>
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 class="text-lg-semibold text-ink-gray-8">Content</h2>
-          <TabButtons v-model="language" size="sm" :options="LANGUAGES" />
-        </div>
+        <h2 class="text-lg-semibold text-ink-gray-8">Content</h2>
 
         <div class="mt-4">
           <RichTextField
-            v-show="language === 'en'"
             v-model="form.content"
             min-height="min-h-64"
             placeholder="Write the page…"
           />
-          <div v-show="language === 'ar'">
-            <div dir="rtl">
-              <RichTextField
-                v-model="form.content_ar"
-                min-height="min-h-64"
-                placeholder="اكتب الصفحة…"
-              />
-            </div>
-            <p class="mt-1.5 text-sm text-ink-gray-5">
-              Left blank, Arabic shoppers see the English content.
-            </p>
-          </div>
         </div>
       </section>
 

@@ -5,12 +5,14 @@
  * Each is the same shape — a switch, public ids, and one credential the server keeps — so they are
  * described as docfields and rendered by the same row renderer the provider screens use, rather
  * than hand-built a third time.
+ *
+ * Every control saves its own field the moment it settles, so there is no Save button.
  */
 import { computed, watch } from 'vue'
-import { Button, LoadingText, SettingsBody, SettingsHeader, toast } from 'frappe-ui'
+import { LoadingText, SettingsBody, SettingsHeader } from 'frappe-ui'
 import SettingsFieldRows from './SettingsFieldRows.vue'
 import { useAdminAction, useAdminRead } from '../../data/api'
-import { useSettingsDraft } from '../../data/useSettingsDraft'
+import { useSettingsAutosave } from '../../data/useSettingsAutosave'
 
 const props = defineProps({
   active: { type: Boolean, default: false },
@@ -30,18 +32,19 @@ const SECRET_FIELDS = ['ga4_service_account_json', 'fb_access_token']
 const analytics = useAdminRead('analytics.get_analytics_settings', { immediate: false })
 const save = useAdminAction('analytics.save_analytics_settings')
 
-const { values, changes, changed, adopt, set } = useSettingsDraft()
+const { values, adopt, set, commit } = useSettingsAutosave(save)
 
 // A secret is never returned, so it starts blank on every load and blank means "keep it".
 function blankSecrets() {
   return Object.fromEntries(SECRET_FIELDS.map((fieldname) => [fieldname, '']))
 }
 
+function plainFields(data) {
+  return Object.fromEntries(PLAIN_FIELDS.map((fieldname) => [fieldname, data[fieldname]]))
+}
+
 function adoptSettings(data) {
-  adopt({
-    ...Object.fromEntries(PLAIN_FIELDS.map((fieldname) => [fieldname, data[fieldname]])),
-    ...blankSecrets(),
-  })
+  adopt({ ...plainFields(data), ...blankSecrets() })
 }
 
 watch(
@@ -70,8 +73,9 @@ const groups = computed(() => [
   },
   {
     label: 'Google Analytics 4',
+    logo: 'ga4',
+    toggle: { fieldname: 'enable_ga4', label: 'Send events to GA4', fieldtype: 'Check' },
     fields: [
-      { fieldname: 'enable_ga4', label: 'Send events to GA4', fieldtype: 'Check' },
       {
         fieldname: 'ga4_measurement_id',
         label: 'Measurement ID',
@@ -95,8 +99,9 @@ const groups = computed(() => [
   },
   {
     label: 'Meta',
+    logo: 'meta',
+    toggle: { fieldname: 'enable_facebook', label: 'Send events to Meta', fieldtype: 'Check' },
     fields: [
-      { fieldname: 'enable_facebook', label: 'Send events to Meta', fieldtype: 'Check' },
       { fieldname: 'fb_pixel_id', label: 'Pixel ID', fieldtype: 'Data' },
       {
         fieldname: 'fb_access_token',
@@ -109,34 +114,22 @@ const groups = computed(() => [
   },
 ])
 
-async function submit() {
-  await save.submit({ ...changes.value })
-  if (save.error) return
-
-  // Whether a secret is stored is read off the loaded settings, not off the save's answer,
-  // so a freshly stored credential only stops reading as missing once these are re-read.
-  await analytics.reload()
-  toast.success('Analytics saved')
+// A blank secret means "keep the stored one": it matches the blank this panel adopted, so it is
+// never submitted. Whether a secret is stored is read off the loaded settings rather than off the
+// save's answer, so a freshly stored credential only stops reading as missing once they are re-read.
+async function commitField(fieldname, value, label) {
+  const isSecret = SECRET_FIELDS.includes(fieldname)
+  await commit(fieldname, value, label, (saved) =>
+    isSecret ? analytics.reload() : adopt(plainFields(saved)),
+  )
 }
 </script>
 
 <template>
   <SettingsHeader
-    title="Apps and channels"
+    title="Analytics"
     description="The analytics and marketing services this store reports to."
-  >
-    <template #actions>
-      <Button
-        v-if="analytics.data"
-        label="Save"
-        variant="solid"
-        theme="gray"
-        :loading="save.loading"
-        :disabled="!changed"
-        @click="submit"
-      />
-    </template>
-  </SettingsHeader>
+  />
 
   <SettingsBody>
     <!-- The refusal itself is already toasted by useAdminRead. This says why the panel is
@@ -148,7 +141,7 @@ async function submit() {
     <LoadingText v-else-if="!analytics.data" class="py-10" />
 
     <div v-else class="divide-y divide-outline-gray-1">
-      <SettingsFieldRows :groups="groups" :values="values" @update="set" />
+      <SettingsFieldRows :groups="groups" :values="values" @update="set" @commit="commitField" />
     </div>
   </SettingsBody>
 </template>

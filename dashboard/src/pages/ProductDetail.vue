@@ -154,7 +154,7 @@ watch(
             <ProductBasics :product="product" />
             <ProductPricing :product="product" />
             <VariantEditor :product="product" @saved="productRequest.reload()" />
-            <ProductStock :product="product" />
+            <ProductStock :product="product" @received="productRequest.reload()" />
             <ProductStorefront :product="product" />
             <ProductOrganization :product="product" />
           </div>

@@ -5,7 +5,11 @@ from bwh_payments.bwh_payments.utils import get_available_payment_modes
 from frappe.tests import IntegrationTestCase
 from frappe.utils.password import get_decrypted_password
 
-from ls_shop.api.admin.integrations import describe_integration
+from ls_shop.api.admin.integrations import (
+	describe_integration,
+	get_integration_linked_doctypes,
+	get_link_options,
+)
 from ls_shop.api.admin.payments import get_payment_integrations, save_payment_integration
 
 SLUG = "razorpay"
@@ -142,3 +146,24 @@ class TestAdminPaymentIntegrations(IntegrationTestCase):
 		self.assertFalse(card["available"])
 		self.assertFalse(card["enabled"])
 		self.assertEqual(card["groups"], [])
+
+
+class TestIntegrationLinkPicker(IntegrationTestCase):
+	"""A carrier quotes from its own pickup Address, so that field has to be pickable."""
+
+	def setUp(self):
+		self.addCleanup(frappe.set_user, "Administrator")
+		frappe.set_user("Administrator")
+
+	def test_the_picker_covers_every_doctype_a_provider_setting_links_to(self):
+		# Address is what makes a live rate possible at all: no origin, no quote.
+		self.assertIn("Address", get_integration_linked_doctypes())
+
+	def test_the_picker_searches_a_doctype_a_provider_links_to(self):
+		options = get_link_options("Currency", search_text="INR")
+
+		self.assertIn("INR", [option["value"] for option in options])
+
+	def test_the_picker_refuses_a_doctype_no_provider_links_to(self):
+		# Otherwise the whitelisted picker reads any doctype the session can see.
+		self.assertRaises(frappe.ValidationError, get_link_options, "User")

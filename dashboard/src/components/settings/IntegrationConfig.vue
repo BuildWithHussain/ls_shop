@@ -71,9 +71,12 @@ async function copyWebhookUrl() {
         </div>
       </SettingsRow>
 
+      <!-- A Link here is a pickup Address or a currency: pickable, because a name typed from
+           memory that does not match reads to the carrier as no origin at all. -->
       <SettingsFieldRows
         :groups="card.groups"
         :values="values"
+        link-options-path="integrations.get_link_options"
         @update="(fieldname, value) => (values[fieldname] = value)"
       />
     </div>

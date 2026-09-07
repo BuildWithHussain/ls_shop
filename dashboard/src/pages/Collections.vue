@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { Badge, Button, dialog, toast } from 'frappe-ui'
+import { Button, dialog, toast } from 'frappe-ui'
 import { List, ListCell, ListHeader, ListHeaderCell, ListRow, ListRows } from 'frappe-ui/list'
 import AppPageHeader from '../components/AppPageHeader.vue'
 import PageBody from '../components/PageBody.vue'
@@ -49,32 +49,24 @@ function addCollection() {
   </AppPageHeader>
 
   <PageBody width="wide">
-    <p class="text-p-sm text-ink-gray-5">
-      Every collection here is manual — ls_shop does not yet re-evaluate a saved rule on its own,
-      so "Type" and "Condition" describe that today rather than a per-collection setting.
-    </p>
-
     <p v-if="collectionsRequest.loading" class="mt-3 text-sm text-ink-gray-5">Loading collections…</p>
 
     <div v-else-if="rows.length" class="mt-3 overflow-x-auto">
+      <!-- Collection and Products only: ls_shop has no smart-collection rule engine, so
+           "Type" read "manual" and "Condition" read "—" on every row — two columns of no
+           information, and a caption under the header apologising for them. -->
       <List
-        class="min-w-[34rem]"
+        class="min-w-[20rem]"
         :row-height="ia.density"
-        :columns="['minmax(9rem,1fr)', '7rem', 'minmax(9rem,1fr)', '6rem']"
+        :columns="['minmax(9rem,1fr)', '6rem']"
       >
         <ListHeader>
           <ListHeaderCell>Collection</ListHeaderCell>
-          <ListHeaderCell>Type</ListHeaderCell>
-          <ListHeaderCell>Condition</ListHeaderCell>
           <ListHeaderCell>Products</ListHeaderCell>
         </ListHeader>
         <ListRows :items="rows" row-key="name" v-slot="{ item }">
           <ListRow :value="item.name">
             <ListCell><span class="truncate text-base text-ink-gray-8">{{ item.name }}</span></ListCell>
-            <ListCell>
-              <Badge :label="item.rule" :theme="item.rule === 'smart' ? 'blue' : 'gray'" variant="subtle" />
-            </ListCell>
-            <ListCell><span class="truncate text-base text-ink-gray-5">{{ item.condition }}</span></ListCell>
             <ListCell><span class="text-base text-ink-gray-7 tabular-nums">{{ item.count }}</span></ListCell>
           </ListRow>
         </ListRows>

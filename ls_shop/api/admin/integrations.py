@@ -7,6 +7,7 @@ import frappe
 from frappe.utils import get_url
 from frappe.utils.data import cint
 
+from ls_shop.api.admin.docfields import get_linked_doctypes, search_link_options
 from ls_shop.api.admin.settings import coerce_field_value
 
 # Fieldtypes the generic renderer cannot express as a single input.
@@ -219,3 +220,36 @@ def save_integration(integration, enabled, values):
 		on_enable(integration)
 
 	return describe_integration(integration)
+
+
+def get_integration_linked_doctypes():
+	"""Every doctype a registered provider's settings Single links to.
+
+	Imported inside the function because both registries import this module: a provider screen is a
+	registry plus two wrappers, and this engine must not know either registry at import time.
+	"""
+	from ls_shop.api.admin.payments import get_payment_registry
+	from ls_shop.api.admin.shipping import get_shipping_registry
+
+	doctypes = set()
+	for integration in (*get_payment_registry(), *get_shipping_registry()):
+		if is_available(integration):
+			doctypes |= get_linked_doctypes(integration["settings_doctype"])
+
+	return doctypes
+
+
+@frappe.whitelist()
+def get_link_options(doctype: str, search_text: str | None = None):
+	"""Options for a Link control on a provider's dialog.
+
+	A carrier quotes live rates from its own pickup Address, so that field has to be pickable rather
+	than typed from memory — an Address named wrong reads as no origin at all, and every delivery
+	option quietly falls back to its backup charge.
+	"""
+	frappe.only_for("System Manager")
+
+	if doctype not in get_integration_linked_doctypes():
+		frappe.throw(frappe._("No provider setting links to {0}.").format(doctype))
+
+	return search_link_options(doctype, search_text)

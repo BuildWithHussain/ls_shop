@@ -149,11 +149,19 @@ def get_ecommerce_warehouse():
 
 
 @frappe.whitelist(methods=["POST"])
-def receive_stock(received_quantities: dict | str):
-	"""Take stock in across any mix of products in one receipt."""
+def receive_stock(received_quantities: dict | str, valuation_rates: dict | str | None = None):
+	"""Take stock in across any mix of products in one receipt.
+
+	A rate is optional per line: Style Attribute Variant.receive_stock() sets `basic_rate` where
+	one is given, and falls back to the item's own valuation where it is not.
+	"""
 	received_quantities = frappe.parse_json(received_quantities)
 	if not isinstance(received_quantities, dict):
 		frappe.throw(_("received_quantities must map item codes to quantities"))
+
+	valuation_rates = frappe.parse_json(valuation_rates) if valuation_rates else {}
+	if not isinstance(valuation_rates, dict):
+		frappe.throw(_("valuation_rates must map item codes to rates"))
 
 	wanted = {
 		cstr(code): flt(quantity) for code, quantity in received_quantities.items() if flt(quantity) > 0
@@ -167,8 +175,14 @@ def receive_stock(received_quantities: dict | str):
 		fields=["item_code", "parent"],
 	)
 	quantities_by_variant = {}
+	rates_by_variant = {}
 	for row in rows:
-		quantities_by_variant.setdefault(row.parent, {})[cstr(row.item_code)] = wanted[cstr(row.item_code)]
+		item_code = cstr(row.item_code)
+		quantities_by_variant.setdefault(row.parent, {})[item_code] = wanted[item_code]
+		# A rate whose line carries no quantity is dropped along with it, so it can never
+		# reach receive_stock() as a size the receipt does not hold.
+		if item_code in valuation_rates:
+			rates_by_variant.setdefault(row.parent, {})[item_code] = valuation_rates[item_code]
 
 	unknown = sorted(set(wanted) - {cstr(row.item_code) for row in rows})
 	if unknown:
@@ -177,7 +191,7 @@ def receive_stock(received_quantities: dict | str):
 	stock_entries = []
 	for variant_name, quantities in quantities_by_variant.items():
 		variant = frappe.get_doc("Style Attribute Variant", variant_name)
-		stock_entries.append(variant.receive_stock(quantities))
+		stock_entries.append(variant.receive_stock(quantities, rates_by_variant.get(variant_name)))
 
 	return {"stock_entries": stock_entries}
 

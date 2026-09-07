@@ -75,7 +75,9 @@ export const integrationLogos = {
   },
   meta: {
     background: '#FFFFFF',
-    svg: `${lockupGlyph(META_ARTWORK, META_VIEW[0], META_VIEW[1], 16, 12)}${lockupWordmark('Meta', '#0082FB', 42, 14)}`,
+    // Centred by hand: "Meta" is the shortest wordmark in the registry, so the lockup left at
+    // the shared x-offsets sat well left of the plate's middle.
+    svg: `${lockupGlyph(META_ARTWORK, META_VIEW[0], META_VIEW[1], 16, 25)}${lockupWordmark('Meta', '#0082FB', 55, 14)}`,
   },
   razorpay: {
     background: '#0C2451',

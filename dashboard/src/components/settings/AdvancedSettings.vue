@@ -3,12 +3,14 @@
  * The long tail of store setup: every remaining Lifestyle Settings field, grouped by the section it
  * sits under in Desk and rendered from that doctype's own meta. Add a field to the doctype and it
  * appears here; nothing about this screen names a field.
+ *
+ * Every control saves its own field the moment it settles, so there is no Save button.
  */
 import { watch } from 'vue'
-import { Alert, Button, LoadingText, SettingsBody, SettingsHeader, toast } from 'frappe-ui'
+import { Alert, LoadingText, SettingsBody, SettingsHeader } from 'frappe-ui'
 import SettingsFieldRows from './SettingsFieldRows.vue'
 import { useAdminAction, useAdminRead } from '../../data/api'
-import { useSettingsDraft } from '../../data/useSettingsDraft'
+import { useSettingsAutosave } from '../../data/useSettingsAutosave'
 
 const props = defineProps({
   active: { type: Boolean, default: false },
@@ -17,7 +19,7 @@ const props = defineProps({
 const advanced = useAdminRead('settings.get_advanced_settings', { immediate: false })
 const save = useAdminAction('settings.save_advanced_settings')
 
-const { values, changes, changed, adopt, set } = useSettingsDraft()
+const { values, adopt, set, commit } = useSettingsAutosave(save)
 
 function adoptSettings(data) {
   for (const group of data.groups) {
@@ -37,14 +39,10 @@ watch(
   { immediate: true },
 )
 
-async function submit() {
-  await save.submit({ ...changes.value })
-  if (save.error) return
-
-  // The server answers with the fields it wrote, not with the screen, and a controller can
-  // rewrite a value on save — so the whole tab is re-read rather than assumed.
-  await advanced.reload()
-  toast.success('Advanced settings saved')
+// The server answers with the fields it wrote, not with the screen, and a controller can rewrite
+// a value on save — so the whole tab is re-read rather than assumed.
+async function commitField(fieldname, value, label) {
+  await commit(fieldname, value, label, () => advanced.reload())
 }
 </script>
 
@@ -52,18 +50,7 @@ async function submit() {
   <SettingsHeader
     title="Advanced"
     description="Every remaining store setting, grouped as it appears in your books."
-  >
-    <template #actions>
-      <Button
-        label="Save"
-        variant="solid"
-        theme="gray"
-        :loading="save.loading"
-        :disabled="!changed"
-        @click="submit"
-      />
-    </template>
-  </SettingsHeader>
+  />
 
   <SettingsBody>
     <LoadingText v-if="advanced.loading && !advanced.data" class="py-10" />
@@ -81,6 +68,7 @@ async function submit() {
           :values="values"
           link-options-path="settings.get_link_options"
           @update="set"
+          @commit="commitField"
         />
       </div>
 

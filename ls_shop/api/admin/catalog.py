@@ -764,8 +764,8 @@ def list_collections(search: str | None = None, start: int = 0, page_length: int
 	The owner never sees "Item Group" — Collections are the leaf Item Groups a product can actually
 	be filed under. The tree's structural parents (e.g. "All Item Groups", "Ecommerce Website") are
 	excluded by nested-set shape (lft/rgt), not by name, so a new structural node never leaks in.
-	ls_shop has no smart-collection rule engine (confirmed in the wiring map), so every row reads
-	rule "manual" and condition "—" — true today, not a fabricated field.
+	ls_shop has no smart-collection rule engine (confirmed in the wiring map), so no rule/condition
+	is reported: every collection is manual, and a column saying so on every row carries nothing.
 	"""
 	frappe.has_permission("Item Group", ptype="read", throw=True)
 
@@ -793,9 +793,7 @@ def list_collections(search: str | None = None, start: int = 0, page_length: int
 	counts = get_collection_product_counts(names)
 
 	return {
-		"collections": [
-			{"name": name, "rule": "manual", "condition": "—", "count": counts.get(name, 0)} for name in names
-		],
+		"collections": [{"name": name, "count": counts.get(name, 0)} for name in names],
 		"total": total,
 	}
 

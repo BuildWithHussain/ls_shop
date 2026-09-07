@@ -142,19 +142,24 @@ const revenueByMonth = computed(() => revenueRequest.data?.months ?? [])
         <Button variant="ghost" label="View all" icon-right="lucide-arrow-right" route="/orders" />
       </div>
       <div class="overflow-x-auto px-2 pb-2">
-        <!-- Four of the five tracks are fixed at 31rem between them, so the
-             floor is not about the table's own width: below 44rem the only
-             flexible track, the customer name, is starved to a few characters.
-             The wrapper scrolls horizontally instead. -->
+        <!-- Payment and fulfilment get a track each, the way Orders.vue lays them
+             out. Sharing one track made two badges — "Cash on delivery" plus
+             "Confirmation pending" — overflow the cell and paint over Total, since
+             a Badge does not shrink or truncate.
+             Five of the six tracks are fixed at 41rem between them, so the floor is
+             not about the table's own width: below 54rem the only flexible track,
+             the customer name, is starved to a few characters. The wrapper scrolls
+             horizontally instead. -->
         <List
-          class="min-w-[44rem]"
-          :columns="['9rem', 'minmax(0,1fr)', '9rem', '7rem', '6rem']"
+          class="min-w-[54rem]"
+          :columns="['9rem', 'minmax(0,1fr)', '9rem', '10rem', '7rem', '6rem']"
           :row-height="Math.max(ia.density, 48)"
         >
           <ListHeader>
             <ListHeaderCell>Order</ListHeaderCell>
             <ListHeaderCell>Customer</ListHeaderCell>
-            <ListHeaderCell>Status</ListHeaderCell>
+            <ListHeaderCell>Payment</ListHeaderCell>
+            <ListHeaderCell>Fulfilment</ListHeaderCell>
             <ListHeaderCell>Total</ListHeaderCell>
             <ListHeaderCell>Placed</ListHeaderCell>
           </ListHeader>
@@ -170,10 +175,10 @@ const revenueByMonth = computed(() => revenueRequest.data?.months ?? [])
                 </div>
               </ListCell>
               <ListCell>
-                <div class="flex items-center gap-1.5">
-                  <StatusBadge :status="item.payment_state.key" :label="item.payment_state.label" />
-                  <StatusBadge :status="item.state.key" :label="item.state.label" />
-                </div>
+                <StatusBadge :status="item.payment_state.key" :label="item.payment_state.label" />
+              </ListCell>
+              <ListCell>
+                <StatusBadge :status="item.state.key" :label="item.state.label" />
               </ListCell>
               <ListCell>
                 <span class="text-base text-ink-gray-7 tabular-nums">{{ money(item.total) }}</span>

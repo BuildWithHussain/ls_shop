@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { createAdminCaller } from './adminCaller'
+import { getIntegrationLogo, letterPlate } from '../components/integrations/logos'
 
 // The vendor's own colour, and the one place in the app where non-semantic colour is
 // correct: it is the thing being recognised. Presentation only — everything else about
@@ -18,7 +19,10 @@ const BRAND_MARKS = {
 const UNBRANDED = { mark: '•', brand: '#4B5563' }
 
 export function brandFor(slug) {
-  return BRAND_MARKS[slug] ?? UNBRANDED
+  const brand = BRAND_MARKS[slug] ?? UNBRANDED
+  // A provider the logo registry has never heard of still gets a plate of the same size
+  // and shape, carrying its initial on its own colour.
+  return { ...brand, plate: getIntegrationLogo(slug) ?? letterPlate(brand.mark, brand.brand) }
 }
 
 // One store per registry. Payments and shipping differ only in which two endpoints they

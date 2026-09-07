@@ -20,7 +20,15 @@ const props = defineProps({
   linkOptionsPath: { type: String, default: '' },
 })
 
-const emit = defineEmits(['update:modelValue'])
+// `update:modelValue` is every edit, including each keystroke; `change` is the value settled —
+// a switch flipped, a file uploaded, a box left. A screen that saves on its own listens to the
+// second one, so a half-typed key is never written.
+const emit = defineEmits(['update:modelValue', 'change'])
+
+function commit(value) {
+  emit('update:modelValue', value)
+  emit('change', value)
+}
 
 const { upload, isUploading } = useFileUpload()
 const fileInput = ref(null)
@@ -32,10 +40,7 @@ const text = computed({
   set: (value) => emit('update:modelValue', value),
 })
 
-const checked = computed({
-  get: () => Boolean(props.modelValue) && props.modelValue !== '0',
-  set: (value) => emit('update:modelValue', value),
-})
+const checked = computed(() => Boolean(props.modelValue) && props.modelValue !== '0')
 
 function inputType(field) {
   if (field.is_secret) return 'password'
@@ -55,7 +60,7 @@ async function uploadFile(event) {
   try {
     // Public: these end up in storefront markup — share images, logos — not behind a login.
     const uploaded = await upload(file, { private: false })
-    emit('update:modelValue', uploaded.file_url)
+    commit(uploaded.file_url)
   } catch {
     toast.error(`Could not upload ${file.name}`)
   }
@@ -63,13 +68,19 @@ async function uploadFile(event) {
 </script>
 
 <template>
-  <Switch v-if="field.fieldtype === 'Check'" v-model="checked" size="sm" />
+  <Switch
+    v-if="field.fieldtype === 'Check'"
+    :model-value="checked"
+    size="sm"
+    @update:model-value="commit"
+  />
 
   <Select
     v-else-if="field.fieldtype === 'Select'"
-    v-model="text"
+    :model-value="text"
     class="w-72"
     :options="selectOptions(field)"
+    @update:model-value="commit"
   />
 
   <SettingsLinkControl
@@ -77,7 +88,7 @@ async function uploadFile(event) {
     :field="field"
     :model-value="text"
     :options-path="linkOptionsPath"
-    @update:model-value="emit('update:modelValue', $event)"
+    @update:model-value="commit"
   />
 
   <div v-else-if="ATTACH_FIELDTYPES.includes(field.fieldtype)" class="flex w-72 items-center gap-2">
@@ -96,7 +107,7 @@ async function uploadFile(event) {
       icon="lucide-x"
       variant="ghost"
       :aria-label="`Remove ${field.label}`"
-      @click="emit('update:modelValue', '')"
+      @click="commit('')"
     />
   </div>
 
@@ -105,6 +116,7 @@ async function uploadFile(event) {
     v-model="text"
     class="w-72"
     :rows="field.fieldtype === 'Code' ? 8 : 3"
+    @change="commit($event.target.value)"
   />
 
   <TextInput
@@ -113,5 +125,6 @@ async function uploadFile(event) {
     class="w-72"
     :type="inputType(field)"
     :placeholder="field.is_secret && field.is_set ? '••••••••' : ''"
+    @change="commit($event.target.value)"
   />
 </template>

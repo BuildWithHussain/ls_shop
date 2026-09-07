@@ -122,8 +122,15 @@ const mixedOption = computed(() =>
 )
 const gridError = computed(() => (mixedOption.value ? `Pick at least one size for ${mixedOption.value}` : ''))
 
+// A price is required, not optional. create_product only writes Item Prices for a rate
+// above zero, so a product created without one carries no Item Price row at all and reads
+// as 0 on every screen until someone prices it by hand — it can never be sold in between.
 const canSubmit = computed(
-  () => Boolean(title.value.trim()) && Boolean(collection.value) && !mixedOption.value,
+  () =>
+    Boolean(title.value.trim()) &&
+    Boolean(collection.value) &&
+    Number(price.value) > 0 &&
+    !mixedOption.value,
 )
 
 // What the owner is about to get, in their words rather than ERPNext's.
@@ -145,6 +152,7 @@ const submitHint = computed(() => {
   if (canSubmit.value || createAction.loading) return ''
   if (!title.value.trim()) return 'Add a title to continue.'
   if (!collection.value) return 'Pick a collection to continue.'
+  if (!(Number(price.value) > 0)) return 'Set a price above zero to continue.'
   return ''
 })
 
@@ -237,7 +245,7 @@ async function submit() {
         <ErrorMessage :message="gridError" />
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormControl v-model.number="price" type="number" label="Price" placeholder="0" />
+          <FormControl v-model.number="price" type="number" label="Price *" placeholder="0" />
           <FormControl v-model.number="compareAt" type="number" label="Compare at" placeholder="0" />
         </div>
 

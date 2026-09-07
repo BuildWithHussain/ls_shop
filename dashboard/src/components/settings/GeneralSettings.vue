@@ -3,19 +3,14 @@
  * The store's own contact details, which this screen writes, beside the company record, which it
  * only reads. Company, currency, tax id and financial year belong to the books — this shows what
  * they say and hands off to Desk for the rest.
+ *
+ * Every box saves itself, committed when it is left rather than per keystroke, so a half-typed
+ * address is never written and there is nothing to lose by closing the dialog.
  */
 import { computed, watch } from 'vue'
-import {
-  Button,
-  LoadingText,
-  SettingsBody,
-  SettingsHeader,
-  SettingsRow,
-  TextInput,
-  toast,
-} from 'frappe-ui'
+import { Button, LoadingText, SettingsBody, SettingsHeader, SettingsRow, TextInput } from 'frappe-ui'
 import { useAdminAction, useAdminRead } from '../../data/api'
-import { useSettingsDraft } from '../../data/useSettingsDraft'
+import { useSettingsAutosave } from '../../data/useSettingsAutosave'
 
 const props = defineProps({
   // Opening the dialog should fetch; switching away and back should not.
@@ -28,7 +23,7 @@ const store = useAdminRead('settings.get_store_settings', { immediate: false })
 const company = useAdminRead('settings.get_company_profile', { immediate: false })
 const save = useAdminAction('settings.save_store_settings')
 
-const { values, changes, changed, adopt } = useSettingsDraft()
+const { values, adopt, commit } = useSettingsAutosave(save)
 
 function pickStoreFields(record) {
   return Object.fromEntries(STORE_FIELDS.map((fieldname) => [fieldname, record[fieldname]]))
@@ -50,12 +45,9 @@ watch(
   { immediate: true },
 )
 
-async function submit() {
-  const saved = await save.submit({ ...changes.value })
-  if (save.error) return
-
-  adopt(pickStoreFields(saved))
-  toast.success('Store details saved')
+// The save answers with the branding fields too; only the four this screen owns are adopted.
+function commitStoreField(fieldname, event, label) {
+  commit(fieldname, event.target.value, label, (saved) => adopt(pickStoreFields(saved)))
 }
 
 // This site's own Desk, on this site's own origin — the dashboard and the books are one install.
@@ -65,34 +57,43 @@ const companyLink = computed(() =>
 </script>
 
 <template>
-  <SettingsHeader title="General" description="How your storefront names itself, and how customers reach you.">
-    <template #actions>
-      <Button
-        label="Save"
-        variant="solid"
-        theme="gray"
-        :loading="save.loading"
-        :disabled="!changed"
-        @click="submit"
-      />
-    </template>
-  </SettingsHeader>
+  <SettingsHeader
+    title="General"
+    description="How your storefront names itself, and how customers reach you."
+  />
 
   <SettingsBody>
     <LoadingText v-if="store.loading && !store.data" class="py-10" />
 
     <div v-else class="divide-y divide-outline-gray-1">
       <SettingsRow title="Store name" description="Shown across your storefront and in the browser tab.">
-        <TextInput v-model="values.store_name" class="w-72" />
+        <TextInput
+          :model-value="values.store_name"
+          class="w-72"
+          @change="commitStoreField('store_name', $event, 'Store name')"
+        />
       </SettingsRow>
       <SettingsRow title="Contact email" description="Where customers reach you, and who order mail comes from.">
-        <TextInput v-model="values.contact_email" class="w-72" type="email" />
+        <TextInput
+          :model-value="values.contact_email"
+          class="w-72"
+          type="email"
+          @change="commitStoreField('contact_email', $event, 'Contact email')"
+        />
       </SettingsRow>
       <SettingsRow title="Contact phone">
-        <TextInput v-model="values.contact_phone" class="w-72" />
+        <TextInput
+          :model-value="values.contact_phone"
+          class="w-72"
+          @change="commitStoreField('contact_phone', $event, 'Contact phone')"
+        />
       </SettingsRow>
       <SettingsRow title="Working hours" description="Shown alongside your contact details.">
-        <TextInput v-model="values.working_hours" class="w-72" />
+        <TextInput
+          :model-value="values.working_hours"
+          class="w-72"
+          @change="commitStoreField('working_hours', $event, 'Working hours')"
+        />
       </SettingsRow>
     </div>
 

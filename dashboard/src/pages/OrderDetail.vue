@@ -40,9 +40,6 @@ watch(
 
 const erpLink = computed(() => (order.value ? erpnextLink('Sales Order', order.value.name) : null))
 
-// Admin-initiated cancel has no wired backend — see
-// docs/commera-open-questions.md, "Order Detail — Refund and Cancel order".
-//
 // "View in ERP" is here unconditionally rather than only below `sm`: the
 // labelled button hides at `sm` (min-width: 640px) but a viewport-reactive
 // menu would have to match that boundary exactly, and a fractional width in
@@ -70,11 +67,6 @@ const moreActions = [
     icon: 'lucide-rotate-ccw',
     condition: () => Boolean(refundStatus.value.can_refund),
     onClick: () => (refundOpen.value = true),
-  },
-  {
-    label: 'Cancel order',
-    icon: 'lucide-x-circle',
-    onClick: () => toast.info('Cancelling from the dashboard isn\'t available yet'),
   },
 ]
 

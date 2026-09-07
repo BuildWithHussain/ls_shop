@@ -7,8 +7,8 @@ from frappe.utils.caching import request_cache
 WEBSITE_SETTINGS = "Website Settings"
 LEGACY_SETTINGS = "Lifestyle Settings"
 
-BUNDLED_LOGO = "/assets/ls_shop/icons/lifestyle.svg"
-BUNDLED_FOOTER_LOGO = "/assets/ls_shop/images/lifestyle.png"
+BUNDLED_LOGO = "/assets/ls_shop/images/meta/commera-mark.svg"
+BUNDLED_FOOTER_LOGO = "/assets/ls_shop/images/meta/commera-mark.svg"
 BUNDLED_FAVICON = "/assets/ls_shop/images/meta/favicon-32x32.png"
 
 # Website Settings labels `banner_image` "Brand Image" - that is the storefront's header logo.
