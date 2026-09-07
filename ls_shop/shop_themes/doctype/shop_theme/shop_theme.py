@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+from contextlib import contextmanager
 
 import frappe
 from frappe.model.document import Document
@@ -290,6 +291,22 @@ def get_render_theme_context():
 
 def clear_render_theme_context():
 	setattr(frappe.local, RENDER_THEME_CONTEXT_LOCAL_KEY, None)
+
+
+@contextmanager
+def render_theme_context(theme_context):
+	"""Pin the template helpers to one theme for the duration.
+
+	Previewing a theme that is not live needs this: shop_theme_asset_url() and shop_theme_config()
+	read this context, and would otherwise hand the previewed theme's templates the LIVE theme's
+	asset URLs and settings Single.
+	"""
+	previous = getattr(frappe.local, RENDER_THEME_CONTEXT_LOCAL_KEY, None)
+	setattr(frappe.local, RENDER_THEME_CONTEXT_LOCAL_KEY, theme_context)
+	try:
+		yield
+	finally:
+		setattr(frappe.local, RENDER_THEME_CONTEXT_LOCAL_KEY, previous)
 
 
 def requested_preview_theme():

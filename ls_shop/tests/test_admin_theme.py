@@ -16,6 +16,7 @@ from ls_shop.www import theme_editor_preview
 
 PIXIO_THEME = "Pixio Theme"
 BASE_THEME = "Shop Base Theme"
+DEFAULT_THEME = "Shop Default Theme"
 
 
 class TestAdminTheme(IntegrationTestCase):
@@ -97,8 +98,8 @@ class TestThemeEditorPreview(IntegrationTestCase):
 		frappe.set_user("Administrator")
 		activate_theme(PIXIO_THEME)
 
-	def render(self, lang="en"):
-		frappe.form_dict = frappe._dict(lang=lang)
+	def render(self, lang="en", theme=None):
+		frappe.form_dict = frappe._dict(lang=lang, theme=theme)
 		context = frappe._dict()
 		theme_editor_preview.get_context(context)
 		return context.rendered_html
@@ -115,3 +116,28 @@ class TestThemeEditorPreview(IntegrationTestCase):
 		activate_theme(BASE_THEME)
 
 		self.assertIn("no home page to preview", self.render())
+
+	def test_the_pane_frames_a_theme_that_is_not_live(self):
+		html = self.render(theme=DEFAULT_THEME)
+
+		# Its own body class and its own assets, while Pixio is the theme the storefront serves:
+		# the template helpers must follow the previewed theme, not the live one.
+		self.assertIn("theme-shop-default", html)
+		self.assertIn("themes/shop_default_theme", html)
+		self.assertNotIn("theme-pixio", html)
+
+	def test_previewing_a_theme_leaves_the_live_one_alone(self):
+		self.render(theme=DEFAULT_THEME)
+
+		self.assertEqual(frappe.db.get_single_value("Shop Theme Settings", "active_theme"), PIXIO_THEME)
+		# The pin is scoped to the render: the next preview is the live theme again.
+		self.assertIn("theme-pixio", self.render())
+
+	def test_a_theme_that_is_not_installed_falls_back_to_the_live_one(self):
+		self.assertIn("theme-pixio", self.render(theme="ZZ No Such Theme"))
+
+	def test_a_previewed_theme_with_no_home_page_is_named_in_the_message(self):
+		html = self.render(theme=BASE_THEME)
+
+		self.assertIn(BASE_THEME, html)
+		self.assertIn("no home page to preview", html)

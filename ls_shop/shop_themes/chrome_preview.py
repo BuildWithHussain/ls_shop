@@ -3,7 +3,11 @@
 
 import frappe
 
-from ls_shop.shop_themes.doctype.shop_theme.shop_theme import get_theme_context, resolve_active_theme
+from ls_shop.shop_themes.doctype.shop_theme.shop_theme import (
+	get_theme_context,
+	render_theme_context,
+	resolve_active_theme,
+)
 from ls_shop.shop_themes.render import render_themed_template
 from ls_shop.shop_themes.theme_resolver import build_base_context, find_theme_file, run_page_controller
 
@@ -53,27 +57,31 @@ def render_chrome_preview(context, blanked_blocks):
 	)
 
 
-def render_page_preview(page_template, blanked_blocks):
-	"""Render one of the active theme's own pages whole, or None if no theme is active or it ships
-	no such page. Unlike render_chrome_preview() this keeps the page content: the theme editor
-	frames the storefront itself, not one end of it."""
-	theme_name = resolve_active_theme()
+def render_page_preview(page_template, blanked_blocks, theme_name=None):
+	"""Render one of a theme's own pages whole, or None if there is no theme or it ships no such
+	page. Unlike render_chrome_preview() this keeps the page content: the theme editor frames the
+	storefront itself, not one end of it. `theme_name` previews a theme that is not the live one."""
+	theme_name = theme_name or resolve_active_theme()
 	theme_context = get_theme_context(theme_name)
 	if not theme_context["dirs"] or not find_theme_file(theme_context["dirs"], page_template):
 		return None
 
-	# The same two steps ThemePageRenderer.render() takes for a real request, so the page gets the
-	# website settings and the controller data it is written against.
-	context = build_base_context(None)
-	run_page_controller(theme_context["dirs"], page_template, context)
+	with render_theme_context(theme_context):
+		# The same two steps ThemePageRenderer.render() takes for a real request, so the page gets
+		# the website settings and the controller data it is written against.
+		context = build_base_context(None)
+		run_page_controller(theme_context["dirs"], page_template, context)
 
-	# Nothing here is unsaved, so the head slot has no colours to append - but jinja is configured
-	# with DebugUndefined, which would print the placeholder into the page rather than drop it.
-	context.preview_theme_css = ""
+		# Nothing here is unsaved, so the head slot has no colours to append - but jinja is
+		# configured with DebugUndefined, which would print the placeholder into the page rather
+		# than drop it.
+		context.preview_theme_css = ""
 
-	return render_themed_template(
-		get_preview_template(f"theme://{page_template}", blanked_blocks), context, theme_name=theme_name
-	)
+		return render_themed_template(
+			get_preview_template(f"theme://{page_template}", blanked_blocks),
+			context,
+			theme_name=theme_name,
+		)
 
 
 def get_preview_context(preview_settings, lang):

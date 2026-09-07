@@ -9,6 +9,8 @@ const props = defineProps({
   path: { type: String, required: true },
   title: { type: String, required: true },
   selector: { type: String, required: true },
+  // Extra query params the previewed page reads, e.g. which theme to render.
+  params: { type: Object, default: () => ({}) },
 })
 
 const collapsed = defineModel('collapsed', { type: Boolean, required: true })
@@ -144,7 +146,14 @@ function measureFrame(event) {
   }
 }
 
-const source = computed(() => `${props.path}?lang=${language.value}&t=${props.token}-${reloadToken.value}`)
+const source = computed(() => {
+  const query = new URLSearchParams({
+    ...props.params,
+    lang: language.value,
+    t: `${props.token}-${reloadToken.value}`,
+  })
+  return `${props.path}?${query}`
+})
 </script>
 
 <template>

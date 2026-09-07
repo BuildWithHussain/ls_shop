@@ -21,6 +21,22 @@ const previewCollapsed = ref(isMobile.value)
 
 const liveTheme = computed(() => themes.value.find((theme) => theme.live) ?? null)
 
+// What the pane frames. Held by name, not by row, so it survives every reload of the list;
+// unset - or pointing at a theme that has since gone - it falls back to whatever is live.
+const selectedName = ref(null)
+const previewedTheme = computed(
+  () => themes.value.find((theme) => theme.name === selectedName.value) ?? liveTheme.value,
+)
+
+const previewParams = computed(() =>
+  previewedTheme.value ? { theme: previewedTheme.value.name } : {},
+)
+
+const previewTitle = computed(() => {
+  if (!previewedTheme.value || previewedTheme.value.live) return 'Storefront preview'
+  return `Preview: ${previewedTheme.value.theme_name}`
+})
+
 // What a theme is, in the only terms this screen knows: what it builds on.
 function themeNote(theme) {
   if (theme.parent_theme) return `Extends ${theme.parent_theme}`
@@ -29,6 +45,7 @@ function themeNote(theme) {
 
 async function activate(theme) {
   if (await mutate('activate_theme', { theme: theme.name })) {
+    selectedName.value = theme.name
     toast.success(`${theme.theme_name} is now the live theme`)
   }
 }
@@ -61,23 +78,38 @@ async function saveSetting(field, value) {
     <div v-else class="gap-6 lg:flex lg:items-start">
       <section class="w-full shrink-0 lg:w-[22rem]">
         <h2 class="text-lg-semibold text-ink-gray-8">Installed themes</h2>
+        <p class="mt-1 text-p-sm text-ink-gray-5">
+          Pick one to preview it below. Only the live theme's own settings can be edited.
+        </p>
         <div class="mt-3 space-y-2">
           <div
             v-for="theme in themes"
             :key="theme.name"
-            class="flex items-center gap-3 rounded-5 border border-outline-gray-1 p-3"
+            class="flex items-center gap-3 rounded-5 border p-3"
+            :class="
+              theme.name === previewedTheme?.name
+                ? 'border-outline-gray-3 bg-surface-gray-2'
+                : 'border-outline-gray-1'
+            "
           >
-            <span
-              class="grid size-9 shrink-0 place-items-center rounded-4 bg-surface-gray-2 text-ink-gray-6"
+            <button
+              type="button"
+              class="flex min-w-0 flex-1 items-center gap-3 text-left"
+              :aria-pressed="theme.name === previewedTheme?.name"
+              @click="selectedName = theme.name"
             >
-              <span class="lucide-palette size-4" aria-hidden="true" />
-            </span>
-            <div class="min-w-0 flex-1">
-              <p class="truncate text-base text-ink-gray-8">{{ theme.theme_name }}</p>
-              <p class="mt-1 truncate text-sm text-ink-gray-5">
-                {{ themeNote(theme) }}
-              </p>
-            </div>
+              <span
+                class="grid size-9 shrink-0 place-items-center rounded-4 bg-surface-white text-ink-gray-6"
+              >
+                <span class="lucide-palette size-4" aria-hidden="true" />
+              </span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-base text-ink-gray-8">{{ theme.theme_name }}</p>
+                <p class="mt-1 truncate text-sm text-ink-gray-5">
+                  {{ themeNote(theme) }}
+                </p>
+              </div>
+            </button>
             <Badge v-if="theme.live" label="Live" theme="green" variant="subtle" />
             <Button v-else label="Activate" :loading="loading" @click="activate(theme)" />
           </div>
@@ -155,7 +187,8 @@ async function saveSetting(field, value) {
       v-model:collapsed="previewCollapsed"
       :token="previewToken"
       path="/theme_editor_preview"
-      title="Storefront preview"
+      :title="previewTitle"
+      :params="previewParams"
       selector="body"
     />
   </div>
