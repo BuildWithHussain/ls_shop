@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { Badge, Button, dialog, toast } from 'frappe-ui'
+import { Badge, Button, Dropdown, dialog, toast } from 'frappe-ui'
 import { List, ListCell, ListHeader, ListHeaderCell, ListRow, ListRows } from 'frappe-ui/list'
 import Thumb from './Thumb.vue'
 import EditableValue from './EditableValue.vue'
@@ -61,9 +61,65 @@ async function bulkSetPrice() {
   })
 }
 
-// Five columns, because the matrix sits beside the summary panel: the barcode
-// is on the variant's own page, where there is room for it.
-const columns = ['minmax(7rem,1.3fr)', 'minmax(5rem,1fr)', '6.5rem', '5rem', '4.5rem']
+const publishAction = useAdminAction('catalog.set_variant_published')
+const receiveAction = useAdminAction('inventory.receive_stock')
+
+// The server refuses to publish an option with no photo or no size, and says so. Reading the
+// same blockers off the row means the matrix can say it before the merchant clicks.
+function publishBlockers(variant) {
+  return variant.blockers ?? []
+}
+
+async function togglePublish(variant) {
+  await publishAction.submit({ style_attribute_variant: variant.name, publish: variant.is_published ? 0 : 1 })
+  // A refusal names the missing photo or size and has already been toasted.
+  if (publishAction.error) return
+  toast.success(variant.is_published ? `${variant.option} hidden from the storefront` : `${variant.option} published`)
+  emit('saved')
+}
+
+// Same additive receipt as the Stock screen and the product menu — ls_shop has no way to set
+// on-hand to an exact number, so one quantity goes onto every size of this option.
+function receiveStock(variant) {
+  const itemCodes = variant.sizes.map((size) => size.item_code).filter(Boolean)
+  if (!itemCodes.length) {
+    toast.info(`${variant.option} has no sizes to receive stock against yet.`)
+    return
+  }
+
+  dialog.prompt({
+    title: `Receive stock on ${variant.option}`,
+    message: `Adds this quantity to each of the ${itemCodes.length} sizes under this option. There is no way to set stock to an exact number here.`,
+    fields: [{ name: 'value', label: 'Quantity received', type: 'number', required: true }],
+    onConfirm: async ({ values }) => {
+      const quantity = Math.max(0, Math.trunc(Number(values.value) || 0))
+      if (!quantity) return
+
+      await receiveAction.submit({
+        received_quantities: Object.fromEntries(itemCodes.map((code) => [code, quantity])),
+      })
+      if (receiveAction.error) return
+      toast.success(`Received ${quantity} on ${itemCodes.length} sizes`)
+      emit('saved')
+    },
+  })
+}
+
+function rowActions(variant) {
+  return [
+    {
+      label: variant.is_published ? 'Hide from storefront' : 'Publish to storefront',
+      icon: variant.is_published ? 'lucide-eye-off' : 'lucide-globe',
+      onClick: () => togglePublish(variant),
+    },
+    { label: 'Receive stock', icon: 'lucide-package-plus', onClick: () => receiveStock(variant) },
+    { label: 'Open full page', icon: 'lucide-external-link', onClick: () => openVariant(variant) },
+  ]
+}
+
+// Seven columns. The min-width has to clear every fixed column plus both minmax floors, or the
+// 1.3fr Variant column collapses to nothing instead of the row scrolling.
+const columns = ['minmax(7rem,1.3fr)', 'minmax(5rem,1fr)', '6.5rem', '5rem', '4.5rem', '7rem', '3rem']
 </script>
 
 <template>
@@ -106,7 +162,7 @@ const columns = ['minmax(7rem,1.3fr)', 'minmax(5rem,1fr)', '6.5rem', '5rem', '4.
       <div class="overflow-x-auto px-2 pb-2">
         <List
           v-model:selection="selection"
-          class="min-w-[30rem]"
+          class="min-w-[42rem]"
           selectable
           :row-height="Math.max(ia.density, 48)"
           :columns="columns"
@@ -117,6 +173,8 @@ const columns = ['minmax(7rem,1.3fr)', 'minmax(5rem,1fr)', '6.5rem', '5rem', '4.
             <ListHeaderCell>Price</ListHeaderCell>
             <ListHeaderCell>Stock</ListHeaderCell>
             <ListHeaderCell>Photos</ListHeaderCell>
+            <ListHeaderCell>Storefront</ListHeaderCell>
+            <ListHeaderCell></ListHeaderCell>
           </ListHeader>
           <ListRows :items="product.variants" row-key="name" v-slot="{ item }">
             <ListRow :value="item.name">
@@ -168,6 +226,28 @@ const columns = ['minmax(7rem,1.3fr)', 'minmax(5rem,1fr)', '6.5rem', '5rem', '4.
                     {{ item.images.length || 'Add' }}
                   </span>
                 </button>
+              </ListCell>
+              <ListCell>
+                <!-- Why it cannot go live matters more than that it has not, so a blocked
+                     option names what it is missing instead of just reading "Hidden". -->
+                <Badge
+                  v-if="item.is_published"
+                  label="Live"
+                  theme="green"
+                  variant="subtle"
+                />
+                <Badge
+                  v-else-if="publishBlockers(item).length"
+                  :label="publishBlockers(item).join(', ')"
+                  theme="amber"
+                  variant="subtle"
+                />
+                <Badge v-else label="Hidden" theme="gray" variant="subtle" />
+              </ListCell>
+              <ListCell>
+                <Dropdown :options="rowActions(item)" @click.stop>
+                  <Button icon="lucide-ellipsis" label="Options for this variant" variant="ghost" />
+                </Dropdown>
               </ListCell>
             </ListRow>
           </ListRows>
