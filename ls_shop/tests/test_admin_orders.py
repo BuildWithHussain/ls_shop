@@ -646,6 +646,15 @@ class TestOrderCharges(IntegrationTestCase):
 		self.assertEqual(order["tax"], 0)
 		self.assertEqual(order["net_total"], order["grand_total"])
 
+	def test_the_screen_names_the_delivery_option_the_shopper_chose(self):
+		"""A shipping amount alone cannot tell the owner which service to book."""
+		self.sales_order.db_set("custom_delivery_option", "ZZ Express Delivery")
+
+		self.assertEqual(get_order(self.sales_order.name)["delivery_option"], "ZZ Express Delivery")
+
+	def test_an_order_that_took_the_flat_shipping_rule_names_no_option(self):
+		self.assertFalse(get_order(self.sales_order.name)["delivery_option"])
+
 
 def draft_delivery_note(sales_order):
 	"""A Delivery Note left unsubmitted - what a merchant prints a packing slip from before the

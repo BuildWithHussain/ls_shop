@@ -174,9 +174,15 @@ function reloadAfterRefund() {
               <div class="flex justify-between text-base text-ink-gray-6">
                 <span>Subtotal</span><span class="tabular-nums">{{ money(order.net_total) }}</span>
               </div>
-              <div class="flex justify-between text-base text-ink-gray-6">
-                <span>Shipping</span>
-                <span class="tabular-nums">{{ order.shipping ? money(order.shipping) : 'Free' }}</span>
+              <div class="flex justify-between gap-3 text-base text-ink-gray-6">
+                <!-- The service the shopper chose and paid for: an amount alone does not tell
+                     whoever packs this which delivery option to book. -->
+                <span class="min-w-0 truncate">
+                  Shipping<span v-if="order.delivery_option" class="text-ink-gray-5">
+                    · {{ order.delivery_option }}</span
+                  >
+                </span>
+                <span class="shrink-0 tabular-nums">{{ order.shipping ? money(order.shipping) : 'Free' }}</span>
               </div>
               <div v-if="order.cod_charge" class="flex justify-between text-base text-ink-gray-6">
                 <span>Cash on delivery charge</span><span class="tabular-nums">{{ money(order.cod_charge) }}</span>

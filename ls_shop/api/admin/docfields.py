@@ -8,6 +8,7 @@ here rather than from a hardcoded field list, so adding a docfield is all it tak
 """
 
 import frappe
+from frappe.utils.data import cstr
 
 # Fieldtypes the generic renderer cannot express as a single input.
 SKIPPED_FIELDTYPES = frozenset({"Section Break", "Column Break", "Tab Break", "HTML", "Button", "Table"})
@@ -95,3 +96,28 @@ def get_child_tables(settings_doctype, settings):
 		for docfield in frappe.get_meta(settings_doctype).fields
 		if docfield.fieldtype == "Table" and not docfield.hidden
 	]
+
+
+def get_linked_doctypes(doctype):
+	"""Every doctype reachable through a Link field on `doctype` — what a picker may search."""
+	return {
+		docfield.options
+		for docfield in frappe.get_meta(doctype).fields
+		if docfield.fieldtype == "Link" and docfield.options
+	}
+
+
+def search_link_options(doctype, search_text=None):
+	"""Matching records as a picker's options. The CALLER owns the guard on which doctype may be
+	searched — this only shapes the answer.
+	"""
+	frappe.has_permission(doctype, ptype="read", throw=True)
+
+	filters = {}
+	if search_text:
+		filters["name"] = ("like", f"%{cstr(search_text)}%")
+
+	# ponytail: first 100 matches only - the picker searches server-side, so anything further
+	# down is reachable by typing; paginate if a doctype outgrows even a searched list
+	records = frappe.get_all(doctype, filters=filters, pluck="name", order_by="name asc", limit=100)
+	return [{"label": name, "value": name} for name in records]

@@ -15,6 +15,7 @@ import {
 import { ThemeSwitcher } from 'frappe-ui/experimental'
 import AdvancedSettings from './AdvancedSettings.vue'
 import AppsSettings from './AppsSettings.vue'
+import DeliveryOptionsPanel from './DeliveryOptionsPanel.vue'
 import GeneralSettings from './GeneralSettings.vue'
 import IntegrationsPanel from './IntegrationsPanel.vue'
 import LocationsSettings from './LocationsSettings.vue'
@@ -122,13 +123,23 @@ watch(
         />
       </SettingsPanel>
 
+      <!-- Shipping reads as one story in two steps: connect a carrier, then say what
+           shoppers may pick from it. The carrier list is short and fixed, so it takes
+           only the height it needs and the options below get the rest of the scroll. -->
       <SettingsPanel value="shipping">
-        <IntegrationsPanel
-          :store="shippingIntegrations"
-          :active="settings.tab === 'shipping'"
-          title="Shipping"
-          description="Carriers this store books with. Each quotes its own rates at checkout."
-        />
+        <!-- The carrier list is the first of two sections rather than a whole panel, so its
+             body drops the 4rem of tail padding a panel ends on; the section below supplies
+             its own top spacing. Reached through frappe-ui's own data-slot, which is the
+             supported hook — IntegrationsPanel itself stays generic and untouched. -->
+        <div class="flex shrink-0 flex-col [&_[data-slot=scroll-area-viewport]]:pb-0">
+          <IntegrationsPanel
+            :store="shippingIntegrations"
+            :active="settings.tab === 'shipping'"
+            title="Shipping"
+            description="Carriers this store books with. Each quotes its own rates at checkout."
+          />
+        </div>
+        <DeliveryOptionsPanel :active="settings.open && settings.tab === 'shipping'" />
       </SettingsPanel>
 
       <SettingsPanel value="apps">

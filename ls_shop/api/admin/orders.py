@@ -649,6 +649,7 @@ def get_order(sales_order: str):
 			"shipping_rule",
 			"per_delivered",
 			"custom_ecommerce_payment_mode",
+			"custom_delivery_option",
 			"shipping_address",
 			"address_display",
 			"modified",
@@ -695,6 +696,9 @@ def get_order(sales_order: str):
 		"total": flt(order.total),
 		"net_total": flt(order.net_total),
 		"shipping": charges["shipping"],
+		# The delivery option the shopper actually chose and paid for. Empty on an order placed
+		# before the shipping connector was installed, or one that took the flat Shipping Rule.
+		"delivery_option": order.custom_delivery_option,
 		"cod_charge": charges["cod_charge"],
 		"tax": charges["tax"],
 		"total_taxes_and_charges": flt(order.total_taxes_and_charges),
