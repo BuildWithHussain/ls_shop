@@ -1,0 +1,141 @@
+{# `hidden` and `animate-spin` are toggled by templates/macros/auth_script.html, so renaming them here would fork the script. #}
+
+<div class="pixio-auth" x-data="pixio_auth()" @open-auth.window="open_dialog()"
+	@keydown.escape.window="close_dialog()">
+
+	<div class="pixio-auth-backdrop" x-show="is_open" x-cloak x-transition.opacity
+		@click="close_dialog()"></div>
+
+	<div class="pixio-auth-panel" role="dialog" aria-modal="true" x-show="is_open" x-cloak
+		x-trap.noscroll="is_open" aria-label="{{ _('Sign in') }}">
+
+		<div class="pixio-auth-head">
+			<h4 class="mb-0">{{ _("Let's get started") }}</h4>
+			<button type="button" class="btn-close" @click="close_dialog()"
+				aria-label="{{ _('Close') }}">&times;</button>
+		</div>
+
+		<div class="pixio-auth-body">
+			<div class="dz-tabs">
+				<ul class="nav nav-tabs center" role="tablist" x-show="!otp_sent">
+					<li class="nav-item" role="presentation">
+						<button type="button" class="nav-link" role="tab"
+							:class="selected_tab === 'login' ? 'active' : ''"
+							:aria-selected="selected_tab === 'login'"
+							@click="selected_tab = 'login'">{{ _("Sign In") }}</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button type="button" class="nav-link" role="tab"
+							:class="selected_tab === 'sign_in' ? 'active' : ''"
+							:aria-selected="selected_tab === 'sign_in'"
+							@click="selected_tab = 'sign_in'">{{ _("Sign Up") }}</button>
+					</li>
+				</ul>
+
+				<div class="tab-content pt-4">
+
+					<div class="tab-pane fade show active" role="tabpanel"
+						x-show="selected_tab === 'login' && !otp_sent" x-cloak>
+						<form @submit.prevent="login_user($data, $refs)">
+							<div class="form-group mb-3">
+								<label class="form-label">{{ _("Email") }}*</label>
+								<input type="email" class="form-control" required x-model="email"
+									placeholder="{{ _('Enter your email') }}">
+							</div>
+							<button type="submit" class="btn btn-secondary w-100" x-ref="login_otp_btn">
+								{{ _("Sign In") }}
+								<span class="hidden animate-spin" role="status" aria-label="{{ _('loading') }}"></span>
+							</button>
+						</form>
+					</div>
+
+					<div class="tab-pane fade show active" role="tabpanel"
+						x-show="selected_tab === 'sign_in' && !otp_sent" x-cloak>
+						<form @submit.prevent="sign_up_user($data, $refs)">
+							<div class="form-group mb-3">
+								<label class="form-label">{{ _("Email") }}*</label>
+								<input type="email" class="form-control" required x-model="email"
+									x-ref="sign_up_email" placeholder="{{ _('Enter your email') }}">
+							</div>
+							<div class="form-group mb-3">
+								<label class="form-label">{{ _("First Name") }}*</label>
+								<input type="text" class="form-control" required x-model="first_name"
+									placeholder="{{ _('Enter your first name') }}">
+							</div>
+							<div class="form-group mb-3">
+								<label class="form-label">{{ _("Last Name") }}*</label>
+								<input type="text" class="form-control" required x-model="last_name"
+									placeholder="{{ _('Enter your last name') }}">
+							</div>
+							<button type="submit" class="btn btn-secondary w-100" x-ref="sign_in_btn">
+								{{ _("Sign Up") }}
+								<span class="hidden animate-spin" role="status" aria-label="{{ _('loading') }}"></span>
+							</button>
+						</form>
+					</div>
+
+					<div class="tab-pane fade show active" role="tabpanel" x-show="otp_sent" x-cloak>
+						<p class="text-center mb-4">{{ _("Enter the verification code sent to your email") }}</p>
+						<form @submit.prevent="verify_otp($data, $refs)">
+							<div class="pixio-auth-otp mb-4">
+								{% for index in range(6) %}
+									<input type="text" inputmode="numeric" maxlength="1" required
+										class="form-control" x-model="otp[{{ index }}]" x-ref="otp{{ index }}"
+										@input="handle_digit_input($data, $refs, $event, {{ index }})"
+										@keydown.backspace="handle_backspace($refs, $event, {{ index }})"
+										@paste="handle_paste($data, $refs, $event, {{ index }})"
+										aria-label="{{ _('Digit {0}').format(index + 1) }}">
+								{% endfor %}
+							</div>
+							<button type="submit" class="btn btn-secondary w-100" x-ref="verify_otp_btn">
+								{{ _("Verify") }}
+								<span class="hidden animate-spin" role="status" aria-label="{{ _('loading') }}"></span>
+							</button>
+							<button type="button" class="btn btn-link w-100 mt-2" :disabled="resend_timer > 0"
+								@click="resend_otp($data, $refs)">
+								<span x-show="resend_timer > 0">
+									{{ _("Resend in") }} <span x-text="resend_timer"></span>s
+								</span>
+								<span x-show="resend_timer === 0">{{ _("Resend code") }}</span>
+							</button>
+						</form>
+					</div>
+
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+{% include "templates/macros/auth_script.html" %}
+
+<script>
+	document.addEventListener("alpine:init", () => {
+		Alpine.data("pixio_auth", () => ({
+			is_open: false,
+			otp_sent: false,
+			selected_tab: "login",
+			first_name: "",
+			last_name: "",
+			email: "",
+			otp: ["", "", "", "", "", ""],
+			resend_timer: 0,
+			resend_interval: null,
+
+			open_dialog() {
+				this.is_open = true;
+			},
+
+			close_dialog() {
+				if (!this.is_open) return;
+				this.is_open = false;
+// A dialog reopened after a half-finished attempt would otherwise show the OTP panel for an abandoned code.
+				this.otp_sent = false;
+				this.otp = ["", "", "", "", "", ""];
+				clearInterval(this.resend_interval);
+				this.resend_interval = null;
+				this.resend_timer = 0;
+			},
+		}));
+	});
+</script>

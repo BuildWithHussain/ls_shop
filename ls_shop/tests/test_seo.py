@@ -8,6 +8,7 @@ import frappe
 from frappe.tests import IntegrationTestCase, UnitTestCase
 
 from ls_shop import seo, website_context
+from ls_shop.tests import get_test_configurator, get_test_item
 from ls_shop.www import sitemap, sitemap_segment
 
 SEO_SETTING_FIELDS = (
@@ -33,9 +34,7 @@ PAGE_SEO_KEYS = {
 
 
 def set_seo_settings(**values):
-	"""Write Lifestyle Settings single fields and bust the cached doc so the SEO
-	helpers (which read via get_cached_doc) observe the deterministic values.
-	"""
+	"""Write Lifestyle Settings fields and bust the cached doc the SEO helpers read through."""
 	for field in SEO_SETTING_FIELDS:
 		frappe.db.set_single_value("Lifestyle Settings", field, values.get(field, ""))
 	frappe.clear_document_cache("Lifestyle Settings", "Lifestyle Settings")
@@ -53,8 +52,7 @@ class TestApplyTitleTemplate(IntegrationTestCase):
 		self.assertEqual(seo.apply_title_template(""), "MyStore")
 
 	def test_unknown_placeholder_does_not_raise(self):
-		# Real DoS bug that was fixed: an admin template with a stray placeholder
-		# must not KeyError/500 the storefront. Locks the defensive path down.
+		# Fixed defect: an admin template with a stray placeholder must not KeyError/500 the storefront.
 		set_seo_settings(store_name="MyStore", seo_title_template="{brand} | {store}")
 		result = seo.apply_title_template("Running Shoes")
 		self.assertIsInstance(result, str)
@@ -207,15 +205,10 @@ class TestCategorySeoOverrides(IntegrationTestCase):
 
 
 class TestBuildCollectionSeo(IntegrationTestCase):
-	"""The bare all-products listing (no category) is admin-configurable via the
-	product_list_* Lifestyle Settings fields; a category page must keep using its
-	per-category overrides regardless of those globals.
-	"""
+	"""A category page keeps its per-category SEO overrides regardless of the product_list_* globals."""
 
 	def set_product_list_seo(self, **values):
-		"""Write the admin-editable product-list SEO fields and bust the cached doc so
-		build_collection_seo observes them (rolled back with the test transaction).
-		"""
+		"""Write the product-list SEO fields and bust the cached doc build_collection_seo reads through."""
 		frappe.db.set_single_value("Lifestyle Settings", "store_name", values.get("store_name", "MyStore"))
 		for field in ("product_list_meta_title", "product_list_meta_description", "product_list_og_image"):
 			frappe.db.set_single_value("Lifestyle Settings", field, values.get(field, ""))
@@ -241,8 +234,7 @@ class TestBuildCollectionSeo(IntegrationTestCase):
 		self.assertIn(seo.DEFAULT_OG_IMAGE, result["image"])
 
 	def test_category_ignores_product_list_globals(self):
-		# Even with globals set, a category page must keep its per-category override (or the
-		# category-specific computed default), never the all-products globals.
+		# A category page keeps its per-category override, never the all-products globals.
 		self.set_product_list_seo(
 			store_name="MyStore",
 			product_list_meta_title="All Products — Shop Everything",
@@ -294,10 +286,7 @@ class TestBreadcrumbJsonLd(IntegrationTestCase):
 
 
 class TestUtilityPageNoindexInjection(IntegrationTestCase):
-	"""The theme renderer bypasses the www get_context controllers, so cart/account/login
-	noindex is injected via update_website_context. Locks that route-keyed injection and,
-	just as importantly, that content routes are left alone.
-	"""
+	"""The theme renderer bypasses the www get_context controllers, so noindex comes via update_website_context."""
 
 	def setUp(self):
 		set_seo_settings(store_name="MyStore", seo_title_template="{title} | {store}")
@@ -340,17 +329,14 @@ class TestUtilityPageNoindexInjection(IntegrationTestCase):
 
 
 class SitemapFixtureMixin:
-	"""Seeds one published / one noindex / one unpublished variant and two categories
-	(enabled + noindex) so both the index and the paginated child controller can be
-	exercised against real, freshly-modified rows.
-	"""
+	"""Seeds one published / one noindex / one unpublished variant and two categories (enabled + noindex)."""
 
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
 		cls.suffix = frappe.generate_hash(length=8)
-		cls.configurator = frappe.get_all("Style Attribute Configurator", limit=1, pluck="name")[0]
-		cls.item = frappe.get_all("Item", limit=1, pluck="name")[0]
+		cls.configurator = get_test_configurator()
+		cls.item = get_test_item()
 
 		cls.published_route = f"seo-test-pub-{cls.suffix}"
 		cls.noindex_route = f"seo-test-noindex-{cls.suffix}"
@@ -474,8 +460,7 @@ class TestSitemapSegment(SitemapFixtureMixin, IntegrationTestCase):
 		self.assertIn(self.url("/ar"), locs)
 
 	def test_pages_segment_is_homepage_only(self):
-		# ls_shop has no CMS page doctype, so this segment carries exactly the two
-		# homepage URLs and nothing else.
+		# ls_shop has no CMS page doctype, so this segment carries exactly the two homepage URLs.
 		self.assertEqual(
 			self.locs("pages", 1),
 			{self.url("/en"), self.url("/ar")},
@@ -492,8 +477,7 @@ class TestSitemapSegment(SitemapFixtureMixin, IntegrationTestCase):
 		self.assertIsNone(sitemap_segment.latest_lastmod("pages"))
 
 	def test_page_never_exceeds_url_cap(self):
-		# Every product route is emitted once per language; a full page must stay
-		# within the sitemaps.org 50k-URL ceiling.
+		# One product route per language; a full page must stay within the sitemaps.org 50k-URL ceiling.
 		context = self.run_segment("products", 1)
 		self.assertLessEqual(len(context.urls), sitemap_segment.DEFAULT_URLS_PER_SITEMAP)
 
@@ -520,8 +504,7 @@ class TestSitemapSegment(SitemapFixtureMixin, IntegrationTestCase):
 		self.assertEqual(self.run_segment("widgets", 1).urls, [])
 
 	def test_docs_per_page_honours_settings(self):
-		# The per-page budget is configurable via Lifestyle Settings and is split
-		# across the storefront languages.
+		# The per-page budget is set in Lifestyle Settings and split across the storefront languages.
 		original = frappe.db.get_single_value("Lifestyle Settings", "sitemap_urls_per_page")
 		try:
 			frappe.db.set_single_value("Lifestyle Settings", "sitemap_urls_per_page", 10)
@@ -608,9 +591,7 @@ class TestBuildProductJsonLd(IntegrationTestCase):
 
 
 class TestGenerateProductJsonLd(SitemapFixtureMixin, IntegrationTestCase):
-	"""The Desk preview button routes through get_product_detail, so it must agree with the
-	product page on price and stock rather than reading the variant in isolation.
-	"""
+	"""The Desk preview button routes through get_product_detail, so price and stock match the product page."""
 
 	def test_generated_schema_matches_product_detail(self):
 		from ls_shop.product_detail import get_product_detail

@@ -19,6 +19,5 @@ class TestAnalyticsSettings(IntegrationTestCase):
 		self.assertFalse(events.is_first_party_enabled())
 
 	def test_settings_single_exists_for_the_cached_read(self):
-		# events.is_first_party_enabled reads via get_cached_value, which needs the
-		# single row to be installed; a missing row would silently disable tracking.
+		# A missing Analytics Settings single silently disables tracking, it is read via get_cached_value.
 		self.assertTrue(frappe.db.exists("Analytics Settings", "Analytics Settings"))

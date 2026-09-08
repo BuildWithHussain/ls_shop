@@ -1,3 +1,6 @@
+# dashboard/ is the Commera frontend, kept byte-for-byte as authored (two-space, single-quote).
+exclude: '^dashboard/'
+
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.1
@@ -17,3 +20,26 @@ repos:
       hooks:
       -   id: biome-check
           additional_dependencies: ["@biomejs/biome@1.4.1"]
+
+  - repo: local
+    hooks:
+      - id: comment-length
+        name: "Keep comments to two lines"
+        entry: python3 scripts/check_comment_length.py
+        language: system
+        types_or: [python, vue, html, javascript, ts, css]
+        # Third-party bundles we ship but do not author: their banners and licence
+        # headers are theirs to keep, and rewriting them loses the provenance.
+        exclude: '(^|/)vendor/|^ls_shop/public/themes/pixio_theme/css/style\.css$'
+
+  # Whole-tree scans: too slow to justify per-commit, and they need node_modules,
+  # so they run on push. Enable with: pre-commit install --hook-type pre-push
+  - repo: local
+    hooks:
+      - id: jscpd
+        name: "Run jscpd duplication check"
+        entry: npm run --silent dupes
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: ^ls_shop/.*\.py$

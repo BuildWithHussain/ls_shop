@@ -1,8 +1,6 @@
 import frappe
 
-# Served verbatim at /llms.txt when the Lifestyle Settings field is blank. migrate.py seeds
-# this into the field on install so admins get an editable starting point rather than a
-# hardcoded page they cannot change.
+# Fallback when the Lifestyle Settings field is blank; migrate.py also seeds this text into that field.
 DEFAULT_LLMS_TXT = """# Storefront
 
 > An online retail storefront, available in English and Arabic. Product pages are

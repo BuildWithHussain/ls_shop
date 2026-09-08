@@ -1,14 +1,7 @@
 # Copyright (c) 2026, company@bwhstudios.com and Contributors
 # See license.txt
 
-"""The storefront nav reads one data source, and the templates must not grow a second one.
-
-A theme engine lands next and its loader can override any path under `templates/`. If a template is
-allowed to query for nav data, a theme that replaces it silently disconnects the menu manager from
-the page it is supposed to drive — the storefront keeps rendering, just not what the shop owner
-built. `test_no_nav_template_queries_for_its_own_data` is the guard; it is a grep, deliberately, so
-it fails on the diff that introduces the query rather than on some later rendering symptom.
-"""
+"""The storefront nav reads one data source, and the templates must not grow a second one."""
 
 import re
 from pathlib import Path
@@ -18,6 +11,7 @@ from frappe.tests import IntegrationTestCase
 
 from ls_shop.lifestyle_shop_ecommerce.doctype.lifestyle_settings.navbar import navbar_manager
 from ls_shop.shop_data import get_category_facets, get_header_data, get_storefront_menu
+from ls_shop.tests import delete_menu_entries
 
 APP_ROOT = Path(frappe.get_app_path("ls_shop"))
 
@@ -43,8 +37,7 @@ class TestStorefrontNav(IntegrationTestCase):
 		frappe.local.ls_shop_storefront_menu = None
 
 	def tearDown(self):
-		frappe.db.delete("Ecommerce Category Item Group", {"parent": ["like", f"{PREFIX}%"]})
-		frappe.db.delete("Ecommerce Category", {"name": ["like", f"{PREFIX}%"]})
+		delete_menu_entries({"name": ["like", f"{PREFIX}%"]})
 		frappe.db.delete("Item Group", {"name": ["like", f"{PREFIX}%"]})
 		frappe.local.ls_shop_storefront_menu = None
 
@@ -83,8 +76,7 @@ class TestStorefrontNav(IntegrationTestCase):
 		)
 
 	def test_the_grep_would_actually_catch_a_query(self):
-		"""Guard against a regex that matches nothing — the check above is only worth its runtime if
-		it fires on the line it is meant to catch."""
+		"""Guard against a regex that matches nothing — the check above must fire on the line it targets."""
 		self.assertTrue(QUERY_CALL.search("{% set rows = frappe.get_all('Brand') %}"))
 		self.assertTrue(QUERY_CALL.search("{% set rows = frappe.db.get_all('Ecommerce Category') %}"))
 		self.assertIsNone(QUERY_CALL.search("{{ nav_menu(header_data.navigation_menu) }}"))
@@ -96,8 +88,7 @@ class TestStorefrontNav(IntegrationTestCase):
 
 		self.assertIn(tab, [node["name"] for node in header_data.navigation_menu])
 		self.assertEqual(len(header_data.navigation_categories), len(header_data.navigation_menu))
-		# The header, the drawer and the sidebar each read the menu once per render, so the second
-		# read must be the same object rather than two more queries.
+		# Header, drawer and sidebar each read the menu, so the second read must be cached, not requeried.
 		self.assertIs(get_storefront_menu(), header_data.navigation_menu)
 
 	def test_a_hidden_tab_never_reaches_the_storefront_menu(self):
@@ -129,28 +120,27 @@ class TestStorefrontNav(IntegrationTestCase):
 			[f"{PREFIX} B2 {self.tag}", f"{PREFIX} B1 {self.tag}"],
 		)
 
-	def test_category_facets_key_every_tab_and_carry_the_item_group_csv(self):
+	def test_category_facets_key_every_tab_and_carry_the_item_group(self):
 		shirts = self.make_item_group(f"{PREFIX} Shirts {self.tag}")
 		belts = self.make_item_group(f"{PREFIX} Belts {self.tag}")
 		tab = navbar_manager.create_node("", f"{PREFIX} Men {self.tag}").name
-		navbar_manager.create_node(tab, f"{PREFIX} Tops", "Item Group", [shirts, belts])
+		navbar_manager.create_node(tab, f"{PREFIX} Tops", "Item Group", [shirts])
+		navbar_manager.create_node(tab, f"{PREFIX} Belts Tab", "Item Group", [belts])
 		frappe.local.ls_shop_storefront_menu = None
 
 		all_tabs = get_category_facets("")
 		self.assertIn(f"{PREFIX} Men {self.tag}", all_tabs)
-		facet = all_tabs[f"{PREFIX} Men {self.tag}"][0]
-		self.assertEqual(facet["item_groups"], [shirts, belts])
-		self.assertEqual(facet["name"], f"{shirts},{belts}")
-		self.assertEqual(facet["is_leaf"], 1)
+		facets = all_tabs[f"{PREFIX} Men {self.tag}"]
+		self.assertEqual({facet["item_groups"][0] for facet in facets}, {shirts, belts})
+		self.assertTrue(all(facet["is_leaf"] for facet in facets))
 
 		# Selecting the tab narrows to that tab only, keyed by whatever ?category= carried.
 		one_tab = get_category_facets(tab)
 		self.assertEqual(list(one_tab), [tab])
 		self.assertEqual(one_tab[tab], all_tabs[f"{PREFIX} Men {self.tag}"])
 
-	def test_a_heading_with_no_item_groups_never_becomes_a_facet(self):
-		"""A Brand or URL entry links no item groups, so a facet for it would filter on the empty
-		string — a checkbox that can be ticked and matches nothing."""
+	def test_a_heading_with_no_item_group_never_becomes_a_facet(self):
+		"""A Brand or URL entry links no item group, so its facet would filter on the empty string."""
 		tab = navbar_manager.create_node("", f"{PREFIX} Mixed {self.tag}").name
 		navbar_manager.create_node(tab, f"{PREFIX} Just A Heading")
 		navbar_manager.create_node(tab, f"{PREFIX} Off Site", "URL", "https://example.com")

@@ -11,9 +11,7 @@ def on_payment_request_update(doc, method=None):
 	if doc.status != "Paid" or doc.ref_doctype != "Quotation":
 		return
 
-	# The Quotation docstatus is the durable idempotency token: place_order submits it, so a replayed
-	# webhook and a confirm_payment poll racing in separate requests cannot both create an order. The
-	# in-memory flag this replaces only guarded re-entry inside one request.
+	# docstatus under for_update is the idempotency token: a replayed webhook and a confirm_payment poll race.
 	if frappe.db.get_value("Quotation", doc.ref_docname, "docstatus", for_update=True) != 0:
 		return
 
@@ -31,12 +29,7 @@ def on_payment_request_update(doc, method=None):
 
 
 def validate_charged_amount_matches_cart(quotation, payment_request):
-	"""Refuse to ship a cart that no longer costs what the gateway charged for it.
-
-	The gateway session freezes an amount, but ref_docname points at the shopper's live draft cart, which
-	stays editable while the session is open. Without this a 300 session submits a 3000 order and the
-	goods leave the warehouse against 300 of real money. Reconcile or refund — never ship.
-	"""
+	"""Refuse a cart that no longer costs what the gateway charged - ref_docname is a live editable draft."""
 	currency = payment_request.currency_code
 	cart_amount = get_charge_amount(quotation)
 	charged_amount = flt(payment_request.amount)

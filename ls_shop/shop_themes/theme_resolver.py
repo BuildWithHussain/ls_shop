@@ -15,8 +15,7 @@ from ls_shop.shop_themes.doctype.shop_theme.shop_theme import (
 )
 from ls_shop.shop_themes.doctype.shop_theme_settings.shop_theme_settings import get_compiled_routes
 
-# page_renderer hooks are instantiated before every built-in renderer, so a first path
-# segment missing from this set is a full route hijack rather than a 404.
+# page_renderer runs before every built-in renderer: a segment missing here is a route hijack, not a 404.
 RESERVED_PATH_SEGMENTS = frozenset(
 	{
 		"api",
@@ -38,14 +37,11 @@ RESERVED_PATH_SEGMENTS = frozenset(
 	}
 )
 
-# Every storefront route carries a language prefix, so a dynamic page can only ever live
-# below one. This structurally excludes the root crawl infrastructure as well.
+# Every storefront route carries a language prefix, so a dynamic page can only live below one.
 DYNAMIC_PAGE_LANG_PREFIXES = frozenset({"en", "ar"})
 
-# A bare (non-theme://) template name is resolvable from a theme ONLY under this prefix.
-# Anything else - notably every "templates/..." name - goes straight to the app loader, so a
-# theme cannot shadow templates/includes/header.html and silently disconnect the menu
-# manager and footer editor for the whole app.
+# Bare template names resolve from a theme only under this prefix: otherwise a theme could shadow
+# templates/includes/header.html and silently disconnect the menu manager and footer editor.
 THEME_OVERRIDABLE_PREFIX = "components/"
 
 DEFAULT_APP_NAME = "Lifestyle"
@@ -132,8 +128,7 @@ class ThemePageRenderer:
 		else:
 			return False
 
-		# Deliberately no fallback to a different template: an active theme that does not
-		# ship this page declines, and stock frappe routing serves it untouched.
+		# No fallback template: a theme that lacks this page declines and stock frappe routing serves it.
 		if not find_theme_file(theme_context["dirs"], template_path):
 			return False
 
@@ -144,8 +139,7 @@ class ThemePageRenderer:
 		return True
 
 	def get_request_path(self):
-		# Matched against the RAW request path, not the endpoint website_route_rules rewrote
-		# it to, so a themed route can bypass those rules.
+		# The RAW request path, not what website_route_rules rewrote it to, so a themed route bypasses them.
 		request = getattr(frappe.local, "request", None)
 		if request:
 			return request.path.strip("/")
@@ -180,9 +174,7 @@ def is_dynamic_page(settings, request_path):
 
 	segments = request_path.split("/")
 
-	# werkzeug percent-decodes request.path before a renderer sees it, so %2e%2e%2f arrives
-	# here as "..". Containment checks downstream catch the escape, but the template path is
-	# built from this string and must never carry a traversal in the first place.
+	# werkzeug percent-decodes request.path, so %2e%2e%2f arrives here as "..".
 	if ".." in segments:
 		return False
 
@@ -190,8 +182,6 @@ def is_dynamic_page(settings, request_path):
 	if first_segment in RESERVED_PATH_SEGMENTS:
 		return False
 
-	# The allowlist is the real guard; the denylist above stays as the backstop for the day
-	# a language prefix is added that collides with a core route.
 	return first_segment in DYNAMIC_PAGE_LANG_PREFIXES
 
 
@@ -229,13 +219,8 @@ def read_template_source(full_path):
 
 
 class ThemeBytecodeCache(BytecodeCache):
-	"""Shares compiled template code across requests without sharing Template objects.
-
-	A shared Template cache cannot be used here: jinja memoises the module of a context-less
-	`{% import %}` on the Template itself, so the first request's lang, user and csrf token
-	would be frozen into every later request's macros. Compiled code carries no request
-	state, so it is the only part that is safe to keep.
-	"""
+	"""Shares compiled code across requests, never Template objects: jinja memoises a context-less
+	`{% import %}` module on the Template, freezing the first request's lang, user and csrf token."""
 
 	def __init__(self):
 		self.buckets = LRUCache(200)
@@ -253,8 +238,7 @@ theme_bytecode_caches = {}
 
 
 def get_theme_bytecode_cache():
-	# Keyed per site: theme dirs are bench-wide app paths, so anything keyed on those alone
-	# is one cache shared by every site on the bench.
+	# Keyed per site: theme dirs are bench-wide paths, so keying on those alone shares one cache.
 	site = getattr(frappe.local, "site", None)
 	bytecode_cache = theme_bytecode_caches.get(site)
 	if bytecode_cache is None:
@@ -264,10 +248,8 @@ def get_theme_bytecode_cache():
 
 
 def get_theme_environment(jenv, theme_dirs):
-	# Built fresh per request, never cached: a jinja overlay keeps a reference to the globals
-	# dict it was built from, and jenv.globals holds THIS request's user, full_name,
-	# form_dict, lang and csrf token. Caching the environment freezes the first request's
-	# identity into every macro imported without context, for every site on the bench.
+	# Built fresh per request, never cached: a jinja overlay holds a reference to jenv.globals, which
+	# carries THIS request's user, form_dict, lang and csrf token.
 	theme_env = jenv.overlay(loader=ThemeFallbackLoader(theme_dirs, jenv.loader))
 	theme_env.auto_reload = bool(frappe.conf.get("developer_mode") or frappe._dev_server)
 	theme_env.bytecode_cache = get_theme_bytecode_cache()
@@ -292,19 +274,15 @@ def apply_website_settings(context):
 	context.boot = {}
 
 	try:
-		# Also fills context.boot, so a themed page gets the same site-wide context
-		# frappe's own renderers build. Never call get_boot_data() on top of this.
+		# Also fills context.boot; never call get_boot_data() on top of this.
 		context.update(get_website_settings())
 
-		# get_website_settings() leaves out the branding fields a theme renders the brand
-		# from, so a site never has to restate its own identity inside a theme.
+		# get_website_settings() leaves out the branding fields a theme renders the brand from.
 		settings = frappe.client_cache.get_doc("Website Settings")
 		context.app_name = settings.app_name or DEFAULT_APP_NAME
 		context.app_logo = settings.app_logo
 	except frappe.DoesNotExistError:
-		# Website Settings only goes missing on a site mid-install; branding is cosmetic and a
-		# themed page must still render without it. Anything else is a real fault and must
-		# surface - swallowing it wrote an Error Log row per anonymous page view.
+		# Only missing mid-install; a broader except wrote an Error Log row per anonymous page view.
 		pass
 
 
@@ -313,8 +291,7 @@ def apply_route_groups(match, context):
 	if not groups:
 		return
 
-	# Merged into form_dict as well, so a www page controller written against
-	# form_dict.get("route") keeps working when reused as a theme page controller.
+	# Merged into form_dict too, so a www controller reading form_dict.get("route") still works.
 	context.update(groups)
 	frappe.local.form_dict.update(groups)
 

@@ -7,7 +7,13 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"ignore": ["public/js/vendor/**/*"]
+		"ignore": [
+			"**/vendor/**/*",
+			"public/js/vendor/**/*",
+			"dashboard/**/*",
+			"ls_shop/public/commera/**/*",
+			"ls_shop/**/*.json"
+		]
 	},
 	"formatter": {
 		"enabled": true,

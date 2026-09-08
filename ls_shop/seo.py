@@ -3,6 +3,8 @@ from urllib.parse import quote, urlsplit, urlunsplit
 import frappe
 from frappe.utils import cstr, flt, get_url, strip_html_tags
 
+from ls_shop.branding import get_configured_brand_assets
+
 META_DESCRIPTION_MAX_LENGTH = 160
 
 DEFAULT_OG_IMAGE = "/assets/ls_shop/images/1.jpg"
@@ -137,8 +139,7 @@ def build_product_seo(
 def build_product_json_ld(product_variant, product, images, price=None, availability=None, currency=None):
 	override = product_variant.get("json_ld")
 	if override:
-		# A half-edited override is admin typo territory, and orjson raises straight through
-		# frappe.parse_json. Falling back to the generated block keeps the product page up.
+		# orjson raises straight through frappe.parse_json, so a half-edited override falls back to generated.
 		try:
 			parsed = frappe.parse_json(override)
 		except Exception:
@@ -210,7 +211,7 @@ def generate_product_json_ld(variant: str | int):
 		product_variant,
 		detail["product"],
 		images=detail["images"],
-		price=detail["sale_price"] or detail["default_price"],
+		price=detail["selected_price"],
 		availability="InStock" if detail["in_stock"] else "OutOfStock",
 	)
 	return frappe.as_json(schema, indent=2)
@@ -257,7 +258,7 @@ def build_page_seo(source, display_name=None, page_type="website"):
 	image = (
 		source.get("og_image")
 		or settings.get("default_share_image")
-		or settings.get("favicon")
+		or get_configured_brand_assets()["favicon"]
 		or DEFAULT_OG_IMAGE
 	)
 
@@ -354,7 +355,9 @@ def build_collection_json_ld(category, breadcrumbs, total_count=0):
 def default_seo():
 	settings = get_seo_settings()
 
-	image = settings.get("default_share_image") or settings.get("favicon") or DEFAULT_OG_IMAGE
+	image = (
+		settings.get("default_share_image") or get_configured_brand_assets()["favicon"] or DEFAULT_OG_IMAGE
+	)
 
 	return {
 		"title": apply_title_template(),
@@ -372,7 +375,7 @@ def default_seo():
 def org_website_json_ld():
 	settings = get_seo_settings()
 	store_name = get_store_name()
-	favicon = settings.get("favicon")
+	favicon = get_configured_brand_assets()["favicon"]
 	site_url = get_url()
 
 	organization = {

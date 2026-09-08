@@ -87,13 +87,8 @@ class SqliteProductSearch(SQLiteSearch):
 	# -- index shape ----------------------------------------------------------------------------
 
 	def index_exists(self):
-		"""Whether a current-shape index is present, memoized for this instance.
-
-		The three-part check opens ~3 read-only SQLite connections, so it is computed once and cached.
-		Read paths share one request-scoped instance (see search/engine_cache.py), collapsing a render
-		to a single check; write/build paths use fresh instances, so the cache is never stale across a
-		rebuild.
-		"""
+		"""Whether a current-shape index is present, memoized for this instance."""
+		# Read paths share one request-scoped instance; write/build paths use fresh ones, so it never goes stale.
 		cached = getattr(self, "index_exists_cache", None)
 		if cached is None:
 			cached = (
@@ -198,12 +193,8 @@ class SqliteProductSearch(SQLiteSearch):
 	# -- incremental writes ---------------------------------------------------------------------
 
 	def index_doc(self, doctype, docname):
-		"""Rebuild and write one doc's index rows directly.
-
-		Replaces core's queue-then-cron behaviour: a storefront cannot wait up to 5 minutes for a
-		publish to show, and the queue path re-reads the doc without the record overlay, which would
-		wipe this doc's product_detail/search_size rows.
-		"""
+		"""Rebuild and write one doc's index rows directly."""
+		# Not core's queue path: it re-reads the doc without the record overlay and wipes product_detail rows.
 		self.raise_if_not_indexed()
 		records = self.build_records_for(doctype, [docname])
 		record = records.get(docname)
@@ -213,13 +204,7 @@ class SqliteProductSearch(SQLiteSearch):
 		self._index_documents(self.documents_for(doctype, [docname], records))
 
 	def index_docs(self, doctype, names):
-		"""Re-sync many docs at once: one batched record build, one FTS write, one delete pass.
-
-		index_doc rebuilds records for a single name, so a catalogue-wide edit through it costs one
-		full record build per product. Names that no longer have a record (unpublished, or missing the
-		images/sizes the storefront card needs) are deleted instead — that is what makes an unpublish
-		disappear from the storefront rather than lingering as a ghost card.
-		"""
+		"""Re-sync many docs at once: one batched record build, one FTS write, one delete pass."""
 		self.raise_if_not_indexed()
 		names = list(names)
 		if not names:
@@ -295,18 +280,13 @@ class SqliteProductSearch(SQLiteSearch):
 	# -- card hydration -------------------------------------------------------------------------
 
 	def hydrate_cards(self, names):
-		"""Card dicts for the given variant names, in `names` order, from product_detail + search_size.
-
-		Preserves the engine's rank (the order of `names`). The snapshot prices here are a fallback;
-		utils.attach_live_prices layers the live Item Price on top.
-		"""
+		"""Card dicts for the given variant names, in `names` order, from product_detail + search_size."""
 		if not names:
 			return []
 
 		card_by_name = {}
 		sizes_by_name = {}
-		# Chunked for the same reason remove_docs is: SQLite caps bound parameters per statement, and
-		# nothing in the signature stops a caller passing more names than that cap.
+		# Chunked: SQLite caps bound parameters per statement, and nothing bounds the caller's name list.
 		for chunk in create_batch(list(names), SQLITE_PARAM_CHUNK_SIZE):
 			doc_ids = tuple(f"Style Attribute Variant:{name}" for name in chunk)
 			placeholders = ", ".join("?" for _ in doc_ids)
@@ -348,12 +328,8 @@ class SqliteProductSearch(SQLiteSearch):
 	COLUMN_TO_NARROW_KEY: ClassVar = {column: key for key, column in NARROW_KEY_TO_COLUMN.items()}
 
 	def facet_counts(self, fts_query, filters=None):
-		"""Sidebar counts per facet, each narrowed by every OTHER selected filter but not by its own.
-
-		Dropping a facet's own key is what keeps its alternatives clickable — narrowing brand by the
-		selected brand would leave the sidebar offering only what is already ticked. Matches the
-		frappe.qb sidebar (www/products/list.py pops the facet's own key before querying).
-		"""
+		"""Sidebar counts per facet, each narrowed by every OTHER selected filter but not by its own."""
+		# Must match the frappe.qb sidebar: www/products/list.py pops the facet's own key before querying.
 		selected = filters or {}
 		counts = {}
 		for column, key in FACET_COLUMN_TO_KEY.items():
@@ -375,8 +351,7 @@ class SqliteProductSearch(SQLiteSearch):
 			"SELECT size, COUNT(DISTINCT doc_id) AS count FROM search_size "
 			"WHERE size != '' AND doc_id IN "
 			f"(SELECT doc_id FROM search_fts WHERE search_fts MATCH ?{narrow_sql}) "
-			# Numeric size scales (38, 40, 42) must not read as 38, 40, 42, 100 -> matches the
-			# frappe.qb sidebar's Cast_(size, "Decimal"); the label breaks ties for lettered scales.
+			# Sizes sort numerically to match the frappe.qb sidebar's Cast_(size, "Decimal"); label breaks ties.
 			"GROUP BY size ORDER BY CAST(size AS REAL), size",
 			(fts_query, *narrow_params),
 			read_only=True,
@@ -407,15 +382,8 @@ class SqliteProductSearch(SQLiteSearch):
 		return "".join(clauses), params
 
 	def price_discount_clause(self, filters, prefix=""):
-		"""SQL fragment + params for the min_price/max_price/has_discount filters against the snapshot.
-
-		min_price/max_price compare the indexed effective_price; has_discount keys off the precomputed
-		has_discount flag. Shared by the search grid and every facet count so both filter identically.
-
-		The bounds go through flt() because FTS5 content columns carry no type affinity: a bound "50"
-		stays TEXT, and SQLite sorts every REAL below every TEXT, so a string bound silently returns
-		the wrong rows instead of raising.
-		"""
+		"""SQL fragment + params for the min_price/max_price/has_discount filters against the snapshot."""
+		# flt() the bounds: FTS5 content columns have no type affinity, and SQLite sorts every REAL below TEXT.
 		clauses = []
 		params = []
 		min_price = flt(filters.get("min_price"))
@@ -452,11 +420,7 @@ class SqliteProductSearch(SQLiteSearch):
 		return self._prepare_fts_query(expanded_query)
 
 	def search_products(self, filters, page=1, page_length=30, sort_by="default"):
-		"""Variant names for a text search page: FTS-matched, filtered, sorted, paginated.
-
-		Joins the matched FTS rows to product_detail so the facet/price filters and sort columns line
-		up with the retained frappe.qb grid. Default sort keeps the engine's bm25 relevance.
-		"""
+		"""Variant names for a text search page: FTS-matched, filtered, sorted, paginated."""
 		fts_query = self.fts_query_for((filters.get("search") or "").strip())
 		if not fts_query:
 			return []
@@ -531,16 +495,8 @@ class SqliteProductSearch(SQLiteSearch):
 	# -- spell correction -----------------------------------------------------------------------
 
 	def _expand_query_with_corrections(self, query):
-		"""Core's trigram correction plus an edit-distance fallback for short-word typos.
-
-		Core only corrects when trigram Jaccard similarity clears its threshold, which short shopping
-		terms ("shae", "shooes") never do. The extra pass is skipped entirely for words that are
-		already in the vocabulary, so a correctly spelled query costs one indexed primary-key lookup.
-
-		Memoized per instance because one request expands the same query twice — once inside core's
-		search(), once again for the facet counts — and a vocabulary miss pays a trigram scan plus a
-		Levenshtein rank every time.
-		"""
+		"""Core's trigram correction plus an edit-distance fallback for short-word typos."""
+		# Core's trigram threshold never fires for short terms ("shae"); memoized, one request expands twice.
 		cache = getattr(self, "expanded_query_cache", None)
 		if cache is None:
 			cache = self.expanded_query_cache = {}
@@ -585,11 +541,7 @@ class SqliteProductSearch(SQLiteSearch):
 			return False
 
 	def fetch_trigram_candidates(self, word):
-		"""Vocabulary words sharing at least one trigram with `word`.
-
-		Length-filtered and grouped at the DB level so the candidate set stays small even against a
-		300k-word vocabulary.
-		"""
+		"""Vocabulary words sharing at least one trigram with `word`."""
 		word_trigrams = self._generate_trigrams(word)
 		if not word_trigrams:
 			return []
@@ -614,12 +566,7 @@ class SqliteProductSearch(SQLiteSearch):
 			return []
 
 	def find_edit_distance_correction(self, word):
-		"""Best vocabulary correction for a genuine miss, ranked by Levenshtein distance.
-
-		Only invoked when the word is not in the vocabulary AND core's trigram-similarity path returned
-		nothing — the short-word typo case where trigram Jaccard is too sparse to clear the threshold.
-		Ties break by frequency, then sequence ratio.
-		"""
+		"""Best vocabulary correction for a genuine miss, ranked by Levenshtein distance."""
 		word = word.lower()
 		if len(word) < MIN_WORD_LENGTH:
 			return None

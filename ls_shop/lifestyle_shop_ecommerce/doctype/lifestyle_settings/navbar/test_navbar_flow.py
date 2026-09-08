@@ -1,19 +1,8 @@
 # Copyright (c) 2026, company@bwhstudios.com and Contributors
 # See license.txt
 
-"""End-to-end flow cover for the navbar-off-Item-Group refactor.
-
-``test_navbar_manager`` proves each whitelisted method on its own. This module drives whole editor
-sessions through the real chain instead — controller validation, NestedSet bookkeeping and the
-storefront read path all execute — and asserts what actually landed in the database.
-
-There is no external service on this path, so nothing is mocked: the whitelisted API is the outermost
-boundary and it is called for real. The promise being defended is that a presentation edit never
-reaches ERP master data, so the flows here compare a full ``SELECT *`` of Item Group and Brand taken
-either side of the session. That is deliberately wider than the doctype's field list: the five nav
-Custom Fields were removed without dropping their columns, so a stray write to ``custom_menu_order``
-would still succeed in SQL and has to be caught here.
-"""
+"""End-to-end flow cover for the navbar-off-Item-Group refactor. Snapshots are a full ``SELECT *``:
+the five nav Custom Fields were removed without their columns, so a stray write still succeeds in SQL."""
 
 from unittest.mock import patch
 
@@ -22,10 +11,13 @@ from frappe.tests import IntegrationTestCase
 from frappe.utils.nestedset import get_descendants_of, get_root_of, rebuild_tree
 
 from ls_shop.lifestyle_shop_ecommerce.doctype.ecommerce_category.ecommerce_category import (
+	ITEM_GROUP_LINK_DOCTYPE,
 	MAX_MENU_DEPTH,
+	get_item_groups_by_entry,
 	get_menu_tree,
 )
 from ls_shop.lifestyle_shop_ecommerce.doctype.lifestyle_settings.navbar import navbar_manager
+from ls_shop.tests import delete_menu_entries
 
 PREFIX = "Test NF"
 
@@ -57,8 +49,7 @@ def labels_in_order(menu):
 
 class TestNavbarFlow(IntegrationTestCase):
 	def setUp(self):
-		# Per-class rollback means every test in this class shares one transaction, so fixture names
-		# carry a hash rather than relying on tearDown having already run.
+		# Per-class rollback: every test shares one transaction, so fixture names carry a hash.
 		self.tag = frappe.generate_hash(length=8)
 		self.catalog = self.make_item_group(f"{PREFIX} Catalog {self.tag}")
 		self.clothing = self.make_item_group(f"{PREFIX} Clothing {self.tag}", self.catalog)
@@ -68,13 +59,10 @@ class TestNavbarFlow(IntegrationTestCase):
 		self.brand = frappe.get_doc({"doctype": "Brand", "brand": f"{PREFIX} Brand {self.tag}"}).insert().name
 
 	def tearDown(self):
-		frappe.db.delete("Ecommerce Category Item Group", {"parent": ["like", f"{PREFIX}%"]})
-		frappe.db.delete("Ecommerce Category", {"name": ["like", f"{PREFIX}%"]})
+		delete_menu_entries({"name": ["like", f"{PREFIX}%"]})
 		frappe.db.delete("Item Group", {"name": ["like", f"{PREFIX}%"]})
 		frappe.db.delete("Brand", {"name": ["like", f"{PREFIX}%"]})
-		# Rollback is per-class, so each test hands its leftovers to the next one. These raw deletes
-		# skip the nested-set bookkeeping on purpose (they are faster and some rows are group nodes),
-		# which leaves gaps in both trees — repaired here so the next test starts from valid bounds.
+		# Raw deletes skip the nested-set bookkeeping, so both trees are repaired for the next test.
 		rebuild_tree("Item Group")
 		rebuild_tree("Ecommerce Category")
 
@@ -179,7 +167,7 @@ class TestNavbarFlow(IntegrationTestCase):
 		shape_before = labels_in_order(navbar_manager.get_menu_editor_data()["menu"])
 
 		navbar_manager.update_node(bags, display_name=f"{PREFIX} Handbags")
-		navbar_manager.update_node(brand_tab, link_type="Item Group", link_target=[self.bags, self.shirts])
+		navbar_manager.update_node(brand_tab, link_type="Item Group", link_target=[self.shirts])
 		navbar_manager.reorder_nodes("", [women, men])
 		navbar_manager.move_node(accessories, women, 0)
 		navbar_manager.set_visibility(brand_tab, 0)
@@ -205,7 +193,7 @@ class TestNavbarFlow(IntegrationTestCase):
 
 		self.assert_master_data_untouched(before)
 		roots = navbar_manager.get_menu_editor_data()["menu"]
-		linked_at_root = {group for root in roots for group in root["item_groups"]}
+		linked_at_root = {item_group for root in roots for item_group in root["item_groups"]}
 		top_level = set(
 			frappe.get_all(
 				"Item Group", filters={"parent_item_group": get_root_of("Item Group")}, pluck="name"
@@ -223,8 +211,7 @@ class TestNavbarFlow(IntegrationTestCase):
 		self.assertEqual(first_pass, sorted(frappe.get_all("Ecommerce Category", pluck="name")))
 		self.assertEqual(
 			labels_in_order([find_node(navbar_manager.get_menu_editor_data()["menu"], self.catalog)]),
-			# Columns keep the catalog's own order, not an alphabetical one: Clothing was created
-			# before Bags, so the import numbers it first.
+			# The catalog's own order, not alphabetical: Clothing was created before Bags.
 			[
 				f"{PREFIX} Catalog {self.tag}",
 				f"{PREFIX} Catalog {self.tag} > {PREFIX} Clothing {self.tag}",
@@ -234,7 +221,7 @@ class TestNavbarFlow(IntegrationTestCase):
 		)
 		# The fourth catalog level is skipped rather than thrown, and never reaches the menu.
 		self.assertFalse(frappe.db.exists("Ecommerce Category", {"display_name": self.too_deep}))
-		self.assertFalse(frappe.db.exists("Ecommerce Category Item Group", {"item_group": self.too_deep}))
+		self.assertFalse(frappe.db.exists(ITEM_GROUP_LINK_DOCTYPE, {"item_group": self.too_deep}))
 		self.assert_nested_set_valid("after a repeated import")
 
 	def test_import_leaves_bounds_a_rebuild_would_not_change(self):
@@ -271,15 +258,8 @@ class TestNavbarFlow(IntegrationTestCase):
 		)
 
 	def test_a_menu_import_leaves_the_erpnext_account_tree_intact(self):
-		"""Regression: the import held core's ``ignore_update_nsm``, which ERPNext's Account reads.
-
-		``frappe.local.flags`` is request-global, not doctype-scoped, so an Account written while the
-		import was in flight skipped its own bookkeeping (``account.py`` returns early on that flag)
-		and landed with stale lft/rgt — a silently corrupted chart of accounts that only surfaces days
-		later in a rollup. The import now holds ``ignore_ecommerce_category_nsm``, which nothing else
-		reads. This drives the real import and writes an Account from inside it, so the flag is
-		genuinely in scope at the moment of the insert.
-		"""
+		"""Regression: the import held core's request-global ``ignore_update_nsm``, which ERPNext's
+		Account reads, so an Account written mid-import landed with stale lft/rgt."""
 		company = frappe.get_all("Company", limit=1, pluck="name")
 		if not company:
 			self.skipTest("no Company on this site")
@@ -295,8 +275,7 @@ class TestNavbarFlow(IntegrationTestCase):
 
 		def create_node_and_an_account(*args, **kwargs):
 			node = real_create_node(*args, **kwargs)
-			# Only on the first node, so the Account is written mid-loop — inside the import's
-			# try/finally rather than before or after it.
+			# Only on the first node, so the Account is written inside the import's try/finally.
 			if not written:
 				self.assertTrue(
 					frappe.local.flags.ignore_ecommerce_category_nsm,
@@ -364,9 +343,7 @@ class TestNavbarFlow(IntegrationTestCase):
 		"""Regression: the same NULL ``old_parent`` made a plain rename re-seat the node as its
 		parent's last child."""
 		navbar_manager.import_from_item_group(item_group=self.catalog)
-		# The buggy path re-seated the node as its parent's last child, so this has to pick the
-		# sibling that is currently first by lft — any other choice may already be last and move
-		# nowhere, making the assertion vacuous.
+		# Pick the sibling first by lft: any other may already be last, making the assertion vacuous.
 		column = frappe.get_all(
 			"Ecommerce Category",
 			filters={"parent_ecommerce_category": self.catalog},
@@ -382,23 +359,15 @@ class TestNavbarFlow(IntegrationTestCase):
 		self.assertEqual((before.lft, before.rgt), (after.lft, after.rgt))
 		self.assert_nested_set_valid("after renaming an imported node")
 
-	def test_delete_node_removes_the_row_and_its_item_group_links(self):
+	def test_delete_node_removes_the_row_and_its_item_group_link(self):
 		men = self.add_node(None, f"{PREFIX} Men {self.tag}")
-		bags = self.add_node(men, f"{PREFIX} Bags", "Item Group", [self.bags, self.shirts])
-		self.assertEqual(
-			frappe.get_all(
-				"Ecommerce Category Item Group",
-				filters={"parent": bags},
-				order_by="idx asc",
-				pluck="item_group",
-			),
-			[self.bags, self.shirts],
-		)
+		bags = self.add_node(men, f"{PREFIX} Bags", "Item Group", [self.bags])
+		self.assertEqual(get_item_groups_by_entry([bags]), {bags: [self.bags]})
 
 		navbar_manager.delete_node(bags)
 
 		self.assertFalse(frappe.db.exists("Ecommerce Category", bags))
-		self.assertFalse(frappe.db.exists("Ecommerce Category Item Group", {"parent": bags}))
+		self.assertEqual(get_item_groups_by_entry([bags]), {})
 		self.assertTrue(frappe.db.exists("Ecommerce Category", men), "the parent must survive")
 		self.assert_nested_set_valid("after deleting a linked node")
 
@@ -413,7 +382,6 @@ class TestNavbarFlow(IntegrationTestCase):
 
 		for name in (men, column, leaf):
 			self.assertFalse(frappe.db.exists("Ecommerce Category", name))
-		self.assertFalse(frappe.db.exists("Ecommerce Category Item Group", {"parent": leaf}))
 		self.assertTrue(frappe.db.exists("Ecommerce Category", kept_leaf), "an unrelated branch was cut")
 		self.assert_nested_set_valid("after deleting a branch with grandchildren")
 

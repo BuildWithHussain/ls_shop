@@ -29,9 +29,6 @@ def capture():
 	if item_code and not frappe.db.exists("Item", item_code):
 		item_code = None
 
-	# Written inline rather than enqueued on purpose: the client posts this as a fire-and-forget
-	# keepalive beacon and never awaits it, so moving the row to a worker would not shorten any
-	# user-visible wait — it would only add per-event job overhead on top of the same INSERT.
 	# ponytail: one INSERT per beacon, revisit with a batched buffer if the events table
 	# outgrows the write budget (roughly: sustained page views above a few hundred/sec)
 	frappe.get_doc(

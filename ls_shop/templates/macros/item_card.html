@@ -1,4 +1,3 @@
-{# components/macros/item_card.html #}
 {% macro item_card(
     image, 
     brand, 
@@ -13,7 +12,6 @@
     product_obj=None,
     attribute_value = ""
 ) %}
-  {# Define size variants as a dict #}
   {% set variants = {
     'default': {
       'brand_size': 'text-xl',
@@ -44,7 +42,6 @@
         <div class="w-fit overflow-hidden rounded-lg">
             <img src="{{ image }}" alt="" class="{{image_size}} object-cover rounded-lg transition duration-300 ease-in-out hover:scale-110" />
         </div>
-        {# Discount Badge #}
         {% if discount %}
             <div class="absolute start-3 top-3 z-40">
                 <span class="rounded bg-accent px-2 py-1 text-xs font-normal text-white">
@@ -53,7 +50,6 @@
             </div>
         {% endif %}
         
-        {# Wishlist Button #}
         <div class="absolute end-3 top-2 z-40" x-data='{
                             get in_wishlist() {
                                 return $store.wishlist.is_in_wishlist({{ json.dumps(product_obj) }})
@@ -75,7 +71,6 @@
             </button>
         </div>
 
-        {# Variations Badge #}
         {% if variations %}
             <div class="absolute bottom-3 left-1/2 z-40 -translate-x-1/2">
                 <span class="text-xxs rounded-full bg-slate-800 px-3 py-1 font-normal text-white md:text-xs">
@@ -85,7 +80,6 @@
         {% endif %}
     </div>
 
-    {# Product Details #}
     <h3 class="mt-6 font-medium text-link {{  current_variant.brand_size  }}" title="{{_(brand|title)}}">
         {{_(brand|title)}}
     </h3>

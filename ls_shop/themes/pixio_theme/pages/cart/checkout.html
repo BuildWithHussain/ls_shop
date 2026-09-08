@@ -1,0 +1,674 @@
+
+{% extends "components/theme_layout.html" %}
+
+{% set language = frappe.lang or "en" %}
+{% set currency_symbol = get_currency_symbol() %}
+{% set checkout_config = {
+	"payment_gateways": payment_gateways,
+	"show_cod": show_cod | int,
+	"net_total": cart_quotation.net_total or 0,
+	"rounding_adjustment": cart_quotation.rounding_adjustment or 0,
+	"rounded_total": cart_quotation.rounded_total or 0,
+	"delivery_charge": delivery_charge or 0,
+	"delivery_charge_applicable_below": delivery_charge_applicable_below or 0,
+	"cod_charge": cod_charge or 0,
+	"cod_charge_applicable_below": cod_charge_applicable_below or 0,
+	"has_billing_addresses": billing_addresses | length > 0,
+	"has_shipping_addresses": shipping_addresses | length > 0,
+	"has_store_pickup": store_pickup_addresses | length > 0,
+} %}
+
+{% block head %}
+	{{ super() }}
+	<link rel="stylesheet" href="{{ shop_theme_asset_url('css/checkout.css') }}">
+{% endblock %}
+
+{% macro address_fields(prefix, heading) %}
+	<div class="col-md-12">
+		<h5 class="title m-b15">{{ heading }}</h5>
+	</div>
+	<div class="col-md-6">
+		<div class="form-group m-b25">
+			<label class="label-title" for="{{ prefix }}_first_name">{{ _("First Name") }} *</label>
+			<input type="text" id="{{ prefix }}_first_name" class="form-control" x-model="{{ prefix }}.first_name" required>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div class="form-group m-b25">
+			<label class="label-title" for="{{ prefix }}_last_name">{{ _("Last Name") }} *</label>
+			<input type="text" id="{{ prefix }}_last_name" class="form-control" x-model="{{ prefix }}.last_name" required>
+		</div>
+	</div>
+	<div class="col-md-12">
+		<div class="form-group m-b25">
+			<label class="label-title" for="{{ prefix }}_email">{{ _("Email address") }} *</label>
+			<input type="email" id="{{ prefix }}_email" class="form-control" x-model="{{ prefix }}.email" required>
+		</div>
+	</div>
+	<div class="col-md-12">
+		<div class="form-group m-b25">
+			<label class="label-title" for="{{ prefix }}_phone_number">{{ _("Phone") }} *</label>
+			<input type="tel" id="{{ prefix }}_phone_number" class="form-control" x-model="{{ prefix }}.phone_number" required>
+		</div>
+	</div>
+	<div class="col-md-12">
+		<div class="form-group m-b25">
+			<label class="label-title" for="{{ prefix }}_full_address">{{ _("Street address") }} *</label>
+			<input type="text" id="{{ prefix }}_full_address" class="form-control m-b15"
+				placeholder="{{ _('House number and street name') }}" x-model="{{ prefix }}.full_address" required>
+			<input type="text" id="{{ prefix }}_landmark" class="form-control"
+				placeholder="{{ _('Apartment, suite, unit, etc.') }}" x-model="{{ prefix }}.landmark"
+				aria-label="{{ _('Address line 2') }}">
+		</div>
+	</div>
+	<div class="col-md-12">
+		<div class="m-b25">
+			<label class="label-title" for="{{ prefix }}_country">{{ _("Country / Region") }} *</label>
+			<select class="default-select form-select w-100" id="{{ prefix }}_country" x-model="{{ prefix }}.country" required>
+				<option value="">{{ _("Select a country") }}</option>
+				{% for country in country_list %}
+					<option value="{{ country.name }}">{{ country.name }}</option>
+				{% endfor %}
+			</select>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div class="form-group m-b25">
+			<label class="label-title" for="{{ prefix }}_city">{{ _("Town / City") }} *</label>
+			<input type="text" id="{{ prefix }}_city" class="form-control" x-model="{{ prefix }}.city" required>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div class="form-group m-b25">
+			<label class="label-title" for="{{ prefix }}_po_box">{{ _("PO Box") }} *</label>
+			<input type="text" id="{{ prefix }}_po_box" class="form-control" x-model="{{ prefix }}.po_box" required>
+		</div>
+	</div>
+{% endmacro %}
+
+{% block uncontained_body %}
+	<div class="dz-bnr-inr">
+		<div class="container">
+			<div class="dz-bnr-inr-entry">
+				<h1>{{ _("Shop Checkout") }}</h1>
+				<nav aria-label="{{ _('breadcrumb') }}" class="breadcrumb-row">
+					<ul class="breadcrumb">
+						<li class="breadcrumb-item"><a href="/{{ language }}">{{ _("Home") }}</a></li>
+						{% for breadcrumb in breadcrumbs %}
+							<li class="breadcrumb-item">
+								{% if breadcrumb.href and breadcrumb.href != "#" %}
+									<a href="{{ breadcrumb.href }}">{{ _(breadcrumb.label) }}</a>
+								{% else %}
+									{{ _(breadcrumb.label) }}
+								{% endif %}
+							</li>
+						{% endfor %}
+					</ul>
+				</nav>
+			</div>
+		</div>
+	</div>
+
+	<div class="content-inner-1" x-data='pixio_checkout({{ checkout_config | tojson }})'>
+		<div class="container">
+			<div class="row shop-checkout">
+				<div class="col-xl-8 m-b30">
+					<h4 class="title m-b15">{{ _("Delivery") }}</h4>
+					<div class="form-group m-b30">
+						<div class="custom-control custom-checkbox d-flex align-items-center m-b10">
+							<input class="form-check-input radio" type="radio" id="delivery_option_home"
+								value="home_delivery" x-model="delivery_option" @change="reset_address_step()">
+							<label class="form-check-label" for="delivery_option_home">{{ _("Home Delivery") }}</label>
+						</div>
+						{% if store_pickup_addresses %}
+							<div class="custom-control custom-checkbox d-flex align-items-center">
+								<input class="form-check-input radio" type="radio" id="delivery_option_pickup"
+									value="store_pickup" x-model="delivery_option" @change="reset_address_step()">
+								<label class="form-check-label" for="delivery_option_pickup">{{ _("Pickup From Store") }}</label>
+							</div>
+						{% endif %}
+					</div>
+
+					<div class="d-flex align-items-center justify-content-between m-b15">
+						<h4 class="title mb-0">{{ _("Billing details") }}</h4>
+						<a href="javascript:void(0);" class="checkout-edit" x-show="address_saved" x-cloak
+							@click="address_saved = false">{{ _("Edit") }}</a>
+					</div>
+
+					<div class="checkout-saved-note m-b30" x-show="address_saved" x-cloak>
+						<i class="icon feather icon-check-circle"></i>
+						<span class="m-l10">{{ _("Delivery details saved. Choose a payment method to place your order.") }}</span>
+					</div>
+
+					<form class="row" x-show="!address_saved" @submit.prevent="save_address()">
+						<template x-if="delivery_option === 'store_pickup'">
+							<div class="col-md-12">
+								<div class="m-b25">
+									<label class="label-title" for="store_pickup_warehouse">{{ _("Pickup Location") }} *</label>
+									<select class="default-select form-select w-100" id="store_pickup_warehouse"
+										x-model="store_pickup_warehouse">
+										<option value="">{{ _("Select a store") }}</option>
+										{% for address in store_pickup_addresses %}
+											<option value="{{ address.warehouse_name }}">{{ address.title }} &mdash; {{ address.display }}</option>
+										{% endfor %}
+									</select>
+								</div>
+							</div>
+						</template>
+
+						<template x-if="delivery_option === 'home_delivery'">
+							<div class="col-md-12">
+								<div class="row">
+									<div class="col-md-12">
+										<div class="form-group m-b20">
+											<div class="custom-control custom-checkbox d-flex align-items-center m-b10">
+												<input class="form-check-input radio" type="radio" id="billing_saved_address"
+													value="saved_address" x-model="billing_use_address"
+													{% if not billing_addresses %}disabled{% endif %}>
+												<label class="form-check-label" for="billing_saved_address">{{ _("Use existing address") }}</label>
+											</div>
+											<div class="custom-control custom-checkbox d-flex align-items-center">
+												<input class="form-check-input radio" type="radio" id="billing_new_address"
+													value="new_address" x-model="billing_use_address">
+												<label class="form-check-label" for="billing_new_address">{{ _("Add new address") }}</label>
+											</div>
+										</div>
+									</div>
+
+									<template x-if="billing_use_address === 'saved_address'">
+										<div class="col-md-12">
+											<div class="m-b25">
+												<label class="label-title" for="billing_address_id">{{ _("Saved addresses") }} *</label>
+												<select class="default-select form-select w-100" id="billing_address_id"
+													x-model="billing_address_id">
+													<option value="">{{ _("Select an address") }}</option>
+													{% for address in billing_addresses %}
+														<option value="{{ address.name }}">{{ address.title }} &mdash; {{ address.display }}</option>
+													{% endfor %}
+												</select>
+											</div>
+										</div>
+									</template>
+
+									<template x-if="billing_use_address === 'new_address'">
+										<div class="col-md-12">
+											<div class="row">
+												{{ address_fields("billing", _("Billing Address")) }}
+											</div>
+										</div>
+									</template>
+
+									<div class="col-md-12 m-b25">
+										<div class="form-group">
+											<div class="custom-control custom-checkbox d-flex align-items-center">
+												<input type="checkbox" class="form-check-input" id="shipping_same_as_billing"
+													x-model="same_as_billing">
+												<label class="form-check-label" for="shipping_same_as_billing">{{ _("Shipping address same as billing") }}</label>
+											</div>
+										</div>
+									</div>
+
+									<template x-if="!same_as_billing">
+										<div class="col-md-12">
+											<div class="row">
+												<div class="col-md-12">
+													<h5 class="title m-b15">{{ _("Shipping Address") }}</h5>
+													<div class="form-group m-b20">
+														<div class="custom-control custom-checkbox d-flex align-items-center m-b10">
+															<input class="form-check-input radio" type="radio" id="shipping_saved_address"
+																value="saved_address" x-model="shipping_use_address"
+																{% if not shipping_addresses %}disabled{% endif %}>
+															<label class="form-check-label" for="shipping_saved_address">{{ _("Use existing address") }}</label>
+														</div>
+														<div class="custom-control custom-checkbox d-flex align-items-center">
+															<input class="form-check-input radio" type="radio" id="shipping_new_address"
+																value="new_address" x-model="shipping_use_address">
+															<label class="form-check-label" for="shipping_new_address">{{ _("Add new address") }}</label>
+														</div>
+													</div>
+												</div>
+
+												<template x-if="shipping_use_address === 'saved_address'">
+													<div class="col-md-12">
+														<div class="m-b25">
+															<label class="label-title" for="shipping_address_id">{{ _("Saved addresses") }} *</label>
+															<select class="default-select form-select w-100" id="shipping_address_id"
+																x-model="shipping_address_id">
+																<option value="">{{ _("Select an address") }}</option>
+																{% for address in shipping_addresses %}
+																	<option value="{{ address.name }}">{{ address.title }} &mdash; {{ address.display }}</option>
+																{% endfor %}
+															</select>
+														</div>
+													</div>
+												</template>
+
+												<template x-if="shipping_use_address === 'new_address'">
+													<div class="col-md-12">
+														<div class="row">
+															{{ address_fields("shipping", _("Shipping Address")) }}
+														</div>
+													</div>
+												</template>
+											</div>
+										</div>
+									</template>
+								</div>
+							</div>
+						</template>
+
+						<div class="col-md-12" x-show="errors.length" x-cloak>
+							<ul class="checkout-errors m-b25">
+								<template x-for="error in errors" :key="error">
+									<li x-text="error"></li>
+								</template>
+							</ul>
+						</div>
+
+						<div class="col-md-12">
+							<button type="submit" class="btn btn-secondary" :disabled="address_loading">
+								<span x-show="!address_loading">{{ _("Continue") }}</span>
+								<span x-show="address_loading" x-cloak>{{ _("Saving...") }}</span>
+							</button>
+						</div>
+					</form>
+				</div>
+
+				<div class="col-xl-4 side-bar">
+					<h4 class="title m-b15">{{ _("Your Order") }}</h4>
+					<div class="order-detail sticky-top">
+						{% for item in items %}
+							<div class="cart-item style-1 {% if loop.last %}mb-0{% endif %}">
+								<div class="dz-media">
+									<img src="{{ item.image or '/assets/ls_shop/images/1.jpg' }}"
+										alt="{{ item.display_name or item.item_name }}">
+								</div>
+								<div class="dz-content">
+									<h6 class="title mb-0">
+										{% if language == "ar" and item.custom_item_name_ar %}
+											{{ item.custom_item_name_ar }}
+										{% else %}
+											{{ item.display_name or item.item_name }}
+										{% endif %}
+										<span class="checkout-item-meta">
+											{% if item.size %}{{ item.size }} &middot; {% endif %}{{ _("Qty") }} {{ item.qty | int }}
+										</span>
+									</h6>
+									<span class="price">{{ currency_symbol }}{{ "%.2f" | format(item.amount or 0) }}</span>
+								</div>
+							</div>
+						{% endfor %}
+
+						<table>
+							<tbody>
+								<tr class="subtotal">
+									<td>{{ _("Subtotal") }}</td>
+									<td class="price">{{ currency_symbol }}{{ "%.2f" | format(cart_quotation.net_total or 0) }}</td>
+								</tr>
+								<tr class="shipping">
+									<td>
+										<span x-show="delivery_option === 'home_delivery' && !selected_shipping_option">{{ _("Home Delivery") }}</span>
+										<span x-show="delivery_option === 'home_delivery' && selected_shipping_option" x-cloak x-text="selected_shipping_option"></span>
+										<span x-show="delivery_option === 'store_pickup'" x-cloak>{{ _("Pickup From Store") }}</span>
+									</td>
+									<td class="price">
+										<span x-show="!shipping_amount">{{ _("Free") }}</span>
+										<span x-show="shipping_amount" x-cloak>{{ currency_symbol }}<span x-text="format_amount(shipping_amount)"></span></span>
+									</td>
+								</tr>
+								<tr class="cod-charge" x-show="cod_amount" x-cloak>
+									<td>{{ _("Cash on Delivery Fee") }}</td>
+									<td class="price">{{ currency_symbol }}<span x-text="format_amount(cod_amount)"></span></td>
+								</tr>
+								<tr class="total">
+									<td>{{ _("Total") }}</td>
+									<td class="price">{{ currency_symbol }}<span x-text="format_amount(total)"></span></td>
+								</tr>
+							</tbody>
+						</table>
+
+						{# Delivery options are priced for the saved address, so they cannot render before it is saved. #}
+						<template x-if="delivery_option === 'home_delivery' && address_saved">
+							<div class="checkout-delivery-options">
+								<h5 class="title m-b15">{{ _("Delivery Method") }}</h5>
+								<p class="checkout-locked-note" x-show="shipping_options_loading">
+									{{ _("Checking delivery options for your address...") }}
+								</p>
+								<p class="checkout-locked-note" x-cloak
+									x-show="!shipping_options_loading && shipping_options_message"
+									x-text="shipping_options_message"></p>
+								<div class="accordion dz-accordion accordion-sm" x-show="shipping_options.length" x-cloak>
+									<template x-for="(option, index) in shipping_options" :key="option.title">
+										<div class="accordion-item">
+											<div class="accordion-header">
+												<div class="accordion-button custom-control custom-checkbox border-0"
+													:class="selected_shipping_option !== option.title && 'collapsed'"
+													@click="select_shipping_option(option.title)">
+													<input class="form-check-input radio" type="radio" name="shipping_option"
+														:id="'shipping_option_' + index" :value="option.title"
+														x-model="selected_shipping_option">
+													<label class="form-check-label" :for="'shipping_option_' + index">
+														<span x-text="option.title"></span>
+														<span x-show="option.is_free"> &mdash; {{ _("Free") }}</span>
+														<span x-show="!option.is_free" x-cloak>
+															&mdash; {{ currency_symbol }}<span x-text="format_amount(option.amount)"></span>
+														</span>
+													</label>
+												</div>
+											</div>
+											<div class="accordion-collapse collapse"
+												:class="selected_shipping_option === option.title && 'show'">
+												<div class="accordion-body">
+													<p class="m-b0" x-text="option.description"></p>
+												</div>
+											</div>
+										</div>
+									</template>
+								</div>
+							</div>
+						</template>
+
+						<h5 class="title m-b15">{{ _("Payment Method") }}</h5>
+						<p class="checkout-locked-note" x-show="!address_saved">
+							{{ _("Save your delivery details above to choose a payment method.") }}
+						</p>
+
+						<div x-show="address_saved" x-cloak>
+							<div class="accordion dz-accordion accordion-sm">
+								{% for gateway_name in payment_gateways %}
+									<div class="accordion-item">
+										<div class="accordion-header">
+											<div class="accordion-button custom-control custom-checkbox border-0"
+												:class='payment_mode !== {{ gateway_name | tojson }} && "collapsed"'
+												@click='payment_mode = {{ gateway_name | tojson }}'>
+												<input class="form-check-input radio" type="radio" name="payment_mode"
+													id="payment_mode_{{ loop.index }}" value="{{ gateway_name }}" x-model="payment_mode">
+												<label class="form-check-label" for="payment_mode_{{ loop.index }}">{{ _(gateway_name) }}</label>
+											</div>
+										</div>
+										<div class="accordion-collapse collapse"
+											:class='payment_mode === {{ gateway_name | tojson }} && "show"'>
+											<div class="accordion-body">
+												<p class="m-b0">{{ _("You will be redirected to the secure payment page to complete your order.") }}</p>
+											</div>
+										</div>
+									</div>
+								{% endfor %}
+
+								{% if show_cod %}
+									<div class="accordion-item">
+										<div class="accordion-header">
+											<div class="accordion-button custom-control custom-checkbox border-0"
+												:class="payment_mode !== 'COD' && 'collapsed'" @click="payment_mode = 'COD'">
+												<input class="form-check-input radio" type="radio" name="payment_mode"
+													id="payment_mode_cod" value="COD" x-model="payment_mode">
+												<label class="form-check-label" for="payment_mode_cod">{{ _("Cash on Delivery") }}</label>
+											</div>
+										</div>
+										<div class="accordion-collapse collapse" :class="payment_mode === 'COD' && 'show'">
+											<div class="accordion-body">
+												<p class="m-b0">{{ _("Pay in cash when your order is delivered.") }}</p>
+												{% if cod_charge and cod_charge_applicable_below > (cart_quotation.rounded_total or 0) %}
+													<p class="m-b0 text-danger">
+														{{ _("A non-refundable cash on delivery fee of") }}
+														{{ currency_symbol }}{{ "%.2f" | format(cod_charge) }} {{ _("will apply.") }}
+													</p>
+												{% endif %}
+											</div>
+										</div>
+									</div>
+								{% endif %}
+							</div>
+
+							<p class="text">
+								{{ _("Your personal data will be used to process your order, support your experience throughout this website, and for other purposes described in our privacy policy.") }}
+							</p>
+							<div class="form-group">
+								<div class="custom-control custom-checkbox d-flex m-b15">
+									<input type="checkbox" class="form-check-input" id="accept_terms" x-model="terms_accepted">
+									<label class="form-check-label" for="accept_terms">{{ _("I have read and agree to the website terms and conditions") }}</label>
+								</div>
+							</div>
+							<button type="button" class="btn btn-secondary w-100"
+								:disabled="!terms_accepted || !payment_mode || order_loading" @click="save_order()">
+								<span x-show="!order_loading">{{ _("Place Order") }}</span>
+								<span x-show="order_loading" x-cloak>{{ _("Placing...") }}</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block script %}
+	{{ super() }}
+	<script>
+		const COD_PAYMENT_MODE = "COD";
+		const MISSING_FIELD_MESSAGE = {{ _("Please fill in every required field.") | tojson }};
+		const INVALID_PHONE_MESSAGE = {{ _("Please enter a valid phone number.") | tojson }};
+		const UNSELECTED_ADDRESS_MESSAGE = {{ _("Please select a saved address.") | tojson }};
+		const PHONE_NUMBER_PATTERN = /^(\+?\d{1,3}[-.\s]?)?(\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{3,4}$/;
+		const NO_SHIPPING_OPTIONS_MESSAGE = {{ _("No delivery options are available for this address.") | tojson }};
+		const SHIPPING_UNAVAILABLE_MESSAGE = {{ _("Delivery options are temporarily unavailable.") | tojson }};
+
+		function get_blank_address() {
+			return {
+				first_name: "",
+				last_name: "",
+				email: "",
+				phone_number: "",
+				full_address: "",
+				landmark: "",
+				country: "",
+				city: "",
+				po_box: "",
+			};
+		}
+
+		document.addEventListener("alpine:init", () => {
+			Alpine.data("pixio_checkout", (config) => ({
+				config: config,
+				delivery_option: "home_delivery",
+				billing_use_address: config.has_billing_addresses ? "saved_address" : "new_address",
+				shipping_use_address: config.has_shipping_addresses ? "saved_address" : "new_address",
+				same_as_billing: true,
+				billing_address_id: "",
+				shipping_address_id: "",
+				store_pickup_warehouse: "",
+				billing: get_blank_address(),
+				shipping: get_blank_address(),
+				address_saved: false,
+				address_loading: false,
+				order_loading: false,
+				terms_accepted: false,
+				errors: [],
+				payment_mode: Alpine.$persist(null).as("payment_mode"),
+				delivery_charge: config.delivery_charge,
+				delivery_charge_applicable_below: config.delivery_charge_applicable_below,
+				shipping_options: [],
+				shipping_options_loading: false,
+				shipping_options_message: "",
+				selected_shipping_option: null,
+				selected_shipping_charge: 0,
+
+				async init() {
+					this.set_available_payment_mode();
+					await this.set_delivery_charge();
+				},
+
+				format_amount(amount) {
+					return (Number(amount) || 0).toFixed(2);
+				},
+
+				get available_payment_modes() {
+					const payment_modes = this.config.payment_gateways.slice();
+					if (this.config.show_cod) payment_modes.push(COD_PAYMENT_MODE);
+					return payment_modes;
+				},
+
+				get shipping_amount() {
+					if (this.delivery_option !== "home_delivery") return 0;
+// A chosen delivery option is priced and stored by the server and replaces the flat shipping rule, so its charge wins.
+					if (this.selected_shipping_option) return this.selected_shipping_charge;
+					return this.config.net_total < this.delivery_charge_applicable_below ? this.delivery_charge : 0;
+				},
+
+				get cod_amount() {
+					if (!this.address_saved || this.payment_mode !== COD_PAYMENT_MODE) return 0;
+					return this.config.cod_charge_applicable_below > this.config.rounded_total ? this.config.cod_charge : 0;
+				},
+
+				get total() {
+					return this.config.net_total + this.config.rounding_adjustment + this.shipping_amount + this.cod_amount;
+				},
+
+				set_available_payment_mode() {
+					if (this.available_payment_modes.includes(this.payment_mode)) return;
+					this.payment_mode = this.available_payment_modes[0] || null;
+				},
+
+// The shipping rule lives on the quotation, so the billed charge can differ from what Lifestyle Settings advertised on page load.
+				async set_delivery_charge() {
+					const response = await frappe_call("/api/v2/method/ls_shop.api.checkout.apply_shipping_rule");
+					[this.delivery_charge, this.delivery_charge_applicable_below] = response.data.map(Number);
+				},
+
+				reset_address_step() {
+					this.address_saved = false;
+					this.errors = [];
+// Switching between delivery and pickup invalidates any quote; the server clears its own copy when the address saves.
+					this.shipping_options = [];
+					this.shipping_options_message = "";
+					this.selected_shipping_option = null;
+					this.selected_shipping_charge = 0;
+				},
+
+				async load_shipping_options() {
+					if (this.delivery_option !== "home_delivery") return;
+
+					this.shipping_options_loading = true;
+					this.shipping_options_message = "";
+					try {
+						const response = await frappe_call("/api/v2/method/ls_shop.api.shipping.get_shipping_options");
+						const data = response.data || {};
+						this.shipping_options = data.options || [];
+						if (!this.shipping_options.length) {
+// No options is a legitimate configuration (a flat delivery rule), so this only explains itself when the connector offered a menu.
+							this.shipping_options_message = data.connector_missing ? "" : NO_SHIPPING_OPTIONS_MESSAGE;
+							return;
+						}
+
+						const still_offered = this.shipping_options.some((option) => option.title === data.selected);
+						await this.select_shipping_option(still_offered ? data.selected : this.shipping_options[0].title);
+					} catch (error) {
+						this.shipping_options = [];
+						this.shipping_options_message = SHIPPING_UNAVAILABLE_MESSAGE;
+					} finally {
+						this.shipping_options_loading = false;
+					}
+				},
+
+				async select_shipping_option(title) {
+					const response = await frappe_call(
+						"/api/v2/method/ls_shop.api.shipping.set_delivery_option",
+						{ delivery_option: title },
+					);
+					this.selected_shipping_option = response.data.delivery_option;
+					this.selected_shipping_charge = Number(response.data.delivery_charge) || 0;
+				},
+
+				get_address_errors(address, label) {
+					const errors = [];
+					for (const [field, value] of Object.entries(address)) {
+						if (field === "landmark") continue;
+						if (!String(value).trim()) errors.push(`${label}: ${MISSING_FIELD_MESSAGE}`);
+					}
+					if (address.phone_number && !PHONE_NUMBER_PATTERN.test(address.phone_number)) {
+						errors.push(`${label}: ${INVALID_PHONE_MESSAGE}`);
+					}
+					return [...new Set(errors)];
+				},
+
+				get_checkout_errors() {
+					if (this.delivery_option === "store_pickup") {
+						return this.store_pickup_warehouse ? [] : [{{ _("Please select a pickup location.") | tojson }}];
+					}
+
+					const errors = [];
+					const billing_label = {{ _("Billing address") | tojson }};
+					if (this.billing_use_address === "saved_address") {
+						if (!this.billing_address_id) errors.push(`${billing_label}: ${UNSELECTED_ADDRESS_MESSAGE}`);
+					} else {
+						errors.push(...this.get_address_errors(this.billing, billing_label));
+					}
+
+					if (this.same_as_billing) return errors;
+
+					const shipping_label = {{ _("Shipping address") | tojson }};
+					if (this.shipping_use_address === "saved_address") {
+						if (!this.shipping_address_id) errors.push(`${shipping_label}: ${UNSELECTED_ADDRESS_MESSAGE}`);
+					} else {
+						errors.push(...this.get_address_errors(this.shipping, shipping_label));
+					}
+					return errors;
+				},
+
+				get_address_payload() {
+					if (this.delivery_option === "store_pickup") {
+						return { is_store_pickup: true, store_pickup_warehouse: this.store_pickup_warehouse };
+					}
+
+					const is_billing_saved = this.billing_use_address === "saved_address";
+					const is_shipping_saved = this.shipping_use_address === "saved_address";
+					return {
+						is_store_pickup: false,
+						billing_address: {
+							is_saved: is_billing_saved,
+							address_id: is_billing_saved ? this.billing_address_id : null,
+							...(is_billing_saved ? get_blank_address() : this.billing),
+						},
+						shipping_address: {
+							is_saved: is_shipping_saved,
+							address_id: is_shipping_saved ? this.shipping_address_id : null,
+							...(is_shipping_saved ? get_blank_address() : this.shipping),
+						},
+						shipping_same_as_billing: this.same_as_billing,
+					};
+				},
+
+				async save_address() {
+					this.errors = this.get_checkout_errors();
+					if (this.errors.length) return;
+
+					this.address_loading = true;
+					try {
+						const response = await frappe_call(
+							"/api/v2/method/ls_shop.api.payments.update_quotation_address",
+							{ address: this.get_address_payload() },
+						);
+						toast(response.data.message, { type: "success" });
+						this.address_saved = true;
+						await this.load_shipping_options();
+					} finally {
+						this.address_loading = false;
+					}
+				},
+
+				async save_order() {
+					this.order_loading = true;
+					try {
+						const response = await frappe_call(
+							"/api/v2/method/ls_shop.api.payments.initiate_checkout_with_mode",
+							{ payment_mode: this.payment_mode },
+						);
+						window.location.href = response.data.order_url;
+					} catch (error) {
+						this.order_loading = false;
+					}
+				},
+			}));
+		});
+	</script>
+{% endblock %}

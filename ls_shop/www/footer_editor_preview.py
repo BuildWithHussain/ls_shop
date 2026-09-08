@@ -1,8 +1,7 @@
 # Copyright (c) 2026, company@bwhstudios.com and contributors
 # For license information, please see license.txt
 
-"""Renders the storefront footer with the *unsaved* Desk form values so the footer editor's iframe
-shows what the shop owner is typing before they hit save."""
+"""Renders the storefront footer with the *unsaved* Desk form values for the footer editor's iframe."""
 
 import re
 
@@ -10,6 +9,14 @@ import frappe
 from frappe.utils import cstr, escape_html, validate_url
 
 from ls_shop.lifestyle_shop_ecommerce.doctype.lifestyle_settings.editor_input import SAFE_URL_SCHEMES
+from ls_shop.shop_themes.chrome_preview import (
+	COMMON_BLANKED_BLOCKS,
+	HEADER_BLOCKS,
+	get_preview_context,
+	render_chrome_preview,
+)
+
+BASE_FOOTER = "templates/includes/footer.html"
 
 no_cache = True
 
@@ -81,13 +88,18 @@ def get_context(context):
 	if lang not in PREVIEW_LANGUAGES:
 		lang = frappe.local.lang or "en"
 
-	footer_html = frappe.render_template(
-		"templates/includes/footer.html",
-		frappe._dict(preview_settings=settings, lang=lang, is_rtl=lang == "ar"),
-	)
+	footer_context = get_preview_context(settings, lang)
+
+	rendered = render_chrome_preview(footer_context, COMMON_BLANKED_BLOCKS + HEADER_BLOCKS)
+	if rendered:
+		context.rendered_html = rendered
+		return
+
+	# BASE_FOOTER is a path constant in this repo, never caller input.
+	footer_html = frappe.render_template(BASE_FOOTER, footer_context)  # nosemgrep: frappe-ssti
 
 	context.rendered_html = f"""<!DOCTYPE html>
-<html lang="{escape_html(lang)}">
+<html lang="{escape_html(lang)}" dir="{"rtl" if footer_context.is_rtl else "ltr"}">
 <head>
 <meta charset="UTF-8">
 <link rel="stylesheet" href="/assets/ls_shop/css/tailwind.css">

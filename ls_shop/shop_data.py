@@ -1,26 +1,14 @@
 # Copyright (c) 2026, company@bwhstudios.com and contributors
 # For license information, please see license.txt
 
-"""The storefront's single source of navigation data.
-
-Every nav surface — desktop header, mobile drawer, listing sidebar facets — reads the menu from
-here and never queries for it itself. A theme may replace any template under `templates/`, so the
-moment a template builds its own nav query the menu manager is silently disconnected from the page
-it is supposed to drive. `get_header_data` is registered as a Jinja method in hooks so even a theme
-that replaces `layout.html` can still reach it.
-"""
-
 import frappe
 
+from ls_shop.branding import get_brand_assets
 from ls_shop.lifestyle_shop_ecommerce.doctype.ecommerce_category.ecommerce_category import get_menu_tree
 
 
 def get_storefront_menu():
-	"""Request-scoped enabled menu tree.
-
-	The header, the mobile drawer and the sidebar facets each read the menu once per render and each
-	read costs two queries, so it is memoised on `frappe.local` the way `search/engine_cache.py` does.
-	"""
+	"""Request-scoped enabled menu tree, memoised on `frappe.local`."""
 	menu = getattr(frappe.local, "ls_shop_storefront_menu", None)
 	if menu is None:
 		menu = get_menu_tree(enabled_only=True)
@@ -37,19 +25,12 @@ def find_menu_root(menu, category):
 
 
 def build_facet_node(node):
-	"""One sidebar facet, or None when the entry can never filter the listing.
-
-	`item_groups` is the facet's identity: the sidebar joins it into the CSV `?subcategory=` filter
-	and splits it back to decide whether the facet is ticked. `name` is that same CSV, because
-	`templates/components/product_filter.html` still reads a single string.
-	"""
+	"""One sidebar facet, or None when the entry can never filter the listing."""
 	children = build_facet_nodes(node["children"])
-	# A URL or Brand entry links no item groups, so a facet for it would be a checkbox that filters
-	# on the empty string — tickable, but matching nothing.
+	# A URL or Brand entry links no item group: its facet would filter on the empty string.
 	if not node["item_groups"] and not children:
 		return None
 	return {
-		"name": ",".join(node["item_groups"]),
 		"item_groups": node["item_groups"],
 		"display_name": node["label"],
 		"children": children,
@@ -69,7 +50,6 @@ def get_category_tree(root_category):
 	if not facet:
 		return {
 			"name": root_category,
-			"item_groups": [],
 			"display_name": root_category,
 			"children": [],
 			"is_leaf": 1,
@@ -89,8 +69,7 @@ def get_category_facets(category):
 def as_legacy_item_group(node):
 	"""Shape one menu entry the way the pre-tree headers read an Item Group row.
 
-	Those templates key off `name` (the `?subcategory=` value) and a display name; an entry with no
-	item groups falls back to its own name so the link still resolves to something.
+	`name` is the `?subcategory=` value, which the listing filter reads as a comma-separated list.
 	"""
 	return frappe._dict(
 		name=",".join(node["item_groups"]) or node["name"],
@@ -99,11 +78,7 @@ def as_legacy_item_group(node):
 
 
 def build_legacy_navigation(menu):
-	"""The pre-tree `navigation_categories` shape, now fed by the menu tree.
-
-	Kept so the template migration can be staged one surface at a time rather than in one commit.
-	Ordered by the editor's `display_order` rather than the old alphabetical sort, which ignored it.
-	"""
+	"""The pre-tree `navigation_categories` shape, now fed by the menu tree."""
 	navigation_categories = []
 	for root in menu:
 		child_category_sections = []
@@ -154,7 +129,7 @@ def get_header_data():
 	return frappe._dict(
 		settings=settings,
 		store_name=settings.store_name or "Lifestyle",
-		brand_logo=settings.brand_logo or "/assets/ls_shop/icons/lifestyle.svg",
+		brand_logo=get_brand_assets().logo,
 		navigation_menu=menu,
 		navigation_categories=build_legacy_navigation(menu),
 		featured_brands=get_featured_brands(menu),

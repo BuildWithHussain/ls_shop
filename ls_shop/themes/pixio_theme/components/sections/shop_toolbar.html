@@ -1,0 +1,93 @@
+
+{% set first_result = ((current_page - 1) * page_length) + 1 %}
+{% set last_result = [current_page * page_length, total_count] | min %}
+
+{# A `subcategory` chip carries the CSV of item groups the filter round-trips, not a shopper-facing string. #}
+{% set facet_labels = namespace(pairs=[]) %}
+{% macro collect_facet_labels(nodes) %}
+{%- for node in nodes -%}
+{%- for item_group in node.item_groups -%}
+{%- set facet_labels.pairs = facet_labels.pairs + [(item_group, node.display_name)] -%}
+{%- endfor -%}
+{{- collect_facet_labels(node.children) if node.children else "" -}}
+{%- endfor -%}
+{% endmacro %}
+{% for facet_name, facet_nodes in filters.items() if facet_name not in ["brands", "colors", "sizes"] %}
+{{- collect_facet_labels(facet_nodes) -}}
+{% endfor %}
+
+<div class="filter-wrapper">
+	<div class="filter-left-area">
+		<ul class="filter-tag">
+			{% for facet_name, facet_values in selected_filters.items() if facet_values is iterable and facet_values is not string %}
+			{% for value in facet_values %}
+			<li>
+				{% set chip_label = namespace(text=value) %}
+				{% for facet_value, facet_label in facet_labels.pairs if facet_value == value %}{% set chip_label.text = facet_label %}{% endfor %}
+				<a href="javascript:void(0);" class="tag-btn"
+					@click='toggle_filter({{ facet_name | tojson }}, {{ value | tojson }})'>{{ chip_label.text }}
+					<i class="icon feather icon-x tag-close"></i>
+				</a>
+			</li>
+			{% endfor %}
+			{% endfor %}
+		</ul>
+		{# Guarded on the page's own rows, not the total: a bookmarked ?page=7 emptied by a filter would read "Showing 181-19 Of 19". #}
+		{% if products %}
+		<span>{{ _("Showing {0}-{1} Of {2} Results").format(first_result, last_result, total_count) }}</span>
+		{% endif %}
+	</div>
+	<div class="filter-right-area">
+		<a href="javascript:void(0);" class="panel-btn" @click="panel_open = true">
+			<i class="flaticon-filter me-2"></i>
+			{{ _("Filter") }}
+		</a>
+		<div class="form-group">
+			<select class="default-select" aria-label="{{ _('Sort by') }}"
+				@change="set_filter('sort_by', $event.target.value)">
+				{% set sort_options = ([("default", _("Relevance"))] if show_relevance_sort else []) + [
+					("new_arrival", _("New Arrival")),
+					("discount", _("Discount")),
+					("price_low", _("Low to high")),
+					("price_high", _("High to low")),
+				] %}
+				{% for option_value, option_label in sort_options %}
+				<option value="{{ option_value }}" {% if sort_by == option_value %}selected{% endif %}>{{ option_label }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="shop-tab">
+			<ul class="nav" role="tablist">
+				<li class="nav-item" role="presentation">
+					<a href="javascript:void(0);" class="nav-link" :class="{ 'active': view === 'column' }"
+						role="tab" :aria-selected="view === 'column'" aria-label="{{ _('Two column view') }}"
+						@click="view = 'column'">
+						<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="512" height="512">
+							<path d="M85.333,0h64c47.128,0,85.333,38.205,85.333,85.333v64c0,47.128-38.205,85.333-85.333,85.333h-64C38.205,234.667,0,196.462,0,149.333v-64C0,38.205,38.205,0,85.333,0z"></path>
+							<path d="M362.667,0h64C473.795,0,512,38.205,512,85.333v64c0,47.128-38.205,85.333-85.333,85.333h-64c-47.128,0-85.333-38.205-85.333-85.333v-64C277.333,38.205,315.538,0,362.667,0z"></path>
+							<path d="M85.333,277.333h64c47.128,0,85.333,38.205,85.333,85.333v64c0,47.128-38.205,85.333-85.333,85.333h-64C38.205,512,0,473.795,0,426.667v-64C0,315.538,38.205,277.333,85.333,277.333z"></path>
+							<path d="M362.667,277.333h64c47.128,0,85.333,38.205,85.333,85.333v64C512,473.795,473.795,512,426.667,512h-64c-47.128,0-85.333-38.205-85.333-85.333v-64C277.333,315.538,315.538,277.333,362.667,277.333z"></path>
+						</svg>
+					</a>
+				</li>
+				<li class="nav-item" role="presentation">
+					<a href="javascript:void(0);" class="nav-link" :class="{ 'active': view === 'grid' }"
+						role="tab" :aria-selected="view === 'grid'" aria-label="{{ _('Three column view') }}"
+						@click="view = 'grid'">
+						<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" width="512" height="512">
+							<path d="M42.667,373.333H96c23.564,0,42.667,19.103,42.667,42.667v53.333C138.667,492.898,119.564,512,96,512H42.667C19.103,512,0,492.898,0,469.333V416C0,392.436,19.103,373.333,42.667,373.333z"></path>
+							<path d="M416,373.333h53.333C492.898,373.333,512,392.436,512,416v53.333C512,492.898,492.898,512,469.333,512H416c-23.564,0-42.667-19.102-42.667-42.667V416C373.333,392.436,392.436,373.333,416,373.333z"></path>
+							<path d="M42.667,186.667H96c23.564,0,42.667,19.103,42.667,42.667v53.333c0,23.564-19.103,42.667-42.667,42.667H42.667C19.103,325.333,0,306.231,0,282.667v-53.333C0,205.769,19.103,186.667,42.667,186.667z"></path>
+							<path d="M416,186.667h53.333c23.564,0,42.667,19.103,42.667,42.667v53.333c0,23.564-19.102,42.667-42.667,42.667H416c-23.564,0-42.667-19.103-42.667-42.667v-53.333C373.333,205.769,392.436,186.667,416,186.667z"></path>
+							<path d="M42.667,0H96c23.564,0,42.667,19.103,42.667,42.667V96c0,23.564-19.103,42.667-42.667,42.667H42.667C19.103,138.667,0,119.564,0,96V42.667C0,19.103,19.103,0,42.667,0z"></path>
+							<path d="M229.333,373.333h53.333c23.564,0,42.667,19.103,42.667,42.667v53.333c0,23.564-19.103,42.667-42.667,42.667h-53.333c-23.564,0-42.667-19.102-42.667-42.667V416C186.667,392.436,205.769,373.333,229.333,373.333z"></path>
+							<path d="M229.333,186.667h53.333c23.564,0,42.667,19.103,42.667,42.667v53.333c0,23.564-19.103,42.667-42.667,42.667h-53.333c-23.564,0-42.667-19.103-42.667-42.667v-53.333C186.667,205.769,205.769,186.667,229.333,186.667z"></path>
+							<path d="M229.333,0h53.333c23.564,0,42.667,19.103,42.667,42.667V96c0,23.564-19.103,42.667-42.667,42.667h-53.333c-23.564,0-42.667-19.103-42.667-42.667V42.667C186.667,19.103,205.769,0,229.333,0z"></path>
+							<path d="M416,0h53.333C492.898,0,512,19.103,512,42.667V96c0,23.564-19.102,42.667-42.667,42.667H416c-23.564,0-42.667-19.103-42.667-42.667V42.667C373.333,19.103,392.436,0,416,0z"></path>
+						</svg>
+					</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+</div>

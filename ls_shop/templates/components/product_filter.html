@@ -1,6 +1,6 @@
 <div x-data="{
     filters: {{ filters }},
-    query_state: window.query_state, // Directly reference QuerySync state
+    query_state: window.query_state,
     accordion: null,
     format_key(key) {
         const formatted = key.replace(/([A-Z])/g, ' $1').trim();
@@ -8,37 +8,30 @@
     },
     reset_filters() {
         Object.keys(this.query_state).forEach((key) => {
-            delete this.query_state[key]; // Removes from state and URL
+            delete this.query_state[key];
         });
         window.location.reload()
     },
+    // `value` is either one option or the list of item groups a facet filters on, so it ticks only when every one is selected.
+    selected_values(query_key) {
+        return this.query_state[query_key] ? this.query_state[query_key].split(',') : [];
+    },
     toggle_filter(key, value, is_subcategory = false) {
-        // Determine the correct query param key
         let query_key = is_subcategory ? 'subcategory' : key;
-    
-        // Get current selections
-        let current_selections = this.query_state[query_key] 
-            ? this.query_state[query_key].split(',') 
-            : [];
-    
-        // For subcategories, just use the value directly without adding the key prefix
-        let formatted_value = value;
-    
-        if (current_selections.includes(formatted_value)) {
-            // Remove if already selected
-            current_selections = current_selections.filter(item => item !== formatted_value);
+        let values = [].concat(value).map(String);
+        let current_selections = this.selected_values(query_key);
+
+        if (this.is_checked(key, value, is_subcategory)) {
+            current_selections = current_selections.filter(item => !values.includes(item));
         } else {
-            // Add if not selected
-            current_selections.push(formatted_value);
+            current_selections = current_selections.concat(values.filter(item => !current_selections.includes(item)));
         }
-    
-        // Update state (store as a comma-separated string)
+
         this.query_state[query_key] = current_selections.length ? current_selections.join(',') : '';
-    
-        // Refresh the page
+
         if(window.innerWidth > 768){
-        window.location.reload();
-    }
+            window.location.reload();
+        }
     },
     toggle_price_filter(key,value){
         // Update state (store as a comma-separated string)
@@ -49,7 +42,9 @@
     },
     is_checked(key, value, is_subcategory = false) {
         let query_key = is_subcategory ? 'subcategory' : key;
-        return this.query_state[query_key] && this.query_state[query_key].split(',').includes(value);
+        let values = [].concat(value).map(String);
+        let current_selections = this.selected_values(query_key);
+        return values.length > 0 && values.every(item => current_selections.includes(item));
     },
     apply_filters(){
         window.location.reload()
@@ -77,7 +72,6 @@
                             clip-rule="evenodd" />
                     </svg>
                 </button>
-                <!-- Normal Filters (brands, sizes, colors) -->
                 <div x-show="current_tab === key && !Array.isArray(values[0]) && !Array.isArray(values)"
                     x-transition class="pt-6 pb-6">
                     <div class="space-y-2">
@@ -93,36 +87,31 @@
                         </template>
                     </div>
                 </div>
-                {# Category facets come from the menu tree: `name` is the CSV of `item_groups` the
-                   `?subcategory=` filter round-trips, `display_name` is the shop owner's label. #}
+                {# `item_groups` are the groups the `?subcategory=` filter round-trips; `display_name` is the shop owner's label. #}
                 {% block storefront_filter_categories %}
                 <div x-show="current_tab === key && Array.isArray(values) && values.length > 0 && values[0].display_name" x-transition
                     class="pt-6 pb-6">
                     <template x-for="(node, node_index) in values" :key="node_index">
                         <div class="mb-3">
                             <div x-data="{ open: false }">
-                                <!-- Node with children gets an expand/collapse button -->
                                 <div x-show="!node.is_leaf" class="flex items-center">
                                     <span class="flex items-center text-gray-800 font-semibold"
                                         x-text="$store.i18n.t(node.display_name)"></span>
 
                                 </div>
 
-                                <!-- Leaf node gets a checkbox -->
                                 <div x-show="node.is_leaf" class="flex items-center">
-                                    <input type="checkbox" :id="`${key}-${node_index}`" :value="node.name"
-                                        @change="toggle_filter(key, node.name, true)"
-                                        :checked="is_checked(key, node.name, true)"
+                                    <input type="checkbox" :id="`${key}-${node_index}`" :value="node.item_groups.join(',')"
+                                        @change="toggle_filter(key, node.item_groups, true)"
+                                        :checked="is_checked(key, node.item_groups, true)"
                                         class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                                     <label :for="`${key}-${node_index}`" class="ms-2 text-sm text-gray-700 capitalize"
                                         x-text="$store.i18n.t(node.display_name)"></label>
                                 </div>
 
-                                <!-- Recursively render children -->
                                 <div class="pl-3 mt-2 space-y-2">
                                     <template x-for="(child, child_index) in node.children" :key="child_index">
                                         <div x-data="{ childOpen: false }" class="mb-2">
-                                            <!-- Child with its own children -->
 
                                             <div x-show="!child.is_leaf" class="flex items-center">
                                                 <button @click="childOpen = !childOpen"
@@ -132,29 +121,27 @@
                                                 </button>
                                             </div>
 
-                                            <!-- Child leaf node -->
                                             <div x-show="child.is_leaf" class="flex items-center">
                                                 <input type="checkbox"
                                                     :id="`${key}-${node_index}-${child_index}`"
-                                                    :value="child.name"
-                                                    @change="toggle_filter(key, child.name, true)"
-                                                    :checked="is_checked(key, child.name, true)"
+                                                    :value="child.item_groups.join(',')"
+                                                    @change="toggle_filter(key, child.item_groups, true)"
+                                                    :checked="is_checked(key, child.item_groups, true)"
                                                     class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                                                 <label :for="`${key}-${node_index}-${child_index}`"
                                                     class="ms-2 text-sm text-gray-700 capitalize"
                                                     x-text="$store.i18n.t(child.display_name)"></label>
                                             </div>
 
-                                            <!-- Grandchildren (third level) -->
                                             <div class="pl-3 mt-2 space-y-2">
                                                 <template x-for="(grandchild, grandchild_index) in child.children"
                                                     :key="grandchild_index">
                                                     <div class="flex items-center">
                                                         <input type="checkbox"
                                                             :id="`${key}-${node_index}-${child_index}-${grandchild_index}`"
-                                                            :value="grandchild.name"
-                                                            @change="toggle_filter(key, grandchild.name, true)"
-                                                            :checked="is_checked(key, grandchild.name, true)"
+                                                            :value="grandchild.item_groups.join(',')"
+                                                            @change="toggle_filter(key, grandchild.item_groups, true)"
+                                                            :checked="is_checked(key, grandchild.item_groups, true)"
                                                             class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                                                         <label
                                                             :for="`${key}-${node_index}-${child_index}-${grandchild_index}`"
@@ -233,7 +220,6 @@
 
                     }
                 }" class="flex w-full items-center justify-between gap-3">
-                    <!-- Min Price Input -->
                     <div class="flex flex-1 flex-col ">
                         <input type="number"
                             class="w-full rounded-lg border border-gray-300 p-1.5 ps-4 placeholder-gray-300 focus:ring-2 focus:ring-gray-300 focus:outline-gray-300"
@@ -243,7 +229,6 @@
                             <span x-show="error_min" class="text-red-600 text-xs ms-2" x-text="error_min"></span>
                         </div>
                     </div>
-                    <!-- Max Price Input -->
                     <div class="flex flex-1 flex-col">
                         <input type="number"
                             class="w-full rounded-lg border border-gray-300 p-1.5 ps-4 placeholder-gray-300 focus:ring-2 focus:ring-gray-300 focus:outline-gray-300"

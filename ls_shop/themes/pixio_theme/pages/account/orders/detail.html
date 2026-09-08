@@ -1,0 +1,301 @@
+{# Bootstrap's tab JS is banned, so Alpine toggles the .active/.show classes bootstrap's own CSS keys the panes off. #}
+
+{% extends "components/theme_layout.html" %}
+{% from "components/core/account_shell.html" import account_shell %}
+
+{% set language = frappe.lang or "en" %}
+{% set orders_url = "/" ~ language ~ "/account/orders" %}
+{% set status_badges = {
+	"Waiting for Approval": "bg-warning",
+	"Order Received": "bg-info",
+	"Preparing for Shipment": "bg-warning",
+	"Shipped": "bg-dark",
+	"Delivered": "bg-success",
+	"Cancelled": "bg-danger",
+	"Returned": "bg-danger",
+} %}
+{% set is_cancellable = order.custom_ecommerce_status in ("Waiting for Approval", "Order Received") %}
+{% set is_returnable = return_period and order.name | can_return(return_period) %}
+{% set returnable_items = order_items | rejectattr("is_free_item") | list %}
+{% set discount_amount = (order.total or 0) - (order.net_total or 0) %}
+{# The stored shipping address is an ERPNext display string with <br> separators and trailing empty lines. #}
+{% set address_lines = [
+	order.pickup_address_line_1,
+	order.pickup_address_line_2,
+	order.pickup_city,
+	order.pickup_state,
+	order.pickup_pincode,
+	order.pickup_phone,
+] if order.custom_is_store_pickup else (order.shipping_address or "").split("<br>") %}
+{% set address_display = ", ".join(address_lines | select | map("trim") | select | list) %}
+{% set address_label = _("Pickup From") if order.custom_is_store_pickup else _("Ship To") %}
+
+{% block head %}
+	{{ super() }}
+	<link rel="stylesheet" href="{{ shop_theme_asset_url('css/account.css') }}">
+{% endblock %}
+
+{% block uncontained_body %}
+{% call account_shell(_("Order Details"), [{"label": _("Orders"), "href": orders_url}]) %}
+<div class="account-card order-details" x-data='order_detail({{ order.name | tojson }})'>
+	<div class="order-head">
+		{% if order_items and order_items[0].image %}
+		<div class="head-thumb">
+			<img src="{{ order_items[0].image }}" alt="" class="w-100" loading="lazy" width="80" height="80">
+		</div>
+		{% endif %}
+		<div class="clearfix m-l20">
+			<div class="badge m-0 {{ status_badges.get(order.custom_ecommerce_status, 'bg-secondary') }}">
+				{{ _(order.custom_ecommerce_status or "Draft") }}
+			</div>
+			<h4 class="mb-0">{{ _("Order") }} {{ order.name }}</h4>
+		</div>
+	</div>
+
+	<div class="row mb-sm-4 mb-2">
+		<div class="col-sm-6">
+			<div class="shiping-tracker-detail">
+				<span>{{ _("Order Date") }}</span>
+				<h6 class="title">{{ frappe.utils.format_datetime(order.creation, "medium") }}</h6>
+			</div>
+		</div>
+		<div class="col-sm-6">
+			<div class="shiping-tracker-detail">
+				<span>{{ _("Payment Method") }}</span>
+				<h6 class="title">
+					{% if not order.custom_ecommerce_payment_mode %}&mdash;
+					{% elif order.custom_ecommerce_payment_mode == "COD" %}{{ _("Cash on Delivery") }}
+					{% else %}{{ _("Card") }}{% endif %}
+				</h6>
+			</div>
+		</div>
+		<div class="col-sm-6">
+			<div class="shiping-tracker-detail">
+				<span>{{ _("Items") }}</span>
+				<h6 class="title">{{ order_items | length }}</h6>
+			</div>
+		</div>
+		<div class="col-sm-6">
+			<div class="shiping-tracker-detail">
+				<span>{{ address_label }}</span>
+				<h6 class="title">{% if address_display %}{{ address_display }}{% else %}&mdash;{% endif %}</h6>
+			</div>
+		</div>
+	</div>
+
+	{% if invoice_name or is_cancellable or is_returnable %}
+	<div class="content-btn m-b15">
+		{% if invoice_name %}
+		<a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Sales%20Invoice&name={{ invoice_name | urlencode }}&format={{ print_format | urlencode }}"
+			target="_blank" rel="noopener" class="btn btn-secondary me-xl-3 me-2 m-b15 btnhover20">{{ _("Download Invoice") }}</a>
+		{% endif %}
+		{% if is_returnable and returnable_items %}
+		<button type="button" class="btn btn-outline-secondary m-b15 me-xl-3 me-2 btnhover20"
+			x-show="!is_fully_returned" x-cloak
+			@click="show_return_form = !show_return_form">{{ _("Return Items") }}</button>
+		{% endif %}
+		{% if is_cancellable %}
+		<button type="button" class="btn btn-outline-danger m-b15 btnhover20"
+			@click="show_cancel_confirm = true">{{ _("Cancel Order") }}</button>
+		{% endif %}
+	</div>
+	{% endif %}
+
+	{% if is_cancellable %}
+	<div class="alert alert-danger" x-show="show_cancel_confirm" x-cloak>
+		<p class="mb-3">{{ _("Are you sure you want to cancel this order?") }}</p>
+		<button type="button" class="btn btn-danger btn-sm me-2" :disabled="is_saving"
+			@click="cancel_order()">{{ _("Yes, cancel it") }}</button>
+		<button type="button" class="btn btn-outline-secondary btn-sm"
+			@click="show_cancel_confirm = false">{{ _("Keep Order") }}</button>
+	</div>
+	{% endif %}
+
+	{% if is_returnable and returnable_items %}
+	<div class="border-top pt-4 m-b30" x-show="show_return_form" x-cloak>
+		<h6>{{ _("Select items to return") }}</h6>
+		{% for item in returnable_items %}
+		<div class="row align-items-center g-3 py-3 border-bottom">
+			<div class="col-md-6 d-flex align-items-center">
+				<input type="checkbox" class="form-check-input m-0 me-3" value="{{ item.item_code }}"
+					x-model="selected_item_codes" :disabled='is_item_locked({{ item.item_code | tojson }})'>
+				<div class="tracking-product-content">
+					<h6 class="title">{% if frappe.lang == "ar" %}{{ item.item_name_ar or item.item_name }}{% else %}{{ item.item_name }}{% endif %}</h6>
+					{% if item.size %}<small class="d-block"><strong>{{ _("Size") }}</strong> : {{ item.size }}</small>{% endif %}
+					<template x-if='is_item_locked({{ item.item_code | tojson }})'>
+						<small class="d-block text-muted" x-text='item_state_label({{ item.item_code | tojson }})'></small>
+					</template>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<select class="form-select" x-model='return_reasons_by_item[{{ item.item_code | tojson }}]'
+					aria-label="{{ _('Reason for Return') }}">
+					<option value="">{{ _("Reason for Return") }}</option>
+					{% for return_reason in return_reasons %}
+					<option value="{{ return_reason.name }}">{{ return_reason.display_name }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="col-md-3">
+				<input type="text" class="form-control" placeholder="{{ _('Comment') }}"
+					x-model='return_comments_by_item[{{ item.item_code | tojson }}]'
+					aria-label="{{ _('Comment') }}">
+			</div>
+		</div>
+		{% endfor %}
+		<button type="button" class="btn btn-secondary m-t20 btnhover20" :disabled="is_saving"
+			@click="save_return_request()">{{ _("Submit Return") }}</button>
+	</div>
+	{% endif %}
+
+	<div class="clearfix">
+		<div class="dz-tabs style-3">
+			<div class="nav nav-tabs" role="tablist">
+				<button class="nav-link" type="button" role="tab" id="items-tab" aria-controls="items-tab-pane"
+					:class="active_tab === 'items' ? 'active' : ''" :aria-selected="active_tab === 'items'"
+					@click="active_tab = 'items'">{{ _("Item Details") }}</button>
+				<button class="nav-link" type="button" role="tab" id="receiver-tab" aria-controls="receiver-tab-pane"
+					:class="active_tab === 'receiver' ? 'active' : ''" :aria-selected="active_tab === 'receiver'"
+					@click="active_tab = 'receiver'">{{ _("Receiver") }}</button>
+			</div>
+		</div>
+		<div class="tab-content">
+			<div class="tab-pane fade" id="items-tab-pane" role="tabpanel" aria-labelledby="items-tab"
+				:class="active_tab === 'items' ? 'show active' : ''">
+				{% for item in order_items %}
+				<div class="tracking-item">
+					{% if item.image %}
+					<div class="tracking-product">
+						<img src="{{ item.image }}" alt="" class="w-100" loading="lazy" width="85" height="85">
+					</div>
+					{% endif %}
+					<div class="tracking-product-content">
+						<h6 class="title">{% if frappe.lang == "ar" %}{{ item.item_name_ar or item.item_name }}{% else %}{{ item.item_name }}{% endif %}</h6>
+						{% if item.brand %}<small class="d-block"><strong>{{ _("Brand") }}</strong> : {{ item.brand }}</small>{% endif %}
+						<small class="d-block"><strong>{{ _("Price") }}</strong> : {{ get_currency_symbol() }}{{ "%.2f" | format(item.price or 0) }}</small>
+						{% if item.size %}<small class="d-block"><strong>{{ _("Size") }}</strong> : {{ item.size }}</small>{% endif %}
+					</div>
+				</div>
+				{% endfor %}
+
+				<div class="tracking-item-content">
+					<span>{{ _("Item(s) Subtotal") }}</span>
+					<h6>{{ get_currency_symbol() }}{{ "%.2f" | format(order.total or 0) }}</h6>
+				</div>
+				{% if discount_amount > 0 %}
+				<div class="tracking-item-content">
+					<span class="text-success">{{ _("Discount") }}</span>
+					<h6>&minus; {{ get_currency_symbol() }}{{ "%.2f" | format(discount_amount) }}</h6>
+				</div>
+				{% endif %}
+				{% if order.total_taxes_and_charges %}
+				<div class="tracking-item-content">
+					<span>{{ _("Shipping & Handling") }}</span>
+					<h6>{{ get_currency_symbol() }}{{ "%.2f" | format(order.total_taxes_and_charges) }}</h6>
+				</div>
+				{% endif %}
+				{% if order.rounding_adjustment %}
+				<div class="tracking-item-content">
+					<span>{{ _("Rounding Adjustment") }}</span>
+					<h6>{{ get_currency_symbol() }}{{ "%.2f" | format(order.rounding_adjustment) }}</h6>
+				</div>
+				{% endif %}
+				<div class="tracking-item-content border-top pt-2">
+					<span>{{ _("Order Total") }}</span>
+					<h6>{{ get_currency_symbol() }}{{ "%.2f" | format(order.rounded_total or 0) }}</h6>
+				</div>
+			</div>
+
+			<div class="tab-pane fade" id="receiver-tab-pane" role="tabpanel" aria-labelledby="receiver-tab"
+				:class="active_tab === 'receiver' ? 'show active' : ''">
+				<ul class="tracking-receiver">
+					<li>{{ _("Order Number") }} : <strong>{{ order.name }}</strong></li>
+					<li>{{ _("Date") }} : <strong>{{ frappe.utils.format_datetime(order.creation, "medium") }}</strong></li>
+					<li>{{ _("Total") }} : <strong>{{ get_currency_symbol() }}{{ "%.2f" | format(order.rounded_total or 0) }}</strong></li>
+					<li>{{ _("Status") }} : <strong>{{ _(order.custom_ecommerce_status or "Draft") }}</strong></li>
+					<li>{{ address_label }} : <strong>{% if address_display %}{{ address_display }}{% else %}&mdash;{% endif %}</strong></li>
+				</ul>
+				<a href="{{ orders_url }}" class="btn-link text-underline p-0">{{ _("Back to Orders") }}</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+	document.addEventListener('alpine:init', () => {
+		Alpine.data('order_detail', (order_id) => ({
+			active_tab: 'items',
+			show_cancel_confirm: false,
+			show_return_form: false,
+			is_saving: false,
+			selected_item_codes: [],
+			return_reasons_by_item: {},
+			return_comments_by_item: {},
+			returned_item_codes: [],
+			draft_return_item_codes: [],
+			is_fully_returned: false,
+
+			init() {
+				this.get_returned_items();
+			},
+
+			is_item_locked(item_code) {
+				return this.returned_item_codes.includes(item_code) || this.draft_return_item_codes.includes(item_code);
+			},
+
+			item_state_label(item_code) {
+				if (this.returned_item_codes.includes(item_code)) return this.$store.i18n.t('Returned');
+				return this.$store.i18n.t('Processing');
+			},
+
+			async get_returned_items() {
+				const response = await frappe_call('/api/v2/method/ls_shop.api.return.get_returned_items', {
+					sales_order_id: order_id
+				});
+				this.returned_item_codes = response.data.returned_items;
+				this.draft_return_item_codes = response.data.returned_items_in_draft;
+				this.is_fully_returned = response.data.is_fully_returned;
+			},
+
+			async cancel_order() {
+				this.is_saving = true;
+				try {
+					await frappe_call('/api/v2/method/ls_shop.api.orders.cancel_order', { order_id });
+					toast(this.$store.i18n.t('Order cancelled successfully!'), { type: 'success' });
+					window.location.reload();
+				} finally {
+					this.is_saving = false;
+				}
+			},
+
+			async save_return_request() {
+				if (!this.selected_item_codes.length) {
+					toast(this.$store.i18n.t('Please select at least one item to return.'), { type: 'warning' });
+					return;
+				}
+				const missing_reason = this.selected_item_codes.some((item_code) => !this.return_reasons_by_item[item_code]);
+				if (missing_reason) {
+					toast(this.$store.i18n.t('Reason is required.'), { type: 'warning' });
+					return;
+				}
+				this.is_saving = true;
+				try {
+					await frappe_call('/api/v2/method/ls_shop.api.return.return_items', {
+						sales_order_id: order_id,
+						items: this.selected_item_codes.map((item_code) => ({
+							item_code: item_code,
+							reason: this.return_reasons_by_item[item_code],
+							comment: this.return_comments_by_item[item_code] || ''
+						}))
+					});
+					toast(this.$store.i18n.t('Return raised successfully!'), { type: 'success' });
+					window.location.reload();
+				} finally {
+					this.is_saving = false;
+				}
+			}
+		}));
+	});
+</script>
+{% endcall %}
+{% endblock %}

@@ -1,0 +1,90 @@
+{# Quick View and Add To Cart link to the product page: the cart store refuses an item without a chosen size variant. #}
+
+{% macro product_card(
+    image,
+    product_name,
+    formatted_price,
+    original_price=0,
+    discount=0,
+    route="",
+    style="",
+    wow_delay="",
+    product_obj=None
+) %}
+{% set product_url = "/" ~ (frappe.lang or "en") ~ "/products/" ~ route %}
+<div class="shop-card {{ style }} wow fadeInUp" data-wow-delay="{{ wow_delay }}">
+	<div class="dz-media">
+		<img src="{{ image or '/assets/ls_shop/images/1.jpg' }}" alt="{{ product_name }}">
+		{% if not style %}
+		<div class="shop-meta">
+			<a href="{{ product_url }}" class="btn btn-secondary btn-md btn-rounded">
+				<i class="fa-solid fa-eye d-md-none d-block"></i>
+				<span class="d-md-block d-none">{{ _("Quick View") }}</span>
+			</a>
+			<div class="btn btn-primary meta-icon dz-wishicon" x-data='{
+					get in_wishlist() {
+						return $store.wishlist.is_in_wishlist({{ json.dumps(product_obj) }})
+					}
+				}'
+				@click.prevent='
+					in_wishlist
+						? $store.wishlist.remove({{ json.dumps(product_obj) }})
+						: $store.wishlist.add({{ json.dumps(product_obj) }})
+				'>
+				<i class="icon feather icon-heart dz-heart" x-show="!in_wishlist"></i>
+				<i class="icon feather icon-heart-on dz-heart-fill" x-show="in_wishlist" x-cloak></i>
+			</div>
+			<a href="{{ product_url }}" class="btn btn-primary meta-icon dz-carticon">
+				<i class="flaticon flaticon-basket"></i>
+			</a>
+		</div>
+		{% endif %}
+	</div>
+	<div class="dz-content">
+		{% if style == "style-2" %}
+		<div>
+			{% if discount %}<span class="sale-title">{{ _("up to {0}% off").format(discount | round | int) }}</span>{% endif %}
+			<h5 class="title"><a href="{{ product_url }}">{{ product_name }}</a></h5>
+		</div>
+		<h6 class="price">
+			{{ get_currency_symbol() }}{{ "%.2f" | format(formatted_price or 0) }}
+			{% if discount %}<del>{{ get_currency_symbol() }}{{ "%.2f" | format(original_price or 0) }}</del>{% endif %}
+		</h6>
+		{% elif style == "style-4" %}
+		<div>
+			<h6 class="title"><a href="{{ product_url }}">{{ product_name }}</a></h6>
+			{% if discount %}<span class="sale-title">{{ _("Up to {0}% Off").format(discount | round | int) }}</span>{% endif %}
+		</div>
+		<div class="d-flex align-items-center">
+			<h6 class="price">
+				{{ get_currency_symbol() }}{{ "%.2f" | format(formatted_price or 0) }}
+				{% if discount %}<del>{{ get_currency_symbol() }}{{ "%.2f" | format(original_price or 0) }}</del>{% endif %}
+			</h6>
+		</div>
+		{% else %}
+		<h5 class="title"><a href="{{ product_url }}">{{ product_name }}</a></h5>
+		<h5 class="price">{{ get_currency_symbol() }}{{ "%.2f" | format(formatted_price or 0) }}</h5>
+		{% endif %}
+	</div>
+	{% if not style and discount %}
+	<div class="product-tag">
+		<span class="badge">{{ _("Get {0}% Off").format(discount | round | int) }}</span>
+	</div>
+	{% endif %}
+</div>
+{% endmacro %}
+
+
+{% macro variant_card(variant, style="", wow_delay="") %}
+{{ product_card(
+    image=variant.image,
+    product_name=variant.item_name if frappe.lang == "en" else (variant.custom_item_name_ar or variant.item_name),
+    formatted_price=variant.sale_price,
+    original_price=variant.default_price,
+    discount=variant.discount_percent,
+    route=variant.route,
+    style=style,
+    wow_delay=wow_delay,
+    product_obj=variant
+) }}
+{% endmacro %}

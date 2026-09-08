@@ -5,9 +5,8 @@ html[data-theme] {
   --shop-default-radius: 0.5rem;
 }
 
-/* @import "tailwindcss" declares @layer theme, base, components, utilities. An unlayered
-   rule here would outrank every one of those regardless of specificity, so the component
-   half is explicitly layered - see ls_shop/.claude/memory/specs/task5_themes_spec.md §3.4. */
+/* @import "tailwindcss" declares @layer theme, base, components, utilities, and an unlayered rule
+   here would outrank all of them regardless of specificity - see task5_themes_spec.md §3.4. */
 @layer components {
   .theme-shop-default .card {
     border-radius: var(--shop-default-radius);

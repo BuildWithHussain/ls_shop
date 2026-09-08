@@ -4,8 +4,9 @@
 import frappe
 from frappe.tests import IntegrationTestCase
 
-# ls_shop makes Item Group.custom_displayname mandatory, so core's link-dependency loader cannot
-# build its stock test records. Nothing here links to one.
+from ls_shop.tests import delete_menu_entries
+
+# Item Group.custom_displayname is mandatory here, so core's link-dependency loader cannot build its records.
 IGNORE_TEST_RECORD_DEPENDENCIES = ["Item Group", "Brand"]
 
 PREFIX = "Test EC"
@@ -16,7 +17,7 @@ class TestEcommerceCategory(IntegrationTestCase):
 		self.tag = frappe.generate_hash(length=8)
 
 	def tearDown(self):
-		frappe.db.delete("Ecommerce Category", {"name": ["like", f"{PREFIX}%"]})
+		delete_menu_entries({"name": ["like", f"{PREFIX}%"]})
 
 	def make_category(self, link_type=None, link_url=None):
 		return frappe.get_doc(
@@ -33,8 +34,7 @@ class TestEcommerceCategory(IntegrationTestCase):
 	def test_a_script_scheme_url_is_refused_on_a_direct_write(self):
 		"""The navbar editor screens URLs, but a Desk form write or a REST insert never goes near it.
 
-		Frappe's Jinja environment has autoescaping off and the menu writes `href` straight into the
-		page, so a `javascript:` entry that reaches the table is stored XSS on the storefront.
+		Frappe's Jinja has autoescaping off and the menu writes `href` raw, so a `javascript:` entry is stored XSS.
 		"""
 		for unsafe_url in ("javascript:alert(1)", "data:text/html,<script>alert(1)</script>"):
 			with self.subTest(url=unsafe_url), self.assertRaises(frappe.ValidationError):
@@ -53,8 +53,6 @@ class TestEcommerceCategory(IntegrationTestCase):
 			self.make_category("URL", "")
 
 	def test_a_stale_url_is_dropped_when_the_link_type_moves_off_url(self):
-		"""Otherwise a node retains a link the editor no longer shows, and the href builder would
-		still have something to reach for if its branching ever changed."""
 		category = self.make_category("URL", "https://example.com/blog")
 
 		category.link_type = ""

@@ -1,6 +1,5 @@
 # Copyright (c) 2026, company@bwhstudios.com and Contributors
-# Tests for the first-party analytics beacon (api/analytics.py), its payload
-# clamps (analytics/events.py) and the event log retention job. Real-DB, auto-rolled-back.
+# Tests for the first-party analytics beacon, its payload clamps and the event log retention job.
 
 import json
 
@@ -10,9 +9,11 @@ from frappe.utils import add_days, now_datetime
 
 from ls_shop.analytics import events
 from ls_shop.api.analytics import capture
+from ls_shop.api.analytics_dashboard import get_traffic_sources
 from ls_shop.lifestyle_shop_ecommerce.doctype.storefront_analytics_event.storefront_analytics_event import (
 	StorefrontAnalyticsEvent,
 )
+from ls_shop.tests import get_test_item
 
 IPAD_USER_AGENT = (
 	"Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 "
@@ -98,8 +99,7 @@ class AnalyticsCaptureTestBase(IntegrationTestCase):
 	def setUp(self):
 		self.session_id = frappe.generate_hash(length=32)
 		self.set_first_party(1)
-		# get_capture_payload prefers a JSON request body; drop any inherited request so the
-		# form_dict branch is the one under test, and so get_user_agent sees no headers.
+		# Drop any inherited request so the form_dict branch is under test and get_user_agent sees none.
 		self.saved_request = getattr(frappe.local, "request", None)
 		if hasattr(frappe.local, "request"):
 			delattr(frappe.local, "request")
@@ -143,8 +143,7 @@ class TestCaptureEventWhitelist(AnalyticsCaptureTestBase):
 				self.assertEqual(self.only_captured_row(["event"])["event"], event)
 
 	def test_purchase_is_rejected_and_writes_no_row(self):
-		# purchase is server-authoritative (logged at order submit); accepting it from the
-		# browser would let anyone forge revenue into the analytics reports.
+		# purchase is server-authoritative; accepting it from the browser would let anyone forge revenue.
 		with self.assertRaises(frappe.ValidationError):
 			self.post(event="purchase", value=99999)
 		self.assertEqual(self.captured_rows(), [])
@@ -178,7 +177,7 @@ class TestCaptureClamps(AnalyticsCaptureTestBase):
 		self.assertIsNone(self.only_captured_row(["item_code"])["item_code"])
 
 	def test_existing_item_code_is_kept(self):
-		item_code = frappe.get_all("Item", limit=1, pluck="name")[0]
+		item_code = get_test_item()
 		self.post(event="view_item", item_code=item_code)
 		self.assertEqual(self.only_captured_row(["item_code"])["item_code"], item_code)
 
@@ -222,8 +221,7 @@ class TestCaptureDisabled(AnalyticsCaptureTestBase):
 		self.assertEqual(self.captured_rows(), [])
 
 	def test_disabled_capture_does_not_even_validate_the_event(self):
-		# The kill switch must short-circuit before the throw, so a beacon still in flight
-		# after an admin disables tracking does not 417 the shopper's browser.
+		# The kill switch must short-circuit before the throw, so an in-flight beacon does not 417.
 		self.set_first_party(0)
 		self.post(event="purchase")
 		self.assertEqual(self.captured_rows(), [])
@@ -280,3 +278,77 @@ class TestClearOldLogs(IntegrationTestCase):
 
 		StorefrontAnalyticsEvent.clear_old_logs(days=30)
 		self.assertFalse(frappe.db.exists("Storefront Analytics Event", event))
+
+
+class TestGetTrafficSources(IntegrationTestCase):
+	"""A window far outside the demo seeder's ~60 days keeps this test's rows the only ones in it."""
+
+	WINDOW_FROM = "2024-01-10"
+	WINDOW_TO = "2024-01-12"
+
+	def setUp(self):
+		self.event_names = []
+
+	def tearDown(self):
+		# get_traffic_sources aggregates the whole window, so leftover rows land in the next test's totals.
+		frappe.db.delete("Storefront Analytics Event", {"name": ("in", self.event_names)})
+
+	def make_session(self, session_id, source, medium, campaign, revenue=0):
+		events_in_session = [("page_view", 0)] + ([("purchase", revenue)] if revenue else [])
+		for event, value in events_in_session:
+			row = frappe.get_doc(
+				{
+					"doctype": "Storefront Analytics Event",
+					"event": event,
+					"session_id": session_id,
+					"utm_source": source,
+					"utm_medium": medium,
+					"utm_campaign": campaign,
+					"value": value,
+				}
+			).insert(ignore_permissions=True)
+			self.event_names.append(row.name)
+			frappe.db.set_value(
+				"Storefront Analytics Event",
+				row.name,
+				"creation",
+				f"{self.WINDOW_FROM} 10:00:00",
+				update_modified=False,
+			)
+
+	def get_rows(self):
+		return {
+			(row["source"], row["medium"], row["campaign"]): row
+			for row in get_traffic_sources(self.WINDOW_FROM, self.WINDOW_TO)
+		}
+
+	def test_two_campaigns_on_one_channel_stay_separate_rows(self):
+		self.make_session("test-diwali-1", "instagram", "social", "diwali", revenue=1000)
+		self.make_session("test-diwali-2", "instagram", "social", "diwali")
+		self.make_session("test-holi-1", "instagram", "social", "holi", revenue=250)
+
+		rows = self.get_rows()
+
+		self.assertEqual(rows[("instagram", "social", "diwali")]["sessions"], 2)
+		self.assertEqual(rows[("instagram", "social", "diwali")]["revenue"], 1000)
+		self.assertEqual(rows[("instagram", "social", "holi")]["sessions"], 1)
+		self.assertEqual(rows[("instagram", "social", "holi")]["revenue"], 250)
+
+	def test_campaignless_traffic_reports_an_empty_campaign(self):
+		self.make_session("test-direct-1", None, None, None)
+		self.make_session("test-organic-1", "google", "organic", None)
+
+		rows = self.get_rows()
+
+		self.assertEqual(rows[("Direct", "", "")]["sessions"], 1)
+		self.assertEqual(rows[("google", "organic", "")]["sessions"], 1)
+
+	def test_campaign_revenue_sums_to_the_channel_total(self):
+		self.make_session("test-diwali-1", "instagram", "social", "diwali", revenue=1000)
+		self.make_session("test-holi-1", "instagram", "social", "holi", revenue=250)
+
+		instagram_revenue = sum(
+			row["revenue"] for key, row in self.get_rows().items() if key[0] == "instagram"
+		)
+
+		self.assertEqual(instagram_revenue, 1250)

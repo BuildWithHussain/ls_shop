@@ -43,7 +43,6 @@
     </label>
     <div class="relative">
 
-        <!-- trigger button  -->
         <button type="button"
             class="inline-flex w-full items-center justify-between gap-2 border border-gray-300 rounded-md  px-4 py-2 text-sm font-medium tracking-wide text-gray-600 transition hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black  "
             role="combobox" aria-controls="countriesList" aria-haspopup="listbox" x-on:click="is_open = ! is_open"
@@ -53,11 +52,9 @@
             x-bind:aria-expanded="is_open || opened_with_keyboard"
             x-bind:aria-label="selected_option ? selected_option.name : 'Please Select'">
             <div class="flex items-center gap-2">
-                <!-- Selected Country Flag Emoji -->
                 <span class="text-lg" x-text="getFlagEmoji(selected_option?.code)"></span>
                 <span class="text-sm font-normal" x-text="selected_option ? selected_option.name : 'Please Select'"></span>
             </div>
-            <!-- Chevron  -->
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5"
                 aria-hidden="true">
                 <path fill-rule="evenodd"
@@ -66,7 +63,6 @@
             </svg>
         </button>
 
-        <!-- Hidden Input To Grab The Selected Value  -->
         <input id="{{id}}_country" name="{{id}}_country" autocomplete="off" x-ref="hidden_text_filed" hidden=""
             value="Saudi Arabia" />
         <div x-show="is_open || opened_with_keyboard" id="{{id}}_countriesList"
@@ -75,7 +71,6 @@
             x-on:click.outside="is_open = false, opened_with_keyboard = false"
             x-on:keydown.down.prevent="$focus.wrap().next()" x-on:keydown.up.prevent="$focus.wrap().previous()"
             x-transition x-trap="opened_with_keyboard">
-            <!-- Search  -->
             <div class="relative">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none"
                     stroke-width="1.5" class="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-gray-600/50 "
@@ -88,7 +83,6 @@
                     aria-label="Search" x-on:input="get_filtered_options($el.value)" x-ref="searchField"
                     placeholder="Search" />
             </div>
-            <!-- Options  -->
             <ul class="flex max-h-44 flex-col overflow-y-auto">
                 <li class="hidden px-4 py-2 text-sm text-gray-600 " x-ref="no_result_message">
                     <span>{{_('No matches found')}}</span>
@@ -98,14 +92,10 @@
                         role="option" x-on:click="setselected_option(item)"
                         x-on:keydown.enter="setselected_option(item)" x-bind:id="'option-' + index" tabindex="0">
                         <div class="flex items-center gap-2">
-                            <!-- Flag Emoji -->
                             <span class="text-lg" x-text="getFlagEmoji(item.code)"></span>
-                            <!-- Country name  -->
                             <span x-bind:class="selected_option == item ? 'font-bold' : null" x-text="item.name"></span>
-                            <!-- Screen reader 'selected' indicator  -->
                             <span class="sr-only" x-text="selected_option == item ? 'selected' : null"></span>
                         </div>
-                        <!-- Checkmark  -->
                         <svg x-cloak x-show="selected_option == item" xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" class="size-4"
             aria-hidden="true">

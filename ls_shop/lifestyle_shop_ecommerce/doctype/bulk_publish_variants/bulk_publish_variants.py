@@ -21,11 +21,8 @@ def chunked(values):
 
 
 def get_variants_to_publish(publish, names=None, item_groups=None, require_complete=True):
-	"""Variants whose `is_published` this call would actually flip.
-
-	Completeness is only demanded on the way in: a variant missing images or sizes has nothing to
-	show a shopper, but one that is already live must always be unpublishable.
-	"""
+	"""Variants whose `is_published` this call would flip. Completeness is demanded only on the way in -
+	an already-live variant must always be unpublishable."""
 	variant = frappe.qb.DocType(PRODUCT_DOCTYPE)
 	slideshow_item = frappe.qb.DocType("Website Slideshow Item")
 	color_size_item = frappe.qb.DocType("Color Size Item")
@@ -58,11 +55,8 @@ def get_variants_to_publish(publish, names=None, item_groups=None, require_compl
 
 
 def save_publish_state(publish, changed_names):
-	"""The one place `is_published` is written in bulk — and therefore the one place the index is told.
-
-	`frappe.db.set_value` fires no document event, so `sync.on_update` never runs and an unpublished
-	variant would stay searchable until the nightly rebuild without the explicit hand-off below.
-	"""
+	"""The one place `is_published` is written in bulk, and so the one place the index is told:
+	`frappe.db.set_value` fires no document event, so `sync.on_update` never runs."""
 	for chunk in create_batch(changed_names, IN_CLAUSE_CHUNK_SIZE):
 		frappe.db.set_value(PRODUCT_DOCTYPE, {"name": ["in", chunk]}, {"is_published": publish})
 
@@ -76,14 +70,9 @@ def publish_variants(publish, names=None, item_groups=None):
 
 
 @frappe.whitelist(methods=["POST"])
-def set_variants_published(publish, names):
-	"""Publish or unpublish exactly the variants named, and nothing else.
-
-	`bulk_toggle_publish` ANDs this Single's *stored* filter fields into its query, so a filter left
-	behind on the Bulk Publish Variants form would silently shrink an explicit selection made
-	somewhere else — the Item ecommerce tab's "Publish all ready" would quietly publish a subset.
-	This path takes the names and no other criteria.
-	"""
+def set_variants_published(publish: int | str, names: list | str):
+	"""Publish or unpublish exactly the variants named: `bulk_toggle_publish` ANDs this Single's stored
+	filter fields in, which would silently shrink an explicit selection."""
 	frappe.has_permission(PRODUCT_DOCTYPE, "write", throw=True)
 
 	names = parse_list(names)

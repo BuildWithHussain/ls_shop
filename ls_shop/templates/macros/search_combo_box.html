@@ -30,7 +30,6 @@
 }" class="flex w-full  flex-col gap-1" x-on:keydown="handleKeydownOnOptions($event)"
     x-on:keydown.esc.window="isOpen = false, openedWithKeyboard = false" x-init="options = allOptions">
     <div class="relative">
-        <!-- trigger button  -->
         <button type="button"
             class="inline-flex w-full items-center justify-between gap-2 border border-gray-300 rounded-lg bg-white p-4 text-sm font-medium tracking-wide text-gray-600 transition  hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 "
             role="combobox" aria-controls="combosList" aria-haspopup="listbox" x-on:click="isOpen = ! isOpen"
@@ -38,7 +37,6 @@
             x-on:keydown.space.prevent="openedWithKeyboard = true" x-bind:aria-expanded="isOpen || openedWithKeyboard"
             x-bind:aria-label="selectedOption ? selectedOption.value : $store.i18n.t('Please Select')">
             <span class="text-sm font-normal text-left" x-text="selectedOption ? selectedOption.display : $store.i18n.t('Please Select')"></span>
-            <!-- Chevron  -->
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5"
                 aria-hidden="true">
                 <path fill-rule="evenodd"
@@ -46,14 +44,12 @@
                     clip-rule="evenodd" />
             </svg>
         </button>
-        <!-- Hidden Input To Grab The Selected Value  -->
         <input id="{{id}}_combo" name="{{id}}_combo" x-ref="hiddenTextField" hidden="" />
         <div x-show="isOpen || openedWithKeyboard" id="{{id}}_combosList"
             class="absolute left-0 top-11 z-10 w-full overflow-hidden rounded-lg border border-gray-300 bg-white  "
             role="listbox" aria-label="industries list" x-on:click.outside="isOpen = false, openedWithKeyboard = false"
             x-on:keydown.down.prevent="$focus.wrap().next()" x-on:keydown.up.prevent="$focus.wrap().previous()"
             x-transition x-trap="openedWithKeyboard">
-            <!-- Search  -->
             <div class="relative">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" fill="none"
                     stroke-width="1.5" class="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-gray-600/50 "
@@ -67,7 +63,6 @@
                     placeholder="Search" />
             </div>
 
-            <!-- Options  -->
             <ul class="flex max-h-44 flex-col overflow-y-auto">
                 <li class="hidden px-4 py-2 text-sm text-gray-600 " x-ref="noResultsMessage">
                     <span>No matches found</span>
@@ -76,7 +71,6 @@
                     <li class="combobox-option inline-flex justify-between gap-6 bg-white px-4 py-3 text-sm text-gray-600 hover:bg-neutral-900/5 hover:text-gray-600 focus-visible:bg-neutral-900/5 focus-visible:text-gray-600 focus-visible:outline-hidden  "
                         role="option" x-on:click="setSelectedOption(item)" x-on:keydown.enter="setSelectedOption(item)"
                         x-bind:id="'{{id}}_option-' + index" tabindex="0">
-                        <!-- Label  -->
                         <div>
                             <div x-show="'{{show_title}}'==='True'" x-bind:class="selectedOption == item ? 'font-semibold' : 'font-medium'"
                                 class="flex mb-1 text-base  items-center">
@@ -84,9 +78,7 @@
                             </div>
                             <span x-bind:class="selectedOption == item ? 'font-medium' : null" x-text="item.display"></span>
                         </div>
-                        <!-- Screen reader 'selected' indicator  -->
                         <span class="sr-only" x-text="selectedOption == item ? 'selected' : null"></span>
-                        <!-- Checkmark  -->
                         <svg x-cloak x-show="selectedOption == item" xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" class="size-4"
                             aria-hidden="true">

@@ -16,9 +16,7 @@ cursor-pointer ' + classes %}
                 order_id
             });
             toast('{{ _("Order cancelled successfully!") }}', {"type": "success"})
-            // wait for 400ms before reload
             await new Promise(resolve => setTimeout(resolve, 600));
-            // reload the page
             window.location.reload()
         } catch (e) {
             console.log(e);

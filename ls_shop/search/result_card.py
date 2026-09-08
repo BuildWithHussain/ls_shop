@@ -1,6 +1,5 @@
 import frappe
 
-# Single source of truth for the search-result card: every selectable attribute (key -> human label).
 RESULT_CARD_CATALOG = {
 	"name": "Name",
 	"image": "Image",
@@ -11,10 +10,8 @@ RESULT_CARD_CATALOG = {
 	"sizes": "Sizes",
 }
 
-# Always-on attributes; the card is meaningless without them.
 MANDATORY_RESULT_FIELDS = ("name", "image", "price")
 
-# Today's layout — the safe default when the table is empty or unconfigured.
 DEFAULT_RESULT_FIELDS = ("image", "name", "color", "price")
 
 MIN_RESULT_FIELDS, MAX_RESULT_FIELDS = 3, 8

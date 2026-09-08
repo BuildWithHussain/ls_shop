@@ -24,16 +24,13 @@
 
 {% block offcanvas_content %}
     <div class="">
-        <!-- Mobile search -->
         <div class=" mt-10 ">
             {{search_bar()}}
         </div>
-        <!-- Language selector -->
         <div class="p-4 border-b border-gray-200 mt-10 ">
             <h3 class="mb-2 text-gray-700 capitalize">{{_('language')}}</h3>
             {% include "templates/components/core/language_selector.html" %}
         </div>
-        <!-- Mobile navigation accordion -->
         <div class="mt-10 ">
             {% block storefront_nav_mobile %}{{ mobile_nav_menu(header_data.navigation_menu) }}{% endblock %}
         </div>

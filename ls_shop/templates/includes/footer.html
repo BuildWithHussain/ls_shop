@@ -1,6 +1,6 @@
 {% import "templates/macros/collapsible_section.html" as macros %}
 {% set settings = preview_settings if preview_settings is defined and preview_settings else frappe.get_cached_doc("Lifestyle Settings", "Lifestyle Settings") %}
-{% set footer_logo = settings.footer_logo or "/assets/ls_shop/images/lifestyle.png" %}
+{% set footer_logo = preview_settings.footer_logo if preview_settings is defined and preview_settings and preview_settings.footer_logo else get_brand_assets().footer_logo %}
 {% set store_name = settings.store_name or "Lifestyle" %}
 {% set contact_phone = settings.contact_phone or "920000576" %}
 {% set contact_email = settings.contact_email or "Contact@lifestyle.sa" %}
@@ -11,7 +11,6 @@
 {% set payment_image = settings.payment_methods_image or "/assets/ls_shop/images/payment_method.png" %}
 {% set vat_image = settings.vat_certificate_image or "/assets/ls_shop/images/vat.png" %}
 
-{# Get footer sections from settings or use defaults #}
 {% set footer_sections = settings.footer_sections if settings.footer_sections else [] %}
 <div class="flex justify-center md:hidden my-9">
   <a href="/">
@@ -21,17 +20,14 @@
 {% block storefront_footer %}
 <footer class="bg-footer text-footer">
   <div class="max-w-7xl mx-auto px-6 md:px-10 mt-14 py-12">
-    <!-- Top Logo Section -->
     <div class="hidden items-start justify-start md:flex mb-12">
       <a href="/">
         <img src="{{ footer_logo }}" alt="{{ store_name }} Logo" class="h-16 w-40 object-contain" />
       </a>
     </div>
   
-    <!-- Main Footer Content -->
     <div class="flex flex-col justify-between md:flex-row">
       {% if footer_sections %}
-        {# Dynamic footer sections from settings #}
         {% for section_mapping in footer_sections|sort(attribute='section_order') %}
           {% if section_mapping.enabled %}
             {% set section = frappe.get_doc('Footer Section Config', section_mapping.footer_section) %}
@@ -50,7 +46,6 @@
           {% endif %}
         {% endfor %}
       {% else %}
-        {# Default footer sections if none configured #}
         {% call macros.collapsible_section(_("My Account"), "order-2 mb-4 md:order-1 md:mb-0 md:w-1/") %}
           <ul class="list-disc ps-4 text-sm">
             <li class="mb-2"><a href="/{{frappe.lang}}/account/dashboard" class="text-xs text-gray-300 hover:text-white">{{_('My account')}}</a></li>
@@ -67,7 +62,6 @@
         {% endcall %}
       {% endif %}
   
-      <!-- Contact Us -->
       {% call macros.collapsible_section(_("Contact us"), "md:w-1/ order-5 mb-4 md:order-" + ((footer_sections|length + 1)|string) + " md:mb-0") %}
         {% if contact_phone %}
         <div class="me-14 flex items-start border-b border-gray-700 pb-4">
@@ -106,7 +100,6 @@
         {% endif %}
       {% endcall %}
   
-      <!-- Newsletter Sign Up -->
       <div
         class="order-1 mt-12 mb-4 border-b border-gray-700 pb-6 decoration-1 md:order-{{ footer_sections|length + 2 }} md:mt-0 md:w-1/5 md:border-0 md:pb-0">
         <h3 class="py-3 text-sm">{{ newsletter_title }}</h3>
@@ -127,7 +120,6 @@
       </div>
     </div>
   
-    <!-- Bottom Bar -->
     <div class="mt-8 flex flex-col-reverse items-center justify-between border-t border-gray-700 pt-10 pb-15 md:flex-row">
       <div class="mb-12 flex space-x-4 md:mb-0">
         <img src="{{ payment_image }}" alt="Payment Icons" class="h-6" />

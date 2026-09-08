@@ -4,8 +4,7 @@ from frappe.utils.data import cint
 
 DEFAULT_URLS_PER_SITEMAP = 50000
 
-# Every route is emitted once per storefront language, so the per-page document
-# budget is the URL cap divided across these prefixes.
+# Every route is emitted once per language, so the document budget is the URL cap divided by these.
 LANGUAGES = ("en", "ar")
 
 
@@ -33,8 +32,7 @@ SEGMENT_CONFIG = {
 		"changefreq": "daily",
 		"priority": "0.6",
 	},
-	# ls_shop has no CMS page doctype, so this segment is the homepage only. It stays a
-	# segment so the index shape survives if editable pages are added later.
+	# No CMS page doctype yet, so this segment is the homepage only.
 	"pages": {
 		"doctype": None,
 		"changefreq": "daily",
@@ -62,8 +60,7 @@ def add_localized(urls, path, lastmod, changefreq, priority):
 
 
 def get_segment_filters(config):
-	"""A row with no route emits no URL, so it must not be counted into the page budget either —
-	most Ecommerce Category rows are nested entries that carry no route_slug."""
+	"""Rows with no route emit no URL: most Ecommerce Category rows are nested and carry no route_slug."""
 	return {**config["filters"], config["route_field"]: ["is", "set"]}
 
 

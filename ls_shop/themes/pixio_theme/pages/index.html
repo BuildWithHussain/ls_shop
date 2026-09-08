@@ -1,0 +1,31 @@
+{% extends "components/theme_layout.html" %}
+
+{% set settings = shop_theme_config() %}
+
+{% block head %}
+	{{ super() }}
+	<link rel="stylesheet" href="{{ shop_theme_asset_url('css/home-rails.css') }}">
+	<link rel="stylesheet" href="{{ shop_theme_asset_url('css/home-promo.css') }}">
+{% endblock %}
+
+{% block uncontained_body %}
+	{% if settings.hero_slides %}{% include "components/sections/hero_slider.html" %}{% endif %}
+	{% if settings.shop_by_category %}{% include "components/sections/category_strip.html" %}{% endif %}
+	{% if header_data.navigation_menu %}{% include "components/sections/marquee.html" %}{% endif %}
+	{% if picked_products.best_picks %}{% include "components/sections/products_grid.html" %}{% endif %}
+	{% if settings.collection_banners %}{% include "components/sections/collection.html" %}{% endif %}
+	{% if best_picks %}{% include "components/sections/similar_products.html" %}{% endif %}
+	{% if picked_products.best_picks %}{% include "components/sections/everyday_essentials.html" %}{% endif %}
+	{% if picked_products.deal_picks %}{% include "components/sections/deals.html" %}{% endif %}
+	{% if settings.offer_banners %}{% include "components/sections/offers.html" %}{% endif %}
+	{% if picked_products.featured_picks %}{% include "components/sections/featured.html" %}{% endif %}
+	{% if new_arrivals %}{% include "components/sections/recent_additions.html" %}{% endif %}
+	{% include "components/sections/sponsored_brands.html" %}
+	{% if header_data.navigation_menu %}{% include "components/sections/collection_collage.html" %}{% endif %}
+{% endblock %}
+
+{% block script %}
+	{{ super() }}
+	<script defer src="/assets/ls_shop/js/vendor/embla-carousel/core.js"></script>
+	<script defer src="{{ shop_theme_asset_url('js/pixio_carousels.js') }}"></script>
+{% endblock %}

@@ -20,8 +20,7 @@ def search_term(filters):
 def relevance_sort_available(filters):
 	"""True when a rankable term (≥ floor, non-Arabic) plus a live index lets SQLite serve the grid.
 
-	The FTS tokenizer has no Arabic stemming, so an Arabic term scores worse than the retained LIKE
-	query and is deliberately routed back to frappe.qb. A no-term browse stays on frappe.qb too.
+	The FTS tokenizer has no Arabic stemming, so an Arabic term is routed back to frappe.qb.
 	"""
 	term = search_term(filters)
 	if len(term) < MIN_QUERY_LENGTH or is_arabic_query(term):

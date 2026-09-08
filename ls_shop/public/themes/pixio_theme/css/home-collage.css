@@ -1,0 +1,51 @@
+/* Gap fills for the .collection-bx collage. Every mask, float animation and breakpoint already
+   lives in style.css (22119-22212) - only what upstream left broken is repeated here. */
+
+/* style.css paints the ghosted wordmark from ../images/collection.png, an asset the vendored
+   package never shipped, so the request 404s and nothing renders. */
+.collection-bx:after {
+	background-image: none;
+}
+
+.collection-bx .collection-watermark {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: -2;
+	text-align: center;
+	/* 13vw is the largest size at which the English wordmark still fits the viewport edge to
+	   edge; overflow: hidden keeps a longer translation clipped rather than scrolling. */
+	font-size: 13vw;
+	font-weight: 700;
+	line-height: 1;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	white-space: nowrap;
+	overflow: hidden;
+	pointer-events: none;
+	color: var(--title);
+	opacity: 0.05;
+}
+
+/* Merchant photos arrive at whatever aspect was uploaded, so without a fixed box the border-radius
+   masks land on different shapes. No display rule here: style.css hides the tiles below 768px. */
+.collection-bx .collection-tile {
+	width: 190px;
+}
+
+.collection-bx .collection-tile img {
+	width: 100%;
+	height: 220px;
+	object-fit: cover;
+	background-color: var(--dark-light);
+}
+
+/* Upstream parks the fifth photo top-centre, which only works for the 200x100 letterbox strip
+   the demo shipped there - a portrait merchant photo lands on top of the heading. */
+.collection-bx .collection5 {
+	top: auto;
+	bottom: 2%;
+	left: 45%;
+}

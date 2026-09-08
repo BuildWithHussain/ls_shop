@@ -1,6 +1,4 @@
 # Copyright (c) 2026, company@bwhstudios.com and Contributors
-# Real-DB tests for the paid-gateway-callback hook (api/payment_hooks.py). The Quotation docstatus is
-# the idempotency token, so these drive the hook twice against persisted state and count rows.
 
 from unittest.mock import patch
 
@@ -13,18 +11,18 @@ from bwh_payments.bwh_payments.doctype.gateway_payment_request.test_gateway_paym
 from bwh_payments.bwh_payments.doctype.stripe_gateway_settings import stripe_gateway_settings
 from bwh_payments.tests.fake_stripe import FakeStripeClient
 from frappe.tests import IntegrationTestCase
-from frappe.utils import get_year_ending, get_year_start, getdate
+from frappe.utils import add_to_date, get_year_ending, get_year_start, getdate, now_datetime
 from frappe.utils.data import flt
 
 from ls_shop.api.payment_hooks import on_payment_request_update
 from ls_shop.api.payments import confirm_payment
+from ls_shop.jobs import sync_pending_gateway_payments
 
 COMPANY = "Lifestyle Demo"
 ITEM_GROUP = "Interior Accessories"
 DEFAULT_CASH_ACCOUNT = "Cash - LSD"
-CURRENCY = "SAR"
-# The site's stock selling list is in INR; a list in the company currency keeps the fixture off the
-# Currency Exchange table, which has nothing to do with what these tests prove.
+CURRENCY = "INR"
+# A price list in the company currency keeps the fixture off the Currency Exchange table.
 PRICE_LIST = "ZZ Payhook SAR Selling"
 ITEM_RATE = 150.0
 
@@ -33,8 +31,7 @@ class TestPaymentHookIdempotency(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		# get_single hands back a cached copy whose timestamp is older than the row another test class
-		# already wrote in this process, which save() then rejects with a TimestampMismatchError.
+		# get_single hands back a copy older than another class's write, so save() throws TimestampMismatch.
 		frappe.clear_cache()
 		configure_stripe_gateway()
 		cls.ensure_mode_of_payment()
@@ -44,8 +41,7 @@ class TestPaymentHookIdempotency(IntegrationTestCase):
 	@classmethod
 	def tearDownClass(cls):
 		super().tearDownClass()
-		# The fixtures above run outside the per-test rollback, so without this the dev site keeps an
-		# enabled gateway backed by a fake key and the storefront offers it to real shoppers.
+		# The fixtures run outside the per-test rollback, so a fake-keyed gateway would stay enabled.
 		frappe.db.rollback()
 		remove_stripe_gateway()
 		frappe.delete_doc(
@@ -243,10 +239,10 @@ class TestPaymentHookIdempotency(IntegrationTestCase):
 
 	# -- queries ----------------------------------------------------------------------------------
 
-	def submitted_sales_orders(self):
+	def submitted_sales_orders(self, quotation_name=None):
 		return frappe.get_all(
 			"Sales Order Item",
-			filters={"prevdoc_docname": self.quotation.name, "docstatus": 1},
+			filters={"prevdoc_docname": quotation_name or self.quotation.name, "docstatus": 1},
 			pluck="parent",
 			distinct=True,
 		)
@@ -292,15 +288,13 @@ class TestPaymentHookIdempotency(IntegrationTestCase):
 		on_payment_request_update(self.payment_request)
 		first_sales_orders = self.submitted_sales_orders()
 
-		# The second delivery still carries the original Quotation reference, exactly as the gateway
-		# would replay it; only the persisted docstatus can stop it.
+		# The replay carries the original Quotation reference; only the persisted docstatus can stop it.
 		replayed = frappe.get_doc("Gateway Payment Request", self.payment_request.name)
 		replayed.ref_doctype = "Quotation"
 		replayed.ref_docname = self.quotation.name
 		on_payment_request_update(replayed)
 
-		# Without the docstatus guard the replay re-enters place_order and dies inside the Sales Order
-		# insert, so simply letting this call run unwrapped is part of the assertion.
+		# Without the docstatus guard the replay re-enters place_order, so running it unwrapped asserts it.
 		self.assertEqual(self.submitted_sales_orders(), first_sales_orders)
 		self.assertEqual(len(self.submitted_sales_orders()), 1)
 
@@ -403,9 +397,7 @@ class TestPaymentHookIdempotency(IntegrationTestCase):
 	def test_a_shopper_confirming_their_own_payment_gets_a_sales_order_and_invoice(self):
 		"""confirm_payment is whitelisted, so it runs as the shopper, who holds no accounting roles.
 
-		Every test above drives the hook as Administrator, which is exactly why the missing
-		ignore_account_permission flag survived: get_party_account's account_perm_check rejected the
-		Quotation submit, the shopper's money was captured and no order existed.
+		A missing ignore_account_permission once let get_party_account reject the submit after capture.
 		"""
 		payment_request = self.create_pending_payment_request(self.quotation)
 
@@ -476,3 +468,82 @@ class TestPaymentHookIdempotency(IntegrationTestCase):
 		)
 		self.assertEqual(reference.ref_doctype, "Sales Order")
 		self.assertEqual(reference.ref_docname, self.submitted_sales_orders()[0])
+
+	# -- pending payment sweep --------------------------------------------------------------------
+
+	def sweep_pending_gateway_payments(self):
+		# The job commits per request, and inside a test that commit would escape the rollback.
+		with patch.object(frappe.db, "commit"):
+			sync_pending_gateway_payments()
+
+	def age_payment_request(self, payment_request, minutes):
+		"""Push a request back past the settle floor, which is what the sweep filters on."""
+		frappe.db.set_value(
+			"Gateway Payment Request",
+			payment_request.name,
+			"creation",
+			add_to_date(now_datetime(), minutes=-minutes),
+			update_modified=False,
+		)
+
+	def test_the_sweep_places_an_order_the_shopper_never_came_back_to_confirm(self):
+		quotation = self.create_cart_quotation()
+		payment_request = self.create_pending_payment_request(quotation)
+		self.age_payment_request(payment_request, minutes=30)
+
+		self.sweep_pending_gateway_payments()
+
+		self.assertEqual(
+			frappe.db.get_value("Gateway Payment Request", payment_request.name, "status"), "Paid"
+		)
+		self.assertEqual(frappe.db.get_value("Quotation", quotation.name, "docstatus"), 1)
+		self.assertEqual(len(self.submitted_sales_orders(quotation.name)), 1)
+
+	def test_the_sweep_leaves_a_request_too_new_to_have_settled_alone(self):
+		"""A shopper still on the gateway's own page reads Pending; touching it buys nothing."""
+		quotation = self.create_cart_quotation()
+		payment_request = self.create_pending_payment_request(quotation)
+
+		self.sweep_pending_gateway_payments()
+
+		self.assertEqual(
+			frappe.db.get_value("Gateway Payment Request", payment_request.name, "status"), "Pending"
+		)
+		self.assertEqual(self.submitted_sales_orders(quotation.name), [])
+
+	def test_the_sweep_leaves_a_request_older_than_the_lookback_alone(self):
+		quotation = self.create_cart_quotation()
+		payment_request = self.create_pending_payment_request(quotation)
+		self.age_payment_request(payment_request, minutes=60 * 24)
+
+		self.sweep_pending_gateway_payments()
+
+		self.assertEqual(
+			frappe.db.get_value("Gateway Payment Request", payment_request.name, "status"), "Pending"
+		)
+
+	def test_one_unreachable_gateway_session_does_not_strand_the_rest_of_the_sweep(self):
+		unreachable_quotation = self.create_cart_quotation()
+		unreachable_request = self.create_pending_payment_request(unreachable_quotation)
+		# The fake transport raises for a session it never issued, as an expired reference does.
+		frappe.db.set_value("Gateway Payment Request", unreachable_request.name, "order_ref", "cs_test_gone")
+		# Strictly older, so the sweep's oldest-first ordering reaches it before the healthy one.
+		self.age_payment_request(unreachable_request, minutes=60)
+
+		healthy_quotation = self.create_cart_quotation()
+		healthy_request = self.create_pending_payment_request(healthy_quotation)
+		self.age_payment_request(healthy_request, minutes=30)
+
+		self.sweep_pending_gateway_payments()
+
+		self.assertEqual(
+			frappe.db.get_value("Gateway Payment Request", unreachable_request.name, "status"), "Pending"
+		)
+		self.assertEqual(
+			frappe.db.get_value("Gateway Payment Request", healthy_request.name, "status"), "Paid"
+		)
+		self.assertEqual(len(self.submitted_sales_orders(healthy_quotation.name)), 1)
+		self.assertTrue(
+			frappe.db.exists("Error Log", {"reference_name": unreachable_request.name}),
+			"the failing request must be logged, not swallowed",
+		)

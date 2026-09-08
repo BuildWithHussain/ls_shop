@@ -1,0 +1,242 @@
+
+{% extends "components/theme_layout.html" %}
+{% from "components/core/account_shell.html" import account_shell %}
+
+{% set address_type_labels = {"Billing": _("Billing Address"), "Shipping": _("Shipping Address")} %}
+
+{% block head %}
+	{{ super() }}
+	<link rel="stylesheet" href="{{ shop_theme_asset_url('css/account.css') }}">
+{% endblock %}
+
+{% block uncontained_body %}
+{% call account_shell(_("Address Book")) %}
+
+{# Synchronous on purpose: Alpine's core is deferred in the base head, so a deferred script here would register after alpine:init. #}
+<script>
+	document.addEventListener("alpine:init", () => {
+		Alpine.data("pixio_account_addresses", (party) => ({
+			form: null,
+			saving: false,
+			confirming: "",
+
+			add() {
+				this.confirming = "";
+				this.form = {
+					name: "",
+					address_title: "",
+					address_type: "Billing",
+					address_line1: "",
+					address_line2: "",
+					city: "",
+					state: "",
+					country: "",
+					pincode: "",
+					phone: "",
+					email_id: "",
+				};
+			},
+
+			edit(address) {
+				this.confirming = "";
+				this.form = { ...address };
+			},
+
+			reset() {
+				this.form = null;
+				this.saving = false;
+			},
+
+			async save() {
+				this.saving = true;
+				const { name, ...fields } = this.form;
+				try {
+					if (name) {
+						await frappe_call(`/api/v2/document/Address/${encodeURIComponent(name)}`, fields, "PUT");
+					} else {
+						await frappe_call("/api/v2/document/Address", {
+							...fields,
+							links: [{ link_doctype: party.doctype, link_name: party.name }],
+						}, "POST");
+					}
+					window.location.reload();
+				} catch (error) {
+					this.saving = false;
+				}
+			},
+
+			async remove(name) {
+				this.saving = true;
+				try {
+					await frappe_call("/api/v2/method/ls_shop.api.users.delete_user_address", { address_id: name });
+					window.location.reload();
+				} catch (error) {
+					this.saving = false;
+					this.confirming = "";
+				}
+			},
+		}));
+	});
+</script>
+
+<div class="account-card" x-data='pixio_account_addresses({{ {"doctype": party_doctype, "name": party_name} | tojson }})'>
+
+	<form x-show="form" x-cloak @submit.prevent="save()">
+		<h6 class="m-b25" x-text="form &amp;&amp; form.name ? $store.i18n.t('Edit Address') : $store.i18n.t('Add New Address')">{{ _("Add New Address") }}</h6>
+		<template x-if="form">
+			<div class="row">
+				<div class="col-lg-6">
+					<div class="form-group m-b25">
+						<label class="label-title" for="address_title">{{ _("Address Title") }}</label>
+						<input id="address_title" class="form-control" required x-model="form.address_title">
+					</div>
+				</div>
+				<div class="col-lg-6">
+					<div class="form-group m-b25">
+						<label class="label-title" for="address_type">{{ _("Address Type") }}</label>
+						<select id="address_type" class="form-control" required x-model="form.address_type">
+							{% for address_type in address_type_labels %}
+							<option value="{{ address_type }}">{{ _(address_type) }}</option>
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+				<div class="col-12">
+					<div class="form-group m-b25">
+						<label class="label-title" for="address_line1">{{ _("Address Line 1") }}</label>
+						<input id="address_line1" class="form-control" required x-model="form.address_line1">
+					</div>
+				</div>
+				<div class="col-12">
+					<div class="form-group m-b25">
+						<label class="label-title" for="address_line2">{{ _("Address Line 2") }}</label>
+						<input id="address_line2" class="form-control" x-model="form.address_line2">
+					</div>
+				</div>
+				<div class="col-lg-6">
+					<div class="form-group m-b25">
+						<label class="label-title" for="city">{{ _("City") }}</label>
+						<input id="city" class="form-control" required x-model="form.city">
+					</div>
+				</div>
+				<div class="col-lg-6">
+					<div class="form-group m-b25">
+						<label class="label-title" for="state">{{ _("State") }}</label>
+						<input id="state" class="form-control" x-model="form.state">
+					</div>
+				</div>
+				<div class="col-lg-6">
+					<div class="form-group m-b25">
+						<label class="label-title" for="country">{{ _("Country") }}</label>
+						<select id="country" class="form-control" required x-model="form.country">
+							<option value="">{{ _("Select a country") }}</option>
+							{% for country in country_list %}
+							<option value="{{ country.name | e }}">{{ country.name | e }}</option>
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+				<div class="col-lg-6">
+					<div class="form-group m-b25">
+						<label class="label-title" for="pincode">{{ _("Postal Code") }}</label>
+						<input id="pincode" class="form-control" x-model="form.pincode">
+					</div>
+				</div>
+				<div class="col-lg-6">
+					<div class="form-group m-b25">
+						<label class="label-title" for="phone">{{ _("Phone") }}</label>
+						<input id="phone" type="tel" class="form-control" x-model="form.phone">
+					</div>
+				</div>
+				<div class="col-lg-6">
+					<div class="form-group m-b25">
+						<label class="label-title" for="email_id">{{ _("Email") }}</label>
+						<input id="email_id" type="email" class="form-control" x-model="form.email_id">
+					</div>
+				</div>
+			</div>
+		</template>
+		<button class="btn btn-primary me-3" type="submit" :disabled="saving">
+			<span x-text="saving ? $store.i18n.t('Saving...') : $store.i18n.t('Save Address')">{{ _("Save Address") }}</span>
+		</button>
+		<button class="btn btn-outline-secondary" type="button" :disabled="saving" @click="reset()">{{ _("Cancel") }}</button>
+	</form>
+
+	<div x-show="!form">
+		<div class="m-b30">
+			<p class="mb-0">{{ _("The following addresses will be used on the checkout page by default.") }}</p>
+		</div>
+
+		{% if addresses %}
+		<div class="row g-4 m-b30">
+			{% for address in addresses %}
+			{% set address_payload = {
+				"name": address.name,
+				"address_title": address.address_title or "",
+				"address_type": address.address_type or "Billing",
+				"address_line1": address.address_line1 or "",
+				"address_line2": address.address_line2 or "",
+				"city": address.city or "",
+				"state": address.state or "",
+				"country": address.country or "",
+				"pincode": address.pincode or "",
+				"phone": address.phone or "",
+				"email_id": address.email_id or "",
+			} %}
+			<div class="col-md-6">
+				<div class="address-card">
+					<div class="account-address-box">
+						<h6 class="mb-3">{{ address_type_labels.get(address.address_type, address.address_type) | e }}</h6>
+						<ul>
+							<li>{{ address.address_title | e }}</li>
+							<li>{{ address.address_line1 | e }}</li>
+							{% if address.address_line2 %}<li>{{ address.address_line2 | e }}</li>{% endif %}
+							<li>
+								{{ address.city | e }}{% if address.state %}, {{ address.state | e }}{% endif %}{% if address.pincode %} - {{ address.pincode | e }}{% endif %}
+							</li>
+							<li>{{ address.country | e }}</li>
+							{% if address.phone %}<li>{{ address.phone | e }}</li>{% endif %}
+							{% if address.email_id %}<li>{{ address.email_id | e }}</li>{% endif %}
+						</ul>
+					</div>
+					<div class="account-address-bottom">
+						<template x-if='confirming !== {{ address.name | tojson }}'>
+							<div class="d-flex">
+								<a href="javascript:void(0);" class="d-block me-3" @click='edit({{ address_payload | tojson }})'>
+									<i class="fa-solid fa-pen me-2"></i>{{ _("Edit") }}
+								</a>
+								<a href="javascript:void(0);" class="d-block" @click='confirming = {{ address.name | tojson }}'>
+									<i class="fa-solid fa-trash-can me-2"></i>{{ _("Remove") }}
+								</a>
+							</div>
+						</template>
+						<template x-if='confirming === {{ address.name | tojson }}'>
+							<div class="d-flex align-items-center flex-wrap">
+								<span class="me-3">{{ _("Remove this address?") }}</span>
+								<a href="javascript:void(0);" class="d-block me-3 text-danger" @click='remove({{ address.name | tojson }})'>{{ _("Yes, remove") }}</a>
+								<a href="javascript:void(0);" class="d-block" @click="confirming = ''">{{ _("Keep") }}</a>
+							</div>
+						</template>
+					</div>
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+		{% else %}
+		<div class="account-empty">
+			<i class="fa-solid fa-location-dot"></i>
+			<p>{{ _("You have not saved an address yet.") }}</p>
+		</div>
+		{% endif %}
+
+		<div class="account-card-add">
+			<div class="account-address-add">
+				<svg width="50" height="50" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m59.28775 26.0578-7.30176-6.251v-11.72068a.99973.99973 0 0 0 -1-1h-7.46a.99974.99974 0 0 0 -1 1v3.60693l-7.2109-6.17675a5.07688 5.07688 0 0 0 -6.6416 0l-23.97314 20.54345a2.04251 2.04251 0 0 0 1.32226 3.56787h5.98047v18.92188a8.60569 8.60569 0 0 0 8.59082 8.60059h10.481a1.00019 1.00019 0 0 0 -.00006-2h-10.48094a6.60308 6.60308 0 0 1 -6.59082-6.60059v-19.92188a1.00005 1.00005 0 0 0 -1-1l-6.99951-.05078 23.97119-20.542a3.08781 3.08781 0 0 1 4.03955 0l8.86133 7.59082a1.00655 1.00655 0 0 0 1.65039-.75934v-4.7802h5.46v11.18066a1.00013 1.00013 0 0 0 .34961.75928l7.63184 6.60156h-6.98148a.99974.99974 0 0 0 -1 1v3.7002a1.00019 1.00019 0 0 0 2-.00006v-2.70014h5.98145a2.03152 2.03152 0 0 0 1.32031-3.56982z"/><path d="m43.99564 33.718a13.00122 13.00122 0 0 0 .00012 26.00244c17.24786-.71391 17.24231-25.29106-.00012-26.00244zm.00012 24.00244c-14.59461-.60394-14.58984-21.40082.00006-22.00244a11.00122 11.00122 0 0 1 -.00006 22.00244z"/><path d="m49.001 45.71942h-4v-4.00049a1.00019 1.00019 0 0 0 -2 0v4.00049h-4a1.00019 1.00019 0 0 0 .00006 2h3.99994v4a1 1 0 0 0 2 0v-4h4a1 1 0 0 0 0-2z"/></svg>
+			</div>
+			<h4 class="mb-3">{{ _("Add New Address") }}</h4>
+			<button class="btn btn-primary px-5" type="button" @click="add()">{{ _("Add") }}</button>
+		</div>
+	</div>
+</div>
+{% endcall %}
+{% endblock %}

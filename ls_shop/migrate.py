@@ -4,14 +4,16 @@ import frappe
 from bwh_payments.bwh_payments.utils import get_available_payment_modes
 
 from ls_shop.api.payments import COD_PAYMENT_MODE
+from ls_shop.lifestyle_shop_ecommerce.doctype.lifestyle_settings.navbar.navbar_manager import (
+	seed_menu_when_empty,
+)
 from ls_shop.search.build import ensure_index_built
 from ls_shop.search.record_builder import DEFAULT_CONTENT_FIELDS
 from ls_shop.search.result_card import DEFAULT_RESULT_FIELDS, RESULT_CARD_CATALOG
 from ls_shop.shop_themes.doctype.shop_theme_settings.shop_theme_settings import seed_default_routes
 from ls_shop.www.llms import DEFAULT_LLMS_TXT
 
-# Marks the robots.txt value as ours. Its absence from a non-blank value means an admin
-# has taken the file over by hand, and we leave it alone from then on.
+# Sentinel marking the robots.txt value as ours; absent from a non-blank value, an admin owns it.
 ROBOTS_MARKER = "# managed by ls_shop"
 
 
@@ -33,6 +35,7 @@ def after_install():
 	setup_robots_txt()
 	seed_llms_txt()
 	seed_default_routes()
+	seed_menu_when_empty()
 
 
 def after_migrate():
@@ -79,9 +82,7 @@ def ensure_storefront_search_index():
 
 
 def register_optional_doctype_links():
-	"""Add Customize Form connections for optional integrations whose doctypes are
-	provided by tabby_frappe.
-	"""
+	"""Add Customize Form connections for optional integrations whose doctypes come from tabby_frappe."""
 	add_sales_order_link_if_doctype_exists("Tabby Payment Request", "ref_docname")
 
 
@@ -128,8 +129,7 @@ def add_payment_mode(mode_of_payment: str, payment_type: str):
 			}
 		).insert(ignore_if_duplicate=True)
 
-	# ERPNext refuses to post a Payment Entry for a Mode of Payment that has no account for the company,
-	# so a gateway seeded without one silently blocks every online order it is used for.
+	# ERPNext refuses a Payment Entry for a Mode of Payment with no account for the company.
 	company = get_shop_company()
 	default_cash_account = company and frappe.get_cached_value("Company", company, "default_cash_account")
 	if not default_cash_account:
@@ -208,8 +208,6 @@ Best regards,
 
 
 def seed_llms_txt():
-	# Seed rather than serve-only, so admins get an editable starting point instead of a
-	# page they can only replace wholesale.
 	current = frappe.db.get_single_value("Lifestyle Settings", "llms_txt")
 	if not (current and current.strip()):
 		frappe.db.set_single_value("Lifestyle Settings", "llms_txt", DEFAULT_LLMS_TXT)
@@ -229,14 +227,12 @@ def setup_robots_txt():
 		"Disallow: /app\n"
 		"Disallow: /api\n"
 		"Disallow: /private\n"
-		# Faceted/sorted/paged listings are duplicate surfaces of the same catalogue; they
-		# burn crawl budget and dilute signals.
+		# Faceted/sorted/paged listings are duplicate surfaces: they burn crawl budget and dilute signals.
 		"Disallow: /*?search=\n"
 		"Disallow: /*?sort=\n"
 		"Disallow: /*?page=\n"
 		"Disallow: /*?filter=\n"
-		# Disallow is a prefix match, so "/en/cart" already covers "/en/cart/checkout".
-		# The explicit checkout line is kept deliberately — do not "tidy" these away.
+		# Disallow is a prefix match: the explicit checkout line is redundant but kept deliberately.
 		"Disallow: /en/cart\n"
 		"Disallow: /ar/cart\n"
 		"Disallow: /en/cart/checkout\n"

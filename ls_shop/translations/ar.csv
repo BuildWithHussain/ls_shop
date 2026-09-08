@@ -1,0 +1,80 @@
+Orders,الطلبات
+Order,طلب
+Products,المنتجات
+Product,منتج
+Inventory,المخزون
+Home,الرئيسية
+Navigation,التنقل
+Footer,تذييل الصفحة
+Storefront,المتجر
+Catalog,الكتالوج
+Sales,المبيعات
+Overview,نظرة عامة
+Settings,الإعدادات
+Store details,بيانات المتجر
+Shipping & returns,الشحن والإرجاع
+Payments,المدفوعات
+Footer & social,التذييل والتواصل الاجتماعي
+Advanced,متقدم
+Profile,الملف الشخصي
+Appearance,المظهر
+Language,اللغة
+The language this dashboard is shown in,اللغة التي تظهر بها لوحة التحكم
+Theme,السمة
+"Choose a light, dark, or system-matched interface",اختر واجهة فاتحة أو داكنة أو مطابقة للنظام
+Payment gateways,بوابات الدفع
+Delivery partners,شركاء التوصيل
+Turn on a provider and add its credentials to take online payments.,فعّل مزوّد الخدمة وأضف بيانات الاعتماد لاستقبال المدفوعات عبر الإنترنت.
+Turn on a carrier and add its credentials to quote live rates and book shipments.,فعّل شركة الشحن وأضف بيانات الاعتماد لعرض الأسعار الفعلية وحجز الشحنات.
+Live,مُفعّل
+Off,متوقف
+Not configured,غير مُهيأ
+Unavailable,غير متاح
+Configure,تهيئة
+Enable this integration,تفعيل هذا التكامل
+Customers only see it at checkout while it is on.,لا يراه العملاء عند الدفع إلا وهو مُفعّل.
+Saved — leave blank to keep it,محفوظ — اتركه فارغًا للإبقاء عليه
+Webhook URL,رابط الويب هوك
+Copy,نسخ
+Cash on delivery,الدفع عند الاستلام
+Accept cash on delivery,قبول الدفع عند الاستلام
+Let customers pay when the order arrives,دع العملاء يدفعون عند وصول الطلب
+COD charge,رسوم الدفع عند الاستلام
+Rates & returns,الأسعار والإرجاع
+Return period,مدة الإرجاع
+Return reasons,أسباب الإرجاع
+Shipping rule,قاعدة الشحن
+Add product,إضافة منتج
+Add link,إضافة رابط
+Add column,إضافة عمود
+Add section,إضافة قسم
+Footer preview,معاينة التذييل
+Navigation preview,معاينة التنقل
+Show footer preview,عرض معاينة التذييل
+Show navigation preview,عرض معاينة التنقل
+Refresh,تحديث
+Search,بحث
+No products yet,لا توجد منتجات بعد
+No orders here,لا توجد طلبات هنا
+Nothing running low,لا يوجد ما أوشك على النفاد
+Running low,أوشك على النفاد
+Out of stock,نفد من المخزون
+All,الكل
+In stock,المتوفر
+Availability,التوفر
+Receive,استلام
+Collection,المجموعة
+Options,الخيارات
+Price,السعر
+Stock,المخزون
+Status,الحالة
+Hidden,مخفي
+Open command palette,فتح لوحة الأوامر
+Show keyboard shortcuts,عرض اختصارات لوحة المفاتيح
+Keyboard shortcuts,اختصارات لوحة المفاتيح
+Go to,انتقل إلى
+View storefront,عرض المتجر
+Brand logo,شعار المتجر
+Footer logo,شعار التذييل
+Favicon,أيقونة الموقع
+Store name,اسم المتجر

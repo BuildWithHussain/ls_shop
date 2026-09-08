@@ -16,6 +16,7 @@ from ls_shop.lifestyle_shop_ecommerce.doctype.lifestyle_settings.navbar import n
 from ls_shop.search import sync
 from ls_shop.search.engine_cache import clear_search_engine
 from ls_shop.search.sqlite_product_search import SqliteProductSearch
+from ls_shop.tests import delete_menu_entries
 
 ITEM_GROUP_SNAPSHOT_FIELDS = ["name", "parent_item_group", "is_group", "lft", "rgt", "modified"]
 
@@ -54,10 +55,8 @@ class TestNavbarManager(IntegrationTestCase):
 		self.women = self.add_node(None, "Test MM Women")["name"]
 
 	def tearDown(self):
-		# IntegrationTestCase only rolls back once, after the whole class finishes, so each test's rows
-		# must be cleared explicitly to avoid duplicate-name collisions with the next test's setUp.
-		frappe.db.delete("Ecommerce Category Item Group", {"parent": ["like", "Test MM%"]})
-		frappe.db.delete("Ecommerce Category", {"name": ["like", "Test MM%"]})
+		# IntegrationTestCase rolls back once per class, so each test must clear its own rows.
+		delete_menu_entries({"name": ["like", "Test MM%"]})
 		frappe.db.delete("Item Group", {"name": ["like", "Test MM%"]})
 		frappe.db.delete("Brand", {"name": ["like", "Test MM%"]})
 
@@ -83,9 +82,7 @@ class TestNavbarManager(IntegrationTestCase):
 
 	def test_editing_the_menu_never_touches_item_group(self):
 		accessories = self.add_node(self.men, "Test MM Accessories")
-		bags = self.add_node(
-			accessories["name"], "Test MM Bags", "Item Group", ["Test MM Bags", "Test MM Belts"]
-		)
+		bags = self.add_node(accessories["name"], "Test MM Bags", "Item Group", ["Test MM Bags"])
 
 		before = self.item_group_snapshot()
 
@@ -125,11 +122,11 @@ class TestNavbarManager(IntegrationTestCase):
 		self.assertEqual(find_node(menu, men_bags["name"])["label"], "Test MM Man Bags")
 		self.assertEqual(find_node(menu, women_bags["name"])["label"], "Test MM Bags")
 
-	def test_node_links_to_many_item_groups(self):
-		bags = self.add_node(self.men, "Test MM Bags", "Item Group", ["Test MM Bags", "Test MM Belts"])
+	def test_node_links_to_one_item_group(self):
+		bags = self.add_node(self.men, "Test MM Bags", "Item Group", ["Test MM Bags"])
 
-		self.assertEqual(bags["item_groups"], ["Test MM Bags", "Test MM Belts"])
-		self.assertIn("subcategory=Test%20MM%20Bags%2CTest%20MM%20Belts", bags["href"])
+		self.assertEqual(bags["item_groups"], ["Test MM Bags"])
+		self.assertIn("subcategory=Test%20MM%20Bags", bags["href"])
 
 	def test_link_type_brand_and_url(self):
 		brand = self.add_node(self.men, "Test MM Brand Tab", "Brand", "Test MM Brand 1")
@@ -195,7 +192,6 @@ class TestNavbarManager(IntegrationTestCase):
 		for name in (self.men, column, leaf):
 			self.assertFalse(frappe.db.exists("Ecommerce Category", name))
 			self.assertIsNone(find_node(menu, name))
-		self.assertFalse(frappe.db.exists("Ecommerce Category Item Group", {"parent": leaf}))
 		self.assertTrue(frappe.db.exists("Ecommerce Category", self.women), "a sibling tab was deleted")
 
 	def test_set_visibility_writes_enabled(self):
@@ -395,12 +391,12 @@ class TestNavbarManager(IntegrationTestCase):
 		self.assertEqual(find_node(menu, self.men)["meta_title"], "Test MM Menswear")
 
 	def test_update_node_keeps_the_other_fields_when_only_seo_changes(self):
-		bags = self.add_node(None, "Test MM Bags", "Item Group", ["Test MM Bags", "Test MM Belts"])
+		bags = self.add_node(None, "Test MM Bags", "Item Group", ["Test MM Bags"])
 
 		menu = navbar_manager.update_node(bags["name"], meta_title="Test MM Bags Page")["menu"]
 
 		node = find_node(menu, bags["name"])
-		self.assertEqual(node["item_groups"], ["Test MM Bags", "Test MM Belts"])
+		self.assertEqual(node["item_groups"], ["Test MM Bags"])
 		self.assertEqual(node["label"], "Test MM Bags")
 		self.assertEqual(node["link_type"], "Item Group")
 		self.assertEqual(node["route_slug"], "test_mm_bags")
@@ -432,8 +428,7 @@ class TestNavbarPublishCascade(IntegrationTestCase):
 		SqliteProductSearch().drop_index()
 		SqliteProductSearch.INDEX_NAME = cls.original_index_name
 		SqliteProductSearch.INDEXABLE_DOCTYPES = cls.original_indexable
-		frappe.db.delete("Ecommerce Category Item Group", {"parent": ["like", f"{PUBLISH_PREFIX}%"]})
-		frappe.db.delete("Ecommerce Category", {"name": ["like", f"{PUBLISH_PREFIX}%"]})
+		delete_menu_entries({"name": ["like", f"{PUBLISH_PREFIX}%"]})
 		super().tearDownClass()
 
 	def setUp(self):
@@ -483,8 +478,7 @@ class TestNavbarPublishCascade(IntegrationTestCase):
 		# No images: unpublish_if_incomplete_data would revert a publish, so the cascade must skip it.
 		cls.incomplete = cls.make_variant("ZZ Pub Draft", "ZZ Pub Dresses", is_published=0, images=False)
 
-		# ZZ Pub Gowns is a child of the linked ZZ Pub Dresses, so the cascade reaches the gown too:
-		# publish expands every linked group over its Item Group descendants.
+		# publish expands every linked group over its Item Group descendants, so the child gown is reached.
 		cls.cascaded = [cls.dress, cls.gown, cls.shoe]
 
 	@classmethod
@@ -620,7 +614,7 @@ class TestNavbarPublishCascade(IntegrationTestCase):
 
 		self.assertTrue(frappe.db.get_value("Style Attribute Variant", self.bag, "is_published"))
 
-	def test_node_without_linked_item_groups_is_a_safe_no_op(self):
+	def test_node_without_a_linked_item_group_is_a_safe_no_op(self):
 		before = self.published_variants()
 
 		self.assertEqual(navbar_manager.get_publish_preview(self.heading, 1)["count"], 0)
@@ -662,11 +656,7 @@ class TestNavbarPublishCascade(IntegrationTestCase):
 		self.assertEqual(self.indexed_variants(), sorted([*self.cascaded, self.bag]))
 
 	def test_the_bulk_publish_tool_shares_the_publish_path(self):
-		"""Bulk Publish Variants had no index sync at all, so it left ghosts the storefront kept serving.
-
-		Routing it through publish_variants gives it the cascade's sync and the same completeness gate:
-		one definition of publishable for both callers.
-		"""
+		"""Bulk Publish Variants had no index sync at all, so it left ghosts the storefront kept serving."""
 		tool = frappe.get_single("Bulk Publish Variants")
 		tool.vendor_code = tool.dcs = tool.brand = tool.item_code = tool.season_code = None
 
@@ -682,9 +672,7 @@ class TestNavbarPublishCascade(IntegrationTestCase):
 	def test_publishing_a_named_set_ignores_filters_left_on_the_bulk_publish_form(self):
 		"""The Item tab's "Publish all ready" sends an explicit list, and it must publish that list.
 
-		`bulk_toggle_publish` ANDs the Single's stored filter fields into its query, so a stale
-		`brand` left on the Bulk Publish Variants form would silently shrink someone else's
-		selection down to nothing and report success.
+		`bulk_toggle_publish` ANDs the Single's stored filters in, so a stale `brand` silently empties the set.
 		"""
 		tool = frappe.get_single("Bulk Publish Variants")
 		tool.vendor_code = tool.dcs = tool.brand = tool.season_code = None

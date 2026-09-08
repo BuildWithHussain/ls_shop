@@ -4,6 +4,7 @@
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from ls_shop.api.admin.pages import PAGE_DOCTYPE, get_page_url
 from ls_shop.lifestyle_shop_ecommerce.doctype.lifestyle_settings.footer.footer_preview import (
 	STATIC_STOREFRONT_ROUTES,
 	add_footer_link,
@@ -17,13 +18,13 @@ from ls_shop.lifestyle_shop_ecommerce.doctype.lifestyle_settings.footer.footer_p
 	reorder_footer_sections,
 	update_footer_link,
 )
+from ls_shop.shop_themes.doctype.shop_theme.shop_theme import get_theme_context, resolve_active_theme
 from ls_shop.www.footer_editor_preview import COLOR_PATTERN, get_context
 
 
 class TestFooterEditor(IntegrationTestCase):
-	# IntegrationTestCase registers its rollback with addClassCleanup, so it fires once after the
-	# whole class — every test still has to clean up after itself or the next one hits a duplicate
-	# Footer Section Config (autoname is field:section_title).
+	# IntegrationTestCase rolls back once per class (addClassCleanup), so each test must clean up after
+	# itself or the next hits a duplicate Footer Section Config (autoname is field:section_title).
 	SECTION_TITLES = ("Help", "About", "Contact", "Support")
 	WEB_PAGE_ROUTES = ("footer-editor-test-page", "footer-editor-draft-page")
 
@@ -41,8 +42,8 @@ class TestFooterEditor(IntegrationTestCase):
 			if frappe.db.exists("Footer Section Config", title):
 				frappe.delete_doc("Footer Section Config", title, force=True, ignore_permissions=True)
 		for route in self.WEB_PAGE_ROUTES:
-			for name in frappe.get_all("Web Page", filters={"route": route}, pluck="name"):
-				frappe.delete_doc("Web Page", name, force=True, ignore_permissions=True)
+			for name in frappe.get_all(PAGE_DOCTYPE, filters={"route": route}, pluck="name"):
+				frappe.delete_doc(PAGE_DOCTYPE, name, force=True, ignore_permissions=True)
 
 	def link_row_name(self, section_name, index=0):
 		section = frappe.get_doc("Footer Section Config", section_name)
@@ -174,32 +175,25 @@ class TestFooterEditor(IntegrationTestCase):
 		self.assertEqual([row.link_label for row in remaining.footer_links], ["B"])
 		self.assertEqual([row.link_order for row in remaining.footer_links], [1])
 
-	def test_page_list_unions_published_web_pages_with_storefront_routes(self):
-		page = frappe.get_doc(
+	def make_shop_page(self, title, route, published):
+		return frappe.get_doc(
 			{
-				"doctype": "Web Page",
-				"title": "Footer Editor Test Page",
-				"route": "footer-editor-test-page",
-				"published": 1,
-				"content_type": "HTML",
-				"main_section_html": "<p>hello</p>",
+				"doctype": PAGE_DOCTYPE,
+				"name": title,
+				"content": "<p>hello</p>",
+				"route": route,
+				"published": published,
 			}
 		).insert()
-		frappe.get_doc(
-			{
-				"doctype": "Web Page",
-				"title": "Footer Editor Draft Page",
-				"route": "footer-editor-draft-page",
-				"published": 0,
-				"content_type": "HTML",
-				"main_section_html": "<p>draft</p>",
-			}
-		).insert()
+
+	def test_page_list_unions_published_shop_pages_with_storefront_routes(self):
+		page = self.make_shop_page("Footer Editor Test Page", "footer-editor-test-page", 1)
+		self.make_shop_page("Footer Editor Draft Page", "footer-editor-draft-page", 0)
 
 		routes = [row["route"] for row in get_footer_editor_data()["pages"]]
 
-		self.assertIn(page.route, routes)
-		self.assertNotIn("footer-editor-draft-page", routes)
+		self.assertIn(get_page_url(page.route), routes)
+		self.assertNotIn(get_page_url("footer-editor-draft-page"), routes)
 		for _label, static_route in STATIC_STOREFRONT_ROUTES:
 			self.assertIn(static_route, routes)
 
@@ -248,6 +242,40 @@ class TestFooterEditor(IntegrationTestCase):
 		self.assertNotIn("expression(1)", html)
 		self.assertNotIn("<script>alert(2)", html)
 		self.assertIn("&lt;script&gt;alert(2)", html)
+
+	def render_preview(self, **overrides):
+		original_form_dict = frappe.local.form_dict
+		frappe.local.form_dict = frappe._dict(lang="en", **overrides)
+		try:
+			context = frappe._dict()
+			get_context(context)
+			return context.rendered_html
+		finally:
+			frappe.local.form_dict = original_form_dict
+
+	def test_preview_renders_the_active_theme_not_the_base_footer(self):
+		"""The base template hardcodes columns the board does not manage, so a fallback disagrees with it."""
+		html = self.render_preview()
+
+		theme_name = resolve_active_theme()
+		if not get_theme_context(theme_name)["dirs"]:
+			self.skipTest("no theme active on this site")
+
+		self.assertIn("page-wraper" if theme_name == "Pixio Theme" else "theme-shop-default", html)
+
+	def test_preview_hides_every_chrome_but_the_footer(self):
+		html = self.render_preview()
+
+		self.assertIn("<footer", html)
+		self.assertNotIn("<header", html)
+		self.assertNotIn("<nav", html)
+		self.assertNotIn("breadcrumb", html)
+
+	def test_preview_markup_is_balanced(self):
+		"""The wrapper opens in one block and closes in another, so blanking the wrong one unscopes the footer."""
+		html = self.render_preview()
+
+		self.assertEqual(html.count("<div"), html.count("</div>"))
 
 	def test_get_context_applies_accepted_overrides(self):
 		original_form_dict = frappe.local.form_dict

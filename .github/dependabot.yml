@@ -1,0 +1,23 @@
+version: 2
+updates:
+  # The dashboard is the whole third-party surface: vite, tailwind, puppeteer and a
+  # frappe-ui beta. Point at the directory holding the lockfile or the manifest bumps
+  # and the lock goes stale.
+  - package-ecosystem: "npm"
+    directory: "/dashboard"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        applies-to: version-updates
+        update-types: ["minor", "patch"]
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

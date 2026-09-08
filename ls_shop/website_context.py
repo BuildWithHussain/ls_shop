@@ -4,8 +4,7 @@ import frappe
 
 from ls_shop import seo
 
-# Cart/account/login render per-user content and must never be indexed. They are handled
-# here rather than in each controller so a new private route inherits the rule for free.
+# Cart/account/login render per-user content and must never be indexed.
 UTILITY_PATH_PATTERN = re.compile(r"^/(?:en|ar)/(cart|account|login)(?:/|$)")
 
 UTILITY_PAGE_NAMES = {"cart": "Cart", "account": "My Account", "login": "Login"}

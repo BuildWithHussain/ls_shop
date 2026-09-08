@@ -1,5 +1,4 @@
 <div class="space-y-6">
-    <!-- Scrollable Cart Items -->
 
     <div class="max-h-80 overflow-y-auto space-y-4 pr-2">
         {% for cart_item in items %}
@@ -35,7 +34,6 @@
 
         {% endfor %}
     </div>
-    <!-- Price Summary -->
     <div class="space-y-3 my-4 py-4 border-b border-t border-gray-300">
         <div class="flex justify-between text-gray-500 text-base">
             <span>{{ _('Subtotal') }}</span>
@@ -82,7 +80,6 @@
         </div>
         {% endif %}
     </div>
-    <!-- Total -->
     <div class="flex justify-between text-base font-bold">
         <span class="uppercase">{{ _('Total') }}</span>
         <div>{{get_currency_symbol()}}

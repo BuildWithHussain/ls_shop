@@ -2,8 +2,7 @@
 // For license information, please see license.txt
 
 // Frappe concatenates every `doctype_js` file for a doctype into one `new Function()` scope
-// (script_manager.js `setup`), so anything declared at the top level here would collide with the
-// other editors registered on Lifestyle Settings. This closure keeps the file's names its own.
+// (script_manager.js `setup`), so a top-level name here would collide with the other scripts.
 (() => {
 	frappe.ui.form.on('Lifestyle Settings', {
 		refresh(frm) {
@@ -268,7 +267,9 @@
 		if (!footer || !crop_box) return;
 
 		const footer_rect = footer.getBoundingClientRect();
-		iframe.style.height = `${Math.ceil(preview_document.documentElement.scrollHeight)}px`;
+		iframe.style.height = `${Math.ceil(
+			preview_document.documentElement.scrollHeight,
+		)}px`;
 		iframe.style.marginTop = `-${Math.floor(footer_rect.top)}px`;
 		crop_box.style.height = `${Math.ceil(footer_rect.height)}px`;
 	}
@@ -563,12 +564,12 @@
 							link_row_name: existing_row.name,
 							label: values.label,
 							url: values.url,
-						})
+					  })
 					: await get_footer_data('add_footer_link', {
 							section_name: column.name,
 							label: values.label,
 							url: values.url,
-						});
+					  });
 				add_footer_editor(frm, wrapper, data);
 			},
 		});

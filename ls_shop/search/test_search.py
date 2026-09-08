@@ -19,8 +19,7 @@ SEARCH_TOKEN = "zzwidget"
 ARABIC_TERM = "قميص"
 SHORT_TERM = "abc"
 
-# Deliberately not title-stable ("ZZ TestSearch Brand".title() != itself): the sidebar used to
-# title-case its values, which then no longer matched the case-sensitive SQLite index.
+# Deliberately not title-stable: the sidebar used to title-case values, which the BINARY index missed.
 BRAND = "ZZ TestSearch Brand"
 ITEM_GROUP = "ZZ Test Search Group"
 # A second group so the facet cross-filter tests have two variants that differ on a facet column.
@@ -49,22 +48,21 @@ class TestStorefrontSearch(IntegrationTestCase):
 		cls.build_catalogue()
 		cls.scope_index_to_fixtures()
 		cls.ensure_non_privileged_user()
-		# The fixtures outlive a single test method (each test rebuilds the index from them), so they
-		# are committed and torn down explicitly rather than riding the per-test transaction.
-		frappe.db.commit()
+		# Fixtures outlive one test method, so they are committed and torn down explicitly.
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit
 
 	@classmethod
 	def tearDownClass(cls):
 		cls.drop_catalogue()
-		frappe.db.commit()
+		# The committed fixtures survive the rollback, so the teardown has to be committed too.
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit
 		SqliteProductSearch().drop_index()
 		SqliteProductSearch.INDEX_NAME = cls.original_index_name
 		SqliteProductSearch.INDEXABLE_DOCTYPES = cls.original_indexable
 		super().tearDownClass()
 
 	def setUp(self):
-		# frappe.local persists across test methods, so a memoized index_exists() from a prior test would
-		# leak into test_index_missing_falls_back_without_throw. Reset the request-scoped engine per test.
+		# frappe.local persists across test methods, so a memoized index_exists() would leak between them.
 		clear_search_engine()
 		self.rebuild_index()
 
@@ -106,9 +104,8 @@ class TestStorefrontSearch(IntegrationTestCase):
 			}
 		).insert(ignore_permissions=True)
 
-		# red: discounted + cheapest; blue: pricier, no discount. Both indexed. They deliberately differ
-		# on item_group AND size so the facet cross-filter assertions have something to narrow by.
-		# Numeric sizes, because that is where the sidebar's ordering can go wrong (10 before 8).
+		# red: discounted + cheapest; blue: pricier, no discount. They differ on item_group AND size for the
+		# facet cross-filter assertions. Numeric sizes, where the sidebar can order 10 before 8.
 		cls.red = cls.make_variant(
 			configurator.name,
 			color="Zzred",
@@ -122,8 +119,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 			sizes=[("38", "ZZ-BLUE-S", 200, None), ("40", "ZZ-BLUE-M", 220, None)],
 			item_group=ITEM_GROUP_BLUE,
 		)
-		# green: published but deliberately left OUT of the index scope, so a name that exists in
-		# MariaDB but not in the index never leaks into an FTS result.
+		# green: published but deliberately outside the index scope, to prove it never leaks into FTS results.
 		cls.green = cls.make_variant(
 			configurator.name,
 			color="Zzgreen",
@@ -169,9 +165,8 @@ class TestStorefrontSearch(IntegrationTestCase):
 				"configurator": configurator,
 				"item_style": STYLE_ITEM,
 				"attribute_value": color,
-				# Real catalogues put the attribute's LABEL here ("Color"), not its value, and the
-				# storefront's colour filter compares against this column — a fixture that stored the
-				# colour here would make the colour assertions pass for the wrong reason.
+				# Real catalogues put the attribute's LABEL here ("Color"), not its value, and the colour filter
+				# compares against this column - storing the colour would pass the assertions for the wrong reason.
 				"attribute_name": "Color",
 				"display_name": display_name,
 				"item_group": item_group,
@@ -297,8 +292,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 		facets = SqliteProductSearch().search(SEARCH_TOKEN)["facets"]
 		self.assertEqual(facets["brand"].get(BRAND), 2)
 		self.assertEqual(set(facets["category"]), {ITEM_GROUP, ITEM_GROUP_BLUE})
-		# The colour facet is built from attribute_name, which real data fills with the attribute's
-		# label, so both variants land under one value. Tracked separately as a storefront parity bug.
+		# Colour facet reads attribute_name, which real data fills with the label - a known storefront parity bug.
 		self.assertEqual(facets["color"], {"Color": 2})
 		self.assertEqual(facets["size"], {"8": 1, "10": 1, "38": 1, "40": 1})
 
@@ -307,8 +301,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 		self.assertEqual(sidebar["colors"], ["Color"])
 
 	def test_size_facet_is_ordered_numerically(self):
-		# Ordered by count the sidebar would render 8, 10, 38, 40 in an arbitrary order; ordered as
-		# text it would render 10 before 8. Both are wrong for a numeric size scale.
+		# By count the order is arbitrary; as text 10 sorts before 8. Both are wrong for a numeric size scale.
 		facets = SqliteProductSearch().search(SEARCH_TOKEN)["facets"]
 		self.assertEqual(list(facets["size"]), ["8", "10", "38", "40"])
 
@@ -319,8 +312,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 		narrowed = engine.search(SEARCH_TOKEN, facet_filters={"sizes": ["8"]})["facets"]
 		self.assertEqual(set(narrowed["category"]), {ITEM_GROUP})
 		self.assertEqual(narrowed["brand"], {BRAND: 1})
-		# ...but the size facet must not narrow by itself, or the sidebar would offer only the
-		# already-ticked size and the shopper could never widen the selection again.
+		# ...but the size facet must not narrow by itself, or the shopper could never widen the selection.
 		self.assertEqual(list(narrowed["size"]), ["8", "10", "38", "40"])
 
 		# Symmetrically: picking blue's category leaves only blue's sizes, and every category listed.
@@ -344,8 +336,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 		self.assertEqual(engine.search_products({"search": SEARCH_TOKEN, "has_discount": 1}), [self.red])
 		self.assertEqual(engine.search_count({"search": SEARCH_TOKEN, "min_price": 150}), 1)
 
-		# The bounds arrive from the URL as strings. FTS5 content columns have no type affinity, so a
-		# TEXT bound sorts above every REAL price and silently returns the wrong rows.
+		# Bounds arrive as strings; FTS5 columns have no type affinity, so a TEXT bound sorts above every REAL.
 		self.assertEqual(engine.search_products({"search": SEARCH_TOKEN, "min_price": "150"}), [self.blue])
 		self.assertEqual(engine.search_products({"search": SEARCH_TOKEN, "max_price": "100"}), [self.red])
 		self.assertEqual(engine.search_count({"search": SEARCH_TOKEN, "min_price": "150"}), 1)
@@ -392,8 +383,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 	# -- live price overlay ----------------------------------------------------------------------
 
 	def test_live_price_overlay_reflects_item_price_edit(self):
-		# The indexed red sale price is 80; editing the live Item Price must show up on the card without
-		# a rebuild, because an Item Price edit fires no Style Attribute Variant event.
+		# An Item Price edit fires no Style Attribute Variant event, so the overlay must show it unrebuilt.
 		price_name = self.price_names[("ZZ-RED-S", self.sale_price_list)]
 		frappe.db.set_value("Item Price", price_name, "price_list_rate", 50)
 		self.addCleanup(frappe.db.set_value, "Item Price", price_name, "price_list_rate", 80)
@@ -405,8 +395,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 	# -- one card shape across both grids ---------------------------------------------------------
 
 	def test_both_grids_return_the_same_card_shape(self):
-		# The type-ahead modal is served by the index on one keystroke and by frappe.qb on the next,
-		# so a key set that differs between them makes the same product render differently.
+		# The modal is served by the index on one keystroke and frappe.qb on the next; key sets must match.
 		index_card = search_query.build_product_cards([self.red])[0]
 		qb_card = utils.get_product_list_qb(product_list=[self.red])[0]
 		self.assertEqual(set(index_card), set(qb_card))
@@ -432,8 +421,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 	# -- sidebar values must round-trip back through the filter -----------------------------------
 
 	def test_sidebar_brand_round_trips_through_both_grids(self):
-		# The sidebar value lands verbatim in the checkbox and the URL, and SQLite compares it with a
-		# BINARY-collated IN. Title-casing it on the way out returned zero rows on the way back in.
+		# SQLite compares the sidebar value with a BINARY-collated IN; title-casing it returned zero rows.
 		from ls_shop.www.products import list as product_list_page
 
 		brands = product_list_page.get_filter_brands({"search": SEARCH_TOKEN})
@@ -496,8 +484,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 		self.assertEqual(set(kwargs["names"]), {self.red, self.blue})
 
 	def test_batch_sync_is_blind_to_in_import(self):
-		# An importer sets in_import to silence per-doc events, then hands the whole set over once;
-		# honouring the flag here would swallow that replacement sync.
+		# An importer sets in_import then hands the set over once; honouring the flag would swallow that sync.
 		with patch.dict(frappe.flags, {"in_import": True}):
 			self.assertTrue(sync.skip_sync())
 			self.assertFalse(sync.skip_batch_sync())
@@ -542,8 +529,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 		self.assertEqual(self.content_for(self.red), ITEM_ATTRIBUTE)
 
 	def test_non_text_and_missing_fields_are_skipped(self):
-		# is_published is a Check (non-text) and there is no such column as `not_a_real_field`; both are
-		# dropped, leaving only the valid Item.brand pair in content.
+		# is_published is a Check and `not_a_real_field` does not exist; both drop, leaving only Item.brand.
 		self.set_content_fields(
 			[
 				("Item", "brand"),
@@ -580,8 +566,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 		self.assertTrue(kwargs["deduplicate"])
 
 	def test_ensure_index_built_resumes_an_interrupted_build(self):
-		# A leftover temp DB is the only trace of a build that died part-way. Without resuming it, a
-		# large catalogue would restart from zero on the next nightly rebuild.
+		# A leftover temp DB is the only trace of a part-way build; without resuming, a rebuild restarts at zero.
 		engine = SqliteProductSearch()
 		temp_db_path = engine._get_db_path(is_temp=True)
 		open(temp_db_path, "a").close()
@@ -602,8 +587,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 		enqueue.assert_not_called()
 
 	def test_nightly_rebuild_is_unconditional(self):
-		# Enqueues a forced rebuild with no index-existence guard, and leaves the index live: build_index
-		# swaps a fresh temp DB over it, so there is no pre-drop.
+		# Forced rebuild leaves the index live: build_index swaps a fresh temp DB over it, so there is no pre-drop.
 		with patch.object(SqliteProductSearch, "drop_index") as drop, patch("frappe.enqueue") as enqueue:
 			build.rebuild_index_nightly()
 		drop.assert_not_called()

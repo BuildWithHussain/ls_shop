@@ -24,11 +24,7 @@ def get_selling_price_lists():
 
 
 def get_base_price_rows_by_key(item_codes, price_lists):
-	"""The base (no customer) selling rows for these items, keyed (item_code, price_list).
-
-	Customer- and company-scoped Item Prices are somebody else's negotiated contract: the storefront
-	reads and writes only the base row, so they are filtered out here rather than at every call site.
-	"""
+	"""Base (no-customer) selling rows keyed (item_code, price_list) - customer rows are negotiated contracts."""
 	if not item_codes:
 		return {}
 
@@ -51,11 +47,7 @@ def get_base_price_rows_by_key(item_codes, price_lists):
 
 
 def get_size_item_codes(item_template, style_attribute_variant_list=None):
-	"""Every leaf size Item sold under this template, derived server-side.
-
-	The client sends variant names, never item codes: joining back through item_style and variant_of
-	means a forged (or simply stale) variant name from another template matches no rows at all.
-	"""
+	"""Every leaf size Item under this template, derived server-side so a forged variant name matches nothing."""
 	style_attribute_variant = frappe.qb.DocType(PRODUCT_DOCTYPE)
 	color_size_item = frappe.qb.DocType("Color Size Item")
 	item = frappe.qb.DocType("Item")
@@ -83,8 +75,7 @@ def get_size_item_codes(item_template, style_attribute_variant_list=None):
 		)
 		if variant_name_chunk is not None:
 			query = query.where(style_attribute_variant.name.isin(variant_name_chunk))
-		# Item Price.item_code is a Data column, so an autoincrement-named Item comes back as an int
-		# here and would never match a price row key without this cast.
+		# Item Price.item_code is Data, so an autoincrement-named Item returns an int and needs cstr to match.
 		found.extend(cstr(row.name) for row in query.run(as_dict=True))
 
 	return list(dict.fromkeys(found))
@@ -93,16 +84,13 @@ def get_size_item_codes(item_template, style_attribute_variant_list=None):
 @frappe.whitelist(methods=["POST"])
 def set_variant_prices(
 	item_template: str,
-	default_rate=None,
-	sale_rate=None,
-	overwrite_existing=0,
+	default_rate: float | str | None = None,
+	sale_rate: float | str | None = None,
+	overwrite_existing: int | str = 0,
 	style_attribute_variant_list: list[str] | str | None = None,
 ) -> dict:
-	"""Price every size Item under a template item in one pass.
-
-	A blank or non-positive rate leaves that price list alone — it never clears or deletes a price.
-	Existing prices are left untouched unless overwrite_existing is set.
-	"""
+	"""Price every size Item under a template in one pass. A non-positive rate leaves that price list
+	alone, and existing prices are untouched unless overwrite_existing is set."""
 	frappe.has_permission("Item", doc=item_template, ptype="write", throw=True)
 	frappe.has_permission("Item Price", ptype="create", throw=True)
 	frappe.has_permission("Item Price", ptype="write", throw=True)
@@ -190,8 +178,7 @@ def insert_item_prices(price_rows, commit_in_chunks=False):
 					"price_list": price_row["price_list"],
 					"price_list_rate": price_row["price_list_rate"],
 					"selling": 1,
-					# ERPNext keys its duplicate-price check on uom; leaving it blank makes every later
-					# per-size edit look like a new price instead of the same one.
+					# ERPNext keys its duplicate-price check on uom; blank makes every later edit look like a new price.
 					"uom": stock_uom_by_item_code.get(price_row["item_code"]),
 				}
 			).insert()

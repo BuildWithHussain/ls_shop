@@ -64,10 +64,7 @@ def fetch_stats(days=30):
 
 
 def summarize(reports):
-	"""Reduce the two runReport responses to per-metric totals plus a sorted day-to-sessions dict.
-
-	GA4 rows: dimensionValues[].value, metricValues[].value. The `date` dimension is YYYYMMDD.
-	"""
+	"""Reduce the two runReport responses to per-metric totals plus a sorted day-to-sessions dict."""
 	totals = dict.fromkeys(EVENTS, 0)
 	totals["sessions"] = 0
 	totals["activeUsers"] = 0

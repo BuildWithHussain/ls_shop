@@ -84,7 +84,7 @@ x-data=
     }
 
     async function update_profile(payload, btn) {
-            const user_email = "{{ frappe.session.user }}"; // Get logged-in user email
+            const user_email = "{{ frappe.session.user }}";
             const api_url = `/api/v2/document/User/${user_email}`;
             btn.disabled = true;
             const spinner = btn.querySelector(".animate-spin");
@@ -93,7 +93,6 @@ x-data=
                 const response = await frappe_call(api_url, payload, "PUT");
                 const message= $store.i18n.t("Profile updated successfully")
                 toast(message, { type: "success" })
-                // wait for 400ms before reload
                 await new Promise(resolve => setTimeout(resolve, 400));
                 window.location.reload()
 

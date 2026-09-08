@@ -1,4 +1,4 @@
-"""Serves /og-image/<route>.png: the thin web layer (request handling, caching, serve-via-redirect, defensive fallback) over og.generator."""
+"""Serves /og-image/<route>.png over og.generator."""
 
 import hashlib
 import os
@@ -50,7 +50,7 @@ def serve_og_image(route):
 		png_bytes = render_card_for_doc("Style Attribute Variant", variant_doc)
 		write_cache(cache_path, png_bytes)
 
-	# www TemplatePage discards a streamed frappe.local.response, so serve the cached card as a static file via a redirect the renderer honours.
+	# www TemplatePage discards a streamed frappe.local.response, so serve the cached card via a redirect.
 	public_root = get_files_path(is_private=False)
 	file_url = "/files/" + os.path.relpath(cache_path, public_root).replace(os.sep, "/")
 	frappe.local.flags.redirect_location = file_url
@@ -67,9 +67,7 @@ def product_photo_url(route):
 def cache_file_path(route, modified):
 	cache_dir = os.path.join(get_files_path(is_private=False), CACHE_SUBDIR)
 	os.makedirs(cache_dir, exist_ok=True)
-	# Deterministic digest (NOT frappe.generate_hash — it ignores its input and
-	# returns a random token, which would defeat the cache). The modified
-	# timestamp in the key auto-invalidates the card when the variant edits.
+	# NOT frappe.generate_hash: it ignores its input and returns a random token, which defeats the cache.
 	key = hashlib.md5(f"{route}-{modified}".encode(), usedforsecurity=False).hexdigest()[:16]
 	return os.path.join(cache_dir, f"{key}.png")
 

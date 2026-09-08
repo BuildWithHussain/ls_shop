@@ -1,0 +1,88 @@
+
+{% extends "components/theme_layout.html" %}
+{% from "components/core/account_shell.html" import account_shell %}
+
+{% set language = frappe.lang or "en" %}
+{% set orders_url = "/" ~ language ~ "/account/orders" %}
+{% set status_badges = {
+	"Waiting for Approval": "bg-warning",
+	"Order Received": "bg-info",
+	"Preparing for Shipment": "bg-warning",
+	"Shipped": "bg-dark",
+	"Delivered": "bg-success",
+	"Cancelled": "bg-danger",
+	"Returned": "bg-danger",
+} %}
+{% set total_pages = ((total_count + page_length - 1) // page_length) if total_count else 0 %}
+{% set window_start = [1, current_page - 2] | max %}
+{% set window_end = [total_pages, current_page + 2] | min %}
+
+{% block head %}
+	{{ super() }}
+	<link rel="stylesheet" href="{{ shop_theme_asset_url('css/account.css') }}">
+{% endblock %}
+
+{% block uncontained_body %}
+{% call account_shell(_("Orders")) %}
+<div class="account-card">
+	{% if orders %}
+	<div class="table-responsive table-style-1">
+		<table class="table table-hover mb-3 account-table">
+			<thead>
+				<tr>
+					<th>{{ _("Order") }}</th>
+					<th>{{ _("Date Purchased") }}</th>
+					<th>{{ _("Total") }}</th>
+					<th>{{ _("Status") }}</th>
+					<th>{{ _("Action") }}</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for order in orders %}
+				{% set order_url = orders_url ~ "/detail?order_id=" ~ (order.name | urlencode) %}
+				<tr>
+					<td><a href="{{ order_url }}" class="fw-medium">{{ order.name }}</a></td>
+					<td>{{ frappe.utils.formatdate(order.creation, "medium") }}</td>
+					<td>{{ get_currency_symbol() }}{{ "%.2f" | format(order.rounded_total or 0) }}</td>
+					<td>
+						<span class="badge m-0 {{ status_badges.get(order.custom_ecommerce_status, 'bg-secondary') }}">
+							{{ _(order.custom_ecommerce_status or "Draft") }}
+						</span>
+					</td>
+					<td><a href="{{ order_url }}" class="btn-link text-underline p-0">{{ _("View") }}</a></td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+
+	{% if total_pages > 1 %}
+	<div class="d-flex justify-content-center">
+		<nav aria-label="{{ _('Table Pagination') }}">
+			<ul class="pagination style-1">
+				<li class="page-item {{ 'disabled' if current_page <= 1 }}">
+					<a class="page-link" href="{{ orders_url }}?page={{ current_page - 1 }}">{{ _("Prev") }}</a>
+				</li>
+				{% for page_number in range(window_start, window_end + 1) %}
+				<li class="page-item">
+					<a class="page-link {{ 'active' if page_number == current_page }}"
+						href="{{ orders_url }}?page={{ page_number }}">{{ page_number }}</a>
+				</li>
+				{% endfor %}
+				<li class="page-item {{ 'disabled' if current_page >= total_pages }}">
+					<a class="page-link" href="{{ orders_url }}?page={{ current_page + 1 }}">{{ _("Next") }}</a>
+				</li>
+			</ul>
+		</nav>
+	</div>
+	{% endif %}
+	{% else %}
+	<div class="account-empty">
+		<i class="flaticon flaticon-cart"></i>
+		<p>{{ _("You have not placed an order yet.") }}</p>
+		<a href="/{{ language }}/products" class="btn btn-secondary">{{ _("Start Shopping") }}</a>
+	</div>
+	{% endif %}
+</div>
+{% endcall %}
+{% endblock %}

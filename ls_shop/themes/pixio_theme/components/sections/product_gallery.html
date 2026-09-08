@@ -1,0 +1,41 @@
+<div class="col-xl-4 col-md-4">
+	<div class="dz-product-detail sticky-top" x-data='{
+			images: {{ images | tojson }},
+			active_image: 0,
+			zooming: false,
+			zoom_origin: "50% 50%",
+			set_zoom_origin(event) {
+				const bounds = event.currentTarget.getBoundingClientRect();
+				const horizontal = ((event.clientX - bounds.left) / bounds.width) * 100;
+				const vertical = ((event.clientY - bounds.top) / bounds.height) * 100;
+				this.zoom_origin = horizontal + "% " + vertical + "%";
+			}
+		}'>
+		<div class="swiper-btn-center-lr">
+			<div class="product-gallery-stage rounded"
+				@mouseenter="zooming = true"
+				@mouseleave="zooming = false"
+				@mousemove="set_zoom_origin($event)">
+				<div class="dz-media">
+					<img :src="images[active_image]"
+						:class="zooming ? 'is-zoomed' : ''"
+						:style="'transform-origin: ' + zoom_origin"
+						alt="{{ product_variant.display_name }}">
+				</div>
+			</div>
+			{% if images | length > 1 %}
+			<div class="swiper product-gallery-swiper thumb-swiper-lg" data-pixio-carousel="product-thumbs">
+				<div class="swiper-wrapper">
+					{% for image in images %}
+					<div class="swiper-slide"
+						:class="active_image === {{ loop.index0 }} ? 'swiper-slide-thumb-active' : ''"
+						@click="active_image = {{ loop.index0 }}">
+						<img src="{{ image }}" alt="{{ product_variant.display_name }}">
+					</div>
+					{% endfor %}
+				</div>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+</div>

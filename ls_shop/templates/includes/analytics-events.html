@@ -41,7 +41,7 @@
 				if (value) utm[key] = value;
 			}
 			if (!Object.keys(utm).length) return;
-			// ts caps the localStorage copy at the same 30-day window as the cookie
+// ts caps the localStorage copy at the same 30-day window as the cookie
 			localStorage.setItem('ls_utm', JSON.stringify({ ...utm, ts: Date.now() }));
 			set_cookie('ls_utm', JSON.stringify(utm), 30 * 24 * 60 * 60);
 		}
@@ -76,7 +76,7 @@
 					...payload,
 				};
 				const headers = { 'Content-Type': 'application/json; charset=utf-8' };
-				// Guest sessions render the token as the literal string "None".
+// Guest sessions render the token as the literal string "None".
 				if (csrf_token && csrf_token !== 'None') headers['X-Frappe-CSRF-Token'] = csrf_token;
 				await fetch(capture_url, {
 					method: 'POST',
@@ -85,7 +85,7 @@
 					keepalive: true,
 				});
 			} catch (error) {
-				// Capture failures must never surface to shoppers.
+// Capture failures must never surface to shoppers.
 			}
 		}
 
@@ -93,7 +93,7 @@
 		try {
 			save_utm_params();
 		} catch (error) {
-			// localStorage can be unavailable (private mode); page keeps working.
+// localStorage can be unavailable (private mode); page keeps working.
 		}
 		track('page_view');
 	})();

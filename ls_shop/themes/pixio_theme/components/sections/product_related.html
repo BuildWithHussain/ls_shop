@@ -1,0 +1,32 @@
+{# .card-container is the hook pixio.css hangs the 3/4 photo frame on; without it the tallest merchant upload sets every slide's height. #}
+{% from "components/macros/product_card.html" import variant_card %}
+<section class="content-inner-1 overflow-hidden">
+	<div class="container">
+		<div class="section-head style-2 d-md-flex justify-content-between align-items-center">
+			<div class="left-content">
+				<h2 class="title mb-0">{{ _("Related products") }}</h2>
+			</div>
+			<a href="/{{ frappe.lang or 'en' }}/products" class="text-secondary font-14 d-flex align-items-center gap-1">
+				{{ _("See all products") }}
+				<i class="icon feather icon-chevron-right font-18"></i>
+			</a>
+		</div>
+		<div class="swiper-btn-center-lr">
+			<div class="swiper swiper-four" data-pixio-carousel="related-products">
+				<div class="swiper-wrapper">
+					{% for variant in recommended_items %}
+					<div class="swiper-slide card-container">{{ variant_card(variant, wow_delay="%.1fs" | format(0.2 + 0.2 * loop.index)) }}</div>
+					{% endfor %}
+				</div>
+			</div>
+			<div class="pagination-align">
+				<div class="btn-prev" data-carousel-prev="related-products" role="button" tabindex="0" aria-label="{{ _('Previous') }}">
+					<i class="flaticon flaticon-left-chevron"></i>
+				</div>
+				<div class="btn-next" data-carousel-next="related-products" role="button" tabindex="0" aria-label="{{ _('Next') }}">
+					<i class="flaticon flaticon-chevron"></i>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

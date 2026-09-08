@@ -33,11 +33,9 @@ class SizeChart(Document):
 			)
 
 		if self.size_chart:
-			# Get File URL
 			file_doc = frappe.get_doc("File", {"file_url": self.size_chart})
 			filename = file_doc.get_full_path()
 
-			# Load workbook
 			wb = openpyxl.load_workbook(filename)
 			ws = wb.active
 
@@ -45,7 +43,6 @@ class SizeChart(Document):
 			for row in ws.iter_rows(values_only=True):
 				data.append(list(row))
 
-			# Save as JSON string
 			self.size_chart_json = json.dumps(data, indent=2)
 
 	def size_chart_with_brand_and_item_group_exists(self):

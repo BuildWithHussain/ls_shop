@@ -11,11 +11,7 @@ BUILD_TIMEOUT = 2 * 60 * 60 + 10 * 60
 
 
 def enqueue_full_rebuild(deduplicate=False):
-	"""Enqueue a full rebuild on the long queue. Returns the enqueue payload.
-
-	`deduplicate` is for callers that can fire repeatedly (a settings save), so a burst of edits
-	queues one rebuild instead of one per save.
-	"""
+	"""Enqueue a full rebuild on the long queue. Returns the enqueue payload."""
 	return frappe.enqueue(
 		CORE_BUILD_INDEX,
 		queue="long",
@@ -41,13 +37,9 @@ def rebuild_index_nightly():
 
 
 def ensure_index_built():
-	"""Build the index when it is absent, or resume a build that died part-way through.
-
-	Core's build writes into a temp DB and swaps it over on completion, so a leftover temp DB is the
-	only trace of an interrupted build. This app does not register the `sqlite_search` hook, so core's
-	own resume (build_index_if_not_exists) never sees this index — without the temp-DB check a build
-	that dies on a large catalogue would restart from zero on the nightly rebuild instead of resuming.
-	"""
+	"""Build the index when it is absent, or resume a build that died part-way through."""
+	# No sqlite_search hook here, so core's own resume never sees this index; a leftover temp DB is
+	# the only trace of an interrupted build.
 	engine = SqliteProductSearch()
 	is_continuation = os.path.exists(engine._get_db_path(is_temp=True))
 	if engine.index_exists() and not is_continuation:

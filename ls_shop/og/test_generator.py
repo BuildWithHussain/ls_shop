@@ -1,14 +1,7 @@
 # Copyright (c) 2026, company@bwhstudios.com and contributors
 # See license.txt
 
-"""Tests for the Satori OG-image render core (og/generator.py) and the live
-/og-image web layer (www/og_image_render.py).
-
-House rules: real rolled-back DB. The ORM, PIL and Jinja are always exercised for real,
-and TestRenderOgPng drives the actual Node/Satori subprocess end to end. The web-layer
-tests patch render_card_for_doc only so the caching/redirect contract is asserted without
-paying for a render on every case.
-"""
+"""Tests for the Satori OG-image render core (og/generator.py) and the /og-image web layer."""
 
 import base64
 import os
@@ -23,6 +16,7 @@ from frappe.utils import flt, get_files_path
 
 from ls_shop import seo
 from ls_shop.og import generator
+from ls_shop.tests import get_test_configurator, get_test_item
 from ls_shop.www import og_image_render
 
 
@@ -182,8 +176,8 @@ class TestServeOgImage(IntegrationTestCase):
 		# A draft route must 404 rather than leak an unreleased product card to a crawler.
 		route = f"og-test-draft-{frappe.generate_hash(length=10)}"
 		variant = frappe.new_doc("Style Attribute Variant")
-		variant.configurator = frappe.get_all("Style Attribute Configurator", limit=1, pluck="name")[0]
-		variant.item_style = frappe.get_all("Item", limit=1, pluck="name")[0]
+		variant.configurator = get_test_configurator()
+		variant.item_style = get_test_item()
 		variant.attribute_value = f"Val {frappe.generate_hash(length=6)}"
 		variant.display_name = f"Draft {route}"
 		variant.route = route
@@ -198,8 +192,7 @@ class TestServeOgImage(IntegrationTestCase):
 		if not variant:
 			self.skipTest("No published Style Attribute Variant available.")
 
-		# Pin the cache path so the render -> write -> redirect contract is exercised in
-		# isolation from whatever card the real key already has on disk.
+		# Pin the cache path so the render -> write -> redirect contract runs in isolation from disk state.
 		public_root = get_files_path(is_private=False)
 		cache_dir = os.path.join(public_root, og_image_render.CACHE_SUBDIR)
 		os.makedirs(cache_dir, exist_ok=True)
@@ -243,8 +236,7 @@ class TestServeOgImage(IntegrationTestCase):
 		og_image_render.write_cache(cache_path, b"cached")
 		self.addCleanup(lambda: os.path.exists(cache_path) and os.remove(cache_path))
 
-		# Pin the same path on both calls so the cache-hit branch is reachable; the
-		# render boundary must NOT be invoked when a cache file already exists.
+		# Pin the same path on both calls so the cache-hit branch is reachable.
 		with (
 			patch("ls_shop.www.og_image_render.render_card_for_doc") as mocked,
 			patch(
@@ -257,10 +249,7 @@ class TestServeOgImage(IntegrationTestCase):
 			mocked.assert_not_called()
 
 	def test_cache_key_is_deterministic(self):
-		"""The cache key MUST be stable for the same (route, modified), otherwise every
-		crawler hit re-renders via Node and orphans a cache file. Guards against
-		regressing to frappe.generate_hash (which ignores its input in v15).
-		"""
+		"""Cache key must be stable per (route, modified): frappe.generate_hash ignores its input in v15."""
 		route = "some-route"
 		modified = "2026-06-17 14:08:55.980572"
 		first = og_image_render.cache_file_path(route, modified)
@@ -271,9 +260,7 @@ class TestServeOgImage(IntegrationTestCase):
 
 
 class TestClearOldCards(IntegrationTestCase):
-	"""The cache key embeds `modified`, so every variant edit strands the previous PNG.
-	clear_old_cards is the only thing bounding that directory.
-	"""
+	"""The cache key embeds `modified`, so every edit strands a PNG; clear_old_cards is the only bound."""
 
 	def setUp(self):
 		self.cache_dir = os.path.join(get_files_path(is_private=False), "og-cache")
@@ -320,9 +307,7 @@ class TestClearOldCards(IntegrationTestCase):
 
 
 class TestRenderOgPng(IntegrationTestCase):
-	"""End-to-end through the real Node/Satori subprocess — the one place the toolchain
-	itself (og_satori.mjs, fonts, resvg) is proven to still produce a spec-sized card.
-	"""
+	"""End-to-end through the real Node/Satori subprocess - the only cover for og_satori.mjs, fonts and resvg."""
 
 	def test_renders_a_spec_sized_png(self):
 		from PIL import Image

@@ -1,24 +1,18 @@
 # Copyright (c) 2026, company@bwhstudios.com and contributors
 # For license information, please see license.txt
 
-"""Trust-boundary helpers shared by the navbar and footer editors.
-
-Both editors take labels and links typed by a shop owner in a Desk dialog and render them into
-public storefront pages, so both need the same three checks in the same place.
-"""
+"""Trust-boundary helpers shared by the navbar and footer editors."""
 
 import frappe
 from frappe.utils import validate_url
 
-# A link may point at another page on this store (no scheme) or off-site over http(s). Anything
-# else — javascript:, data:, vbscript: — is a script-injection vector once the footer renders it.
+# Anything outside these — javascript:, data:, vbscript: — is a script-injection vector once rendered.
 SAFE_URL_SCHEMES = ("", "http", "https")
 
 
 def parse_list(value):
 	if isinstance(value, str):
-		# Every caller is a Desk dialog posting a JSON array, and orjson raises straight through
-		# frappe.parse_json, so malformed input has to become a user-facing error not a 500.
+		# frappe.parse_json lets orjson's error through, so malformed input would 500 instead of throwing.
 		try:
 			value = frappe.parse_json(value)
 		except Exception:

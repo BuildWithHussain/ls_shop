@@ -14,7 +14,6 @@ link='cart',
     {{_('Cart is empty')}}
 </div>
 
-<!-- Cart items -->
 <template x-for="(cart_item, index) in $store.cart.items" :key="index">
     <div class="flex gap-4 items-center border-b border-gray-200 pb-2 mb-2">
         <div class="">
@@ -36,7 +35,6 @@ link='cart',
     </div>
 </template>
 
-<!-- See all link -->
 <a href="/{{frappe.lang}}/cart">
     <div x-show="$store.cart.items.length > 0" class="text-center text-xs text-gray-500  hover:text-gray-700 capitalize">
         {{_('checkout')}}

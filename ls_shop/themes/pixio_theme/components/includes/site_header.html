@@ -1,0 +1,133 @@
+
+{% from "components/macros/navigation.html" import brand_logo, menu_tab %}
+{% set language = frappe.lang or "en" %}
+{% set settings = header_data.settings %}
+
+{% set languages = [("en", "English"), ("ar", "العربية")] %}
+
+{# Synchronous on purpose: Alpine's core is deferred in the base head, so a deferred script here would register after alpine:init. #}
+<script src="/assets/ls_shop/js/vendor/alpinejs/plugins/focus.js"></script>
+<script src="{{ shop_theme_asset_url('js/pixio_header.js') }}"></script>
+
+<header class="site-header mo-left header style-1 header-transparent" x-data="pixio_header"
+	@open-search.window="open_search()"
+	@open-cart.window="open_cart()"
+	@open-mobile-menu.window="open_mobile_menu()">
+	<div class="sticky-header main-bar-wraper navbar-expand-lg">
+		<div class="main-bar clearfix">
+			<div class="container-fluid clearfix d-lg-flex d-block">
+
+				{{ brand_logo(header_data, "me-md-5") }}
+
+				<button class="navbar-toggler collapsed navicon justify-content-end" type="button"
+					:class="menu_open ? 'open' : ''"
+					@click="menu_open ? close_overlays() : $dispatch('open-mobile-menu')"
+					:aria-expanded="menu_open"
+					aria-controls="navbarNavDropdown"
+					aria-label="{{ _('Toggle navigation') }}">
+					<span></span>
+					<span></span>
+					<span></span>
+				</button>
+
+				<div class="header-nav w3menu navbar-collapse collapse justify-content-start" id="navbarNavDropdown"
+					:class="menu_open ? 'show' : ''"
+					x-trap.noscroll="menu_open"
+					@keydown.escape.window="menu_open = false">
+					{{ brand_logo(header_data) }}
+					<ul class="nav navbar-nav">
+						{% for node in header_data.navigation_menu %}{{ menu_tab(node, loop.index) }}{% endfor %}
+					</ul>
+					{% if header_data.has_social_links %}
+					<div class="dz-social-icon">
+						<ul>
+							{% for url, icon in [
+								(settings.facebook_url, "fa-facebook-f"),
+								(settings.twitter_url, "fa-twitter"),
+								(settings.instagram_url, "fa-instagram"),
+								(settings.tiktok_url, "fa-tiktok"),
+								(settings.snapchat_url, "fa-snapchat"),
+							] %}
+							{% if url %}<li><a class="fab {{ icon }}" target="_blank" rel="noopener noreferrer" href="{{ url }}"></a></li>{% endif %}
+							{% endfor %}
+						</ul>
+					</div>
+					{% endif %}
+				</div>
+
+				<div class="extra-nav" :class="bottom_bar_active ? 'active' : ''">
+					<div class="extra-cell">
+						<ul class="header-right">
+							<li class="nav-item login-link">
+								{% if frappe.session.user == "Guest" %}
+								<a class="nav-link" href="/login">{{ _("Login / Register") }}</a>
+								{% else %}
+								<a class="nav-link" href="/{{ language }}/account/dashboard">{{ _("My Account") }}</a>
+								{% endif %}
+							</li>
+							{# Bootstrap's dropdown CSS ships in style.css but its JS does not, so Alpine stamps .show and the [data-bs-popper] offsets are authored here. #}
+							<li class="nav-item language-link dropdown" @click.outside="language_open = false"
+								@keydown.escape="language_open = false"
+								x-data="{
+									language_open: false,
+									current_language: '{{ language }}',
+									async change_language(language) {
+										if (language === this.current_language) return;
+										/* The cached bundle is per language, so it has to be dropped before the
+										   next page reads it back out of localStorage. */
+										Alpine.store('i18n').i18n = {};
+										Alpine.store('i18n').lastFetched = null;
+										await Alpine.store('i18n').init();
+										window.location.href = window.location.pathname.replace(/^\/(en|ar)/, `/${language}`);
+									},
+								}">
+								<a class="nav-link" href="javascript:void(0);" @click="language_open = !language_open"
+									aria-haspopup="true" :aria-expanded="language_open" aria-label="{{ _('Change language') }}">
+									<span>{{ language|upper }}</span>
+									<i class="fas fa-chevron-down"></i>
+								</a>
+								<div class="dropdown-menu dropdown-menu-end" data-bs-popper="static"
+									:class="language_open ? 'show' : ''" x-cloak>
+									{% for code, label in languages %}
+									<button type="button" class="dropdown-item{% if code == language %} active{% endif %}"
+										@click="language_open = false; change_language('{{ code }}')">{{ label }}</button>
+									{% endfor %}
+								</div>
+							</li>
+							<li class="nav-item search-link">
+								<a class="nav-link" href="javascript:void(0);" @click="$dispatch('open-search')" aria-label="{{ _('Search') }}">
+									<i class="iconly-Light-Search"></i>
+								</a>
+							</li>
+							<li class="nav-item wishlist-link">
+								<a class="nav-link" href="/{{ language }}/account/wishlist" aria-label="{{ _('Wishlist') }}">
+									<i class="iconly-Light-Heart2"></i>
+									<span class="badge badge-circle" x-show="$store.wishlist.count" x-text="$store.wishlist.count" x-cloak></span>
+								</a>
+							</li>
+							<li class="nav-item cart-link">
+								<a href="javascript:void(0);" class="nav-link cart-btn" @click="$dispatch('open-cart')" aria-label="{{ _('Cart') }}">
+									<i class="iconly-Broken-Buy"></i>
+									<span class="badge badge-circle" x-show="$store.cart.count" x-text="$store.cart.count" x-cloak></span>
+								</a>
+							</li>
+						</ul>
+					</div>
+				</div>
+
+			</div>
+		</div>
+		{# The observer that reveals the mobile icon bar watches this element instead of listening on scroll. #}
+		<div x-ref="header_sentinel"></div>
+	</div>
+
+	{% include "components/overlays/search_canvas.html" %}
+	{% include "components/overlays/cart_drawer.html" %}
+	{% if frappe.session.user == "Guest" %}
+		{% include "components/overlays/auth_dialog.html" %}
+	{% endif %}
+
+	{# Bootstrap writes this backdrop from the JS this theme does not load, so the header emits it itself. #}
+	<div class="offcanvas-backdrop fade" x-show="search_open || cart_open" :class="(search_open || cart_open) ? 'show' : ''"
+		@click="close_overlays()" x-cloak></div>
+</header>

@@ -1,13 +1,13 @@
 import os
 import re
 import shutil
+from contextlib import contextmanager
 
 import frappe
 from frappe.model.document import Document
 from frappe.modules.utils import export_module_json
 
-# frappe.scrub() does not strip path separators, so it is not a sanitiser. Every theme name
-# that reaches the filesystem is matched against this first.
+# frappe.scrub() does not strip path separators, so it is not a sanitiser.
 THEME_NAME_PATTERN = re.compile(r"^[A-Za-z0-9 _-]+$")
 
 DEFAULT_THEME_APP = "ls_shop"
@@ -25,9 +25,7 @@ class ShopTheme(Document):
 			self.validate_no_circular_inheritance()
 
 	def validate_unique_slug(self):
-		# Every filesystem path a theme owns is frappe.scrub(theme_name), and "Foo Bar" and
-		# "Foo-Bar" both scrub to foo_bar. on_trash rmtrees by slug, so a collision lets
-		# deleting one theme take out the other's source tree.
+		# "Foo Bar" and "Foo-Bar" scrub to the same slug, and on_trash rmtrees by slug: one delete takes both.
 		# ponytail: scrubs every theme name in python, revisit if a site ever ships enough
 		# themes for this to matter
 		slug = frappe.scrub(self.theme_name)
@@ -130,8 +128,7 @@ def validate_theme_name(theme_name):
 def is_within_directory(directory, target):
 	directory = os.path.realpath(directory)
 	target = os.path.realpath(target)
-	# The trailing separator is what rejects the sibling-prefix case: /themes/foo_evil is
-	# not inside /themes/foo even though the string starts with it.
+	# The trailing separator rejects the sibling-prefix case: /themes/foo_evil is not inside /themes/foo.
 	return target == directory or target.startswith(directory + os.sep)
 
 
@@ -143,7 +140,6 @@ def get_contained_path(base_dir, *segments):
 
 
 def get_app_for_module(module):
-	# Kept indirect so a third-party app can ship themes under its own module.
 	app = frappe.db.get_value("Module Def", module, "app_name") if module else None
 	return app or DEFAULT_THEME_APP
 
@@ -221,8 +217,7 @@ def scaffold_theme(theme_name, module=None):
 	for folder in ("pages", "components/includes", "components/macros", "styles"):
 		os.makedirs(get_contained_path(theme_dir, folder), exist_ok=True)
 
-	# A real directory, never a symlink to the private tree: the private tree holds page
-	# templates and their .py controllers and must stay unreachable over HTTP.
+	# A real directory, never a symlink to the private tree: .py controllers must stay unreachable over HTTP.
 	theme_public_dir = get_contained_path(os.path.join(app_path, "public", "themes"), slug)
 	for folder in ("scripts", "images"):
 		os.makedirs(get_contained_path(theme_public_dir, folder), exist_ok=True)
@@ -272,9 +267,6 @@ def get_theme_context(theme_name):
 
 
 def resolve_active_theme():
-	# Read off the cached Single rather than get_single_value: this runs before every core
-	# renderer on every request, and get_cached_doc costs no query once warm. The same doc
-	# backs the compiled route table.
 	try:
 		return frappe.get_cached_doc("Shop Theme Settings").active_theme
 	except frappe.DoesNotExistError:
@@ -290,8 +282,6 @@ RENDER_THEME_CONTEXT_LOCAL_KEY = "shop_theme_render_context"
 
 
 def get_render_theme_context():
-	# Memoised on frappe.local over redis, same as get_compiled_routes(): can_render() runs
-	# ahead of every core renderer on every request, so the redis hget sits on that path.
 	context = getattr(frappe.local, RENDER_THEME_CONTEXT_LOCAL_KEY, None)
 	if context is None:
 		context = get_theme_context(resolve_theme())
@@ -301,6 +291,18 @@ def get_render_theme_context():
 
 def clear_render_theme_context():
 	setattr(frappe.local, RENDER_THEME_CONTEXT_LOCAL_KEY, None)
+
+
+@contextmanager
+def render_theme_context(theme_context):
+	"""Pin shop_theme_asset_url() and shop_theme_config() to one theme for the duration, so previewing
+	a non-live theme cannot hand its templates the LIVE theme's asset URLs and settings Single."""
+	previous = getattr(frappe.local, RENDER_THEME_CONTEXT_LOCAL_KEY, None)
+	setattr(frappe.local, RENDER_THEME_CONTEXT_LOCAL_KEY, theme_context)
+	try:
+		yield
+	finally:
+		setattr(frappe.local, RENDER_THEME_CONTEXT_LOCAL_KEY, previous)
 
 
 def requested_preview_theme():

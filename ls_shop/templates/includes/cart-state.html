@@ -4,7 +4,6 @@
             items: Alpine.$persist([]),
             add(item, variant, price = 0,default_price=0, brand = '',sizes=[],qty=1) {
                 let already_added = false;
-                // Check if the same item AND variant is already in the cart
                 variant = JSON.parse(variant)
                 for (let cart_item of this.items) {
                     if (cart_item.item.name === item.name &&
@@ -18,7 +17,6 @@
                     }
                 }
 
-                // If not already in cart, add as new item
                 if (!already_added) {
                     this.items.push({
                         item,
@@ -27,7 +25,7 @@
                         price: price,
                         default_price: default_price,
                         brand: brand,
-                        stock_qty: 0, // populate on cart load
+                        stock_qty: 0,
                         selected: true,
                         sizes: sizes,
                     });
@@ -81,7 +79,7 @@
                         return true;
                     } else {
                         toast("Some items are out of stock:\n" + data.data.message.join("\n"), { type: "warning" });
-                        await this.fetch_detail_for_cart(); // refresh stock
+                        await this.fetch_detail_for_cart();
                         return false;
                     }
                 }
@@ -112,7 +110,6 @@
                 if (found_item) {
                     found_item.qty -= 1;
 
-                    // Remove item if quantity becomes 0
                     if (found_item.qty <= 0) {
                         this.items = this.items.filter(cart_item =>
                             !(cart_item.item.name === name &&
@@ -138,10 +135,8 @@
 
             get total() {
                 return this.items.filter(item => item.selected).reduce((sum, cart_item) => {
-                    // Handle cases where price is null, undefined, empty string, or not a number
                     const price = cart_item.price ? parseFloat(cart_item.price) : 0;
                     const quantity = cart_item.qty || 0;
-                    // Only add to sum if price is a valid number
                     return sum + (isNaN(price) ? 0 : price * quantity);
                 }, 0);
             },
@@ -166,7 +161,6 @@
                     JSON.stringify(item.variant) === JSON.stringify(new_variant) &&
                     item !== cart_item
                 );
-                // If same product with different size is already in cart
                 if (existing_item) {
                     this.increment(existing_item.item.name, new_variant)
                     existing_item.price = data.price || 0;
@@ -176,7 +170,6 @@
                 }
 
                 else {
-                    // No duplicate, just update
                     cart_item.variant = new_variant;
                     cart_item.qty = 1;
                     cart_item.price = data.price || 0;

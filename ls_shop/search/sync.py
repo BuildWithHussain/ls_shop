@@ -29,13 +29,8 @@ def skip_sync():
 
 
 def skip_batch_sync():
-	"""Whether an explicitly requested batch sync should stay quiet for this write.
-
-	Deliberately blind to `in_import`: a bulk importer sets that flag precisely so the per-doc events
-	stop firing one job per row, then hands the whole set over once at the end. Honouring the flag here
-	as well would swallow the replacement sync and leave the index stale until the nightly rebuild. The
-	remaining flags all end in a full index build, so a batch job on top of them is pure waste.
-	"""
+	"""Whether a requested batch sync should stay quiet. Blind to `in_import`: an importer mutes the
+	per-doc events and re-syncs the whole set at the end, so honouring it here would swallow that."""
 	return bool(frappe.flags.in_migrate or frappe.flags.in_install or frappe.flags.in_patch)
 
 
@@ -52,16 +47,8 @@ def enqueue_upsert(doctype, name):
 
 
 def enqueue_upsert_many(doctype, names):
-	"""Re-sync a whole set of docs in one job.
-
-	Bulk catalogue writes go through frappe.db.set_value, which never fires the document event that
-	normally keeps the index fresh, so the caller has to hand the changed names over itself. One job
-	rather than one per name: a bulk publish moves hundreds of products, and the batched engine write
-	costs a single record build for all of them.
-
-	Chunked because the names are serialised into the RQ payload: a bulk publish over a real catalogue
-	is tens of thousands of names, which is a multi-megabyte job body for redis to carry.
-	"""
+	"""Re-sync a set of docs in one job: frappe.db.set_value never fires the doc event that keeps the
+	index fresh. Chunked because the names ride in the RQ payload, which redis has to carry."""
 	names = list(names)
 	if skip_batch_sync() or not names:
 		return
@@ -93,8 +80,7 @@ def upsert_doc(doctype, name):
 
 def upsert_docs(doctype, names):
 	if not SqliteProductSearch().index_exists():
-		# First publish on a site that never had an index: there is nothing to patch, so fall through
-		# to the normal first build instead of dropping the change on the floor until the nightly job.
+		# No index yet: patching is a no-op, so build it instead of waiting for the nightly job.
 		ensure_index_built()
 		return
 	serialized_write(lambda engine: engine.index_docs(doctype, names))

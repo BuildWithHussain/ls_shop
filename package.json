@@ -7,7 +7,11 @@
 		"postinstall": "yarn tailwind:build",
 		"build": "yarn tailwind:build",
 		"tailwind:watch": "npx @tailwindcss/cli -i ./ls_shop/public/css/main.css -o ./ls_shop/public/css/tailwind.css --watch",
-		"tailwind:build": "npx @tailwindcss/cli -i ./ls_shop/public/css/main.css -o ./ls_shop/public/css/tailwind.css"
+		"tailwind:build": "npx @tailwindcss/cli -i ./ls_shop/public/css/main.css -o ./ls_shop/public/css/tailwind.css",
+		"dupes": "npm run dupes:py && npm run dupes:vue",
+		"dupes:py": "jscpd ls_shop --format python --threshold 1",
+		"dupes:vue": "jscpd dashboard/src --format vue,typescript,javascript --threshold 1",
+		"dupes:report": "jscpd ls_shop dashboard/src --format python,vue,typescript,javascript --reporters html,console --output .jscpd-report"
 	},
 	"repository": {
 		"type": "git",
@@ -28,6 +32,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
-		"@tailwindcss/typography": "^0.5.16"
+		"@tailwindcss/typography": "^0.5.16",
+		"jscpd": "^4"
 	}
 }

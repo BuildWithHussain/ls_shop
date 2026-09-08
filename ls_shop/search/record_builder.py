@@ -37,8 +37,7 @@ def is_indexable_content_field(doctype, field):
 	meta_field = frappe.get_meta(doctype).get_field(field)
 	if not meta_field or meta_field.fieldtype not in INDEXABLE_FIELDTYPES:
 		return False
-	# has_column guards custom columns present in meta on some sites but absent here — get_all on a
-	# missing column raises, so a pair that names one is silently dropped rather than breaking the build.
+	# has_column guards columns in meta but absent on this site: get_all would raise, so the pair is dropped.
 	return frappe.db.has_column(doctype, field)
 
 
@@ -58,10 +57,7 @@ def union_fields(base_fields, extra_fields):
 
 def get_indexable_docs(doctype, filters, names, fields):
 	"""Rows matching `filters`, narrowed to `names` when given.
-
-	`names` is chunked because a bulk publish hands the re-index tens of thousands of names, and one
-	IN (...) that long falls over. `None` means "every indexable row"; an empty list means "nothing",
-	so the two must not collapse into each other.
+	`names` is chunked (one huge IN(...) falls over); `None` means every row, `[]` means nothing - never collapse them.
 	"""
 	if names is None:
 		return frappe.get_all(doctype, filters=filters, fields=fields)
@@ -89,8 +85,7 @@ def build_product_search_records(variant_names=None):
 		"modified",
 		"configurator",
 	]
-	# `is_published` stays ANDed with the name filter: a targeted re-index of a variant that has since
-	# been unpublished must build no record for it, so index_docs deletes it instead of re-adding it.
+	# `is_published` stays ANDed with the name filter so a since-unpublished variant is deleted, not re-added.
 	variants = get_indexable_docs(
 		"Style Attribute Variant",
 		{"is_published": 1},
@@ -122,9 +117,8 @@ def build_product_search_records(variant_names=None):
 				"content": build_content(configured_fields, variant, item, configurator),
 				"item_group": variant.item_group or "",
 				"brand": item.get("brand") or "",
-				# The storefront's `colors` filter compares against Style Attribute Variant.attribute_name
-				# (see utils.get_product_base_query), so the facet column has to hold the same value or
-				# picking a facet value would return nothing.
+				# Must hold Style Attribute Variant.attribute_name to match the storefront's `colors` filter
+				# (utils.get_product_base_query), or picking a facet value returns nothing.
 				"color": variant.attribute_name or "",
 				"sizes": sizes_by_variant.get(variant.name, []),
 				"detail": build_product_detail(
@@ -179,9 +173,7 @@ def build_product_detail(variant, item, sizes, images, prices):
 
 def get_root_route_slugs():
 	"""(lft, rgt, route_slug) of every menu root, so a nested entry can borrow a landable slug.
-
-	Only roots own a `route_slug` — a nested entry is reached through its parent's listing page —
-	so a hit on a child would otherwise index an empty slug and send the shopper to `/products?category=`.
+	Only roots own a `route_slug`; without the borrow a child hit lands on `/products?category=`.
 	"""
 	return frappe.get_all(
 		"Ecommerce Category",

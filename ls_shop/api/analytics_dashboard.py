@@ -15,6 +15,8 @@ from frappe.utils.data import (
 )
 
 from ls_shop.analytics import facebook, ga4
+from ls_shop.api.admin.inventory import get_ecommerce_warehouse
+from ls_shop.api.admin.orders import get_reporting_currency, is_webshop_order
 
 KNOWN_PROVIDER_ERRORS = {
 	"meta": "Meta denied pixel stats — the token needs ads_read AND the pixel's connected ad account assigned to the system user",
@@ -27,7 +29,8 @@ FUNNEL_STAGES = (
 	("purchased", "Purchased", "purchase"),
 )
 ABANDONED_CARTS_LIMIT = 20
-TRAFFIC_SOURCES_LIMIT = 30
+# source x medium x campaign is a guest-controlled grouping, so the cap bounds the distinct groups
+TRAFFIC_SOURCES_LIMIT = 50
 # engagement sorts by conversion rate, so rank a wider by-views pool first, then slice
 ENGAGEMENT_CANDIDATE_LIMIT = 100
 ITEM_SOURCES_LIMIT = 10
@@ -60,11 +63,6 @@ def get_days(start, end):
 
 def in_window(field, start, end):
 	return (field >= start) & (field < end)
-
-
-def is_webshop_order(sales_order):
-	# drafts count: the purchase event fires at order placement (COD may stay draft); only cancelled is out
-	return (sales_order.docstatus < 2) & (sales_order.order_type == "Shopping Cart")
 
 
 def distinct_sessions(analytics_event):
@@ -174,7 +172,8 @@ def get_overview(from_date: str, to_date: str):
 	previous_from, previous_to = get_previous_window(from_date, to_date)
 	previous = get_period_kpis(previous_from, previous_to)
 	return {
-		"currency": frappe.get_cached_value("Global Defaults", "Global Defaults", "default_currency"),
+		# base_grand_total is company currency; Global Defaults is a separate setting and mislabels the tiles.
+		"currency": get_reporting_currency(),
 		"kpis": {key: {"value": current[key], "previous": previous[key]} for key in current},
 	}
 
@@ -373,18 +372,21 @@ def get_traffic_sources(from_date: str, to_date: str):
 	analytics_event = frappe.qb.DocType("Storefront Analytics Event")
 	source = Coalesce(NullIf(analytics_event.utm_source, ""), "Direct")
 	medium = Coalesce(analytics_event.utm_medium, "")
+	# direct and organic traffic has no campaign; left empty rather than given a placeholder
+	campaign = Coalesce(analytics_event.utm_campaign, "")
 	sessions = distinct_sessions(analytics_event)
 	rows = (
 		frappe.qb.from_(analytics_event)
 		.select(
 			source,
 			medium,
+			campaign,
 			sessions,
 			distinct_purchase_sessions(analytics_event),
 			Sum(Case().when(analytics_event.event == "purchase", analytics_event.value)),
 		)
 		.where(in_window(analytics_event.creation, start, end))
-		.groupby(source, medium)
+		.groupby(source, medium, campaign)
 		.orderby(sessions, order=Order.desc)
 		# guests control utm_* values, so distinct groups are unbounded without a cap
 		.limit(TRAFFIC_SOURCES_LIMIT)
@@ -394,10 +396,11 @@ def get_traffic_sources(from_date: str, to_date: str):
 		{
 			"source": row[0],
 			"medium": row[1] or "",
-			"sessions": cint(row[2]),
-			"orders": cint(row[3]),
-			"revenue": flt(row[4]),
-			"conversion_rate": get_rate(cint(row[3]), cint(row[2])),
+			"campaign": row[2] or "",
+			"sessions": cint(row[3]),
+			"orders": cint(row[4]),
+			"revenue": flt(row[5]),
+			"conversion_rate": get_rate(cint(row[4]), cint(row[3])),
 		}
 		for row in rows
 	]
@@ -730,4 +733,61 @@ def get_item_analytics(item_code: str, from_date: str, to_date: str):
 			{"order": row[0], "date": str(row[1]), "qty": cint(row[2]), "amount": flt(row[3])}
 			for row in recent_orders
 		],
+	}
+
+
+@frappe.whitelist()
+def get_stock_movement(from_date: str, to_date: str):
+	"""How stock moved through the shop warehouse each day, and the level it left behind."""
+	frappe.only_for("System Manager")
+	warehouse = get_ecommerce_warehouse()
+	start, end = get_window(from_date, to_date)
+	days = get_days(start, end)
+	if not warehouse:
+		return {"warehouse": None, "labels": days, "units_in": [], "units_out": [], "on_hand": []}
+
+	stock_ledger = frappe.qb.DocType("Stock Ledger Entry")
+	incoming = Sum(Case().when(stock_ledger.actual_qty > 0, stock_ledger.actual_qty).else_(0))
+	outgoing = Sum(Case().when(stock_ledger.actual_qty < 0, -stock_ledger.actual_qty).else_(0))
+	movement = (
+		frappe.qb.from_(stock_ledger)
+		.select(stock_ledger.posting_date, incoming.as_("units_in"), outgoing.as_("units_out"))
+		.where(stock_ledger.warehouse == warehouse)
+		.where(stock_ledger.is_cancelled == 0)
+		.where(stock_ledger.posting_date >= start)
+		.where(stock_ledger.posting_date < end)
+		.groupby(stock_ledger.posting_date)
+	).run(as_dict=True)
+
+	by_day = {str(row.posting_date): row for row in movement}
+	units_in = [flt(by_day[day].units_in) if day in by_day else 0.0 for day in days]
+	units_out = [flt(by_day[day].units_out) if day in by_day else 0.0 for day in days]
+
+	# Bin only knows today, so the level on each past day is walked back from it through the ledger.
+	bin_table = frappe.qb.DocType("Bin")
+	on_hand_now = (
+		frappe.qb.from_(bin_table).select(Sum(bin_table.actual_qty)).where(bin_table.warehouse == warehouse)
+	).run()
+	closing = flt(on_hand_now[0][0]) if on_hand_now else 0.0
+
+	since_window = (
+		frappe.qb.from_(stock_ledger)
+		.select(Sum(stock_ledger.actual_qty))
+		.where(stock_ledger.warehouse == warehouse)
+		.where(stock_ledger.is_cancelled == 0)
+		.where(stock_ledger.posting_date >= end)
+	).run()
+	closing -= flt(since_window[0][0]) if since_window else 0.0
+
+	on_hand = []
+	for index in reversed(range(len(days))):
+		on_hand.insert(0, closing)
+		closing -= units_in[index] - units_out[index]
+
+	return {
+		"warehouse": warehouse,
+		"labels": days,
+		"units_in": units_in,
+		"units_out": units_out,
+		"on_hand": on_hand,
 	}

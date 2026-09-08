@@ -38,28 +38,23 @@ class BulkImageUpload(Document):
 		# frappe.throw("Images imported successfully!")
 
 	def import_images(self):
-		# folder zip can now contain multiple style folders
-		# Each style folder has the structure: STYLE-NAME > Color > list of image files
+		# Expected zip layout: STYLE-NAME > Color > image files.
 		file_doc = frappe.get_doc("File", {"file_url": self.folder_zip})
 
 		with zipfile.ZipFile(file_doc.get_full_path()) as zip_file:
-			# Get all unique top-level folder names (style names)
 			style_folders = set()
 			for path in zip_file.namelist():
 				parts = path.split("/")
-				if len(parts) > 1:  # Ensure it's not the root
+				if len(parts) > 1:
 					style_folders.add(parts[0])
 
-			# Process each style folder
 			for style_name in style_folders:
-				# iterate through all the color folders in this style
 				for folder_name in zip_file.namelist():
 					if (
 						folder_name.startswith(f"{style_name}/")
 						and folder_name.count("/") == 2
 						and folder_name.endswith("/")
 					):
-						# this is a color folder within the style
 						self.import_images_for_folder(
 							style_name,
 							folder_name,
@@ -76,8 +71,6 @@ class BulkImageUpload(Document):
 	):
 		try:
 			color_name = folder_name.split("/")[1]
-			# check if this variant exists
-
 			variant_doc = frappe.get_doc(
 				"Style Attribute Variant",
 				{"item_style": style_name, "attribute_value": color_name},
@@ -102,7 +95,6 @@ class BulkImageUpload(Document):
 				image_data = zip_file.read(image_file)
 				image_data = io.BytesIO(image_data)
 
-				# create a new file document
 				file_doc = frappe.get_doc(
 					{
 						"doctype": "File",

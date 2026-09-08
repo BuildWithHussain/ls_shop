@@ -8,7 +8,7 @@ from frappe.translate import get_all_translations
 from frappe.utils import cstr
 
 from ls_shop.search import query as search_query
-from ls_shop.utils import get_available_stocks, get_product_list
+from ls_shop.utils import get_available_stocks, get_product_list, validate_document_access
 
 
 def auth_required(func):
@@ -22,27 +22,49 @@ def auth_required(func):
 	return wrapper
 
 
-@frappe.whitelist(allow_guest=True)
-def get_order_detail(order_name):
-	sales_order = frappe.get_doc("Sales Order", order_name)
+# Only what the screen renders: the whole document carries contact_email, phone and the address block.
+ORDER_DETAIL_FIELDS = (
+	"name",
+	"status",
+	"docstatus",
+	"transaction_date",
+	"delivery_date",
+	"currency",
+	"net_total",
+	"total_taxes_and_charges",
+	"grand_total",
+	"rounded_total",
+)
+ORDER_DETAIL_ITEM_FIELDS = ("item_code", "item_name", "qty", "rate", "amount", "image")
 
-	return {"sales_order": sales_order}
+
+@frappe.whitelist()
+def get_order_detail(order_name: str):
+	sales_order = validate_document_access("Sales Order", order_name)
+
+	detail = {fieldname: sales_order.get(fieldname) for fieldname in ORDER_DETAIL_FIELDS}
+	detail["items"] = [
+		{fieldname: item.get(fieldname) for fieldname in ORDER_DETAIL_ITEM_FIELDS}
+		for item in sales_order.items
+	]
+	return {"sales_order": detail}
 
 
 @frappe.whitelist()
 def get_whitelist_transaction_list(
-	doctype,
-	txt=None,
-	filters=None,
-	limit_start=0,
-	limit_page_length=20,
-	order_by="modified",
-	custom=False,
+	doctype: str,
+	txt: str | None = None,
+	filters: dict | None = None,
+	limit_start: int | str = 0,
+	limit_page_length: int | str = 20,
+	order_by: str = "modified",
+	custom: bool = False,
 ):
 	return get_transaction_list(doctype, txt, filters, limit_start, limit_page_length, order_by, custom)
 
 
-@frappe.whitelist(allow_guest=True)
+# The storefront landing page is public, and so is everything Landing Page Settings holds.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
 def get_homepage_details():
 	landing_page = frappe.get_cached_doc("Landing Page Settings")
 	landing_page = landing_page.as_dict()
@@ -79,9 +101,10 @@ def get_item_details(items):
 	return recommended_items
 
 
-@frappe.whitelist(allow_guest=True)
+# Catalogue search is public and rate limited; it returns only published products.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
 @rate_limit(limit=120, seconds=60)
-def get_search_results(search):
+def get_search_results(search: str):
 	filters = {"search": cstr(search)}
 	if search_query.relevance_sort_available(filters):
 		return search_query.storefront_search(filters["search"], limit=6)["products"]
@@ -89,7 +112,7 @@ def get_search_results(search):
 
 
 @frappe.whitelist()
-def notify_user_product(item):
+def notify_user_product(item: str):
 	try:
 		user = frappe.session.user
 
@@ -115,8 +138,9 @@ def notify_user_product(item):
 		frappe.throw(_("Cannot subscribe for notification"))
 
 
-@frappe.whitelist(allow_guest=True)
-def get_translations(lang="ar"):
+# UI strings, the same data frappe's own get_boot_translations serves guests.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
+def get_translations(lang: str = "ar"):
 	return get_all_translations(lang=lang)
 
 

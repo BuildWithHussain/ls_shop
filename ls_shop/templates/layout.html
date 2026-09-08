@@ -3,14 +3,12 @@
 {% from "templates/macros/seo.html" import seo_meta, json_ld_block %}
 {% set settings = frappe.get_cached_doc("Lifestyle Settings", "Lifestyle Settings") %}
 {% set store_name = settings.store_name or "Lifestyle" %}
-{% set favicon = settings.favicon or "/assets/ls_shop/images/meta/favicon-32x32.png" %}
+{% set favicon = get_brand_assets().favicon %}
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    {# Kept as overridable blocks: a theme that replaces this layout must be able to
-       restate the SEO head without re-deriving it, and must not silently drop it. #}
     {% block seo %}{{ seo_meta(seo if seo is defined and seo else seo_page_meta()) }}{% endblock %}
     {% block json_ld %}{{ json_ld_block(json_ld if json_ld is defined and json_ld else seo_org_jsonld()) }}{% endblock %}
 
@@ -20,7 +18,6 @@
     {% include "templates/includes/custom-tracking-scripts.html" %}
     {% endblock %}
 
-    <!-- meta -->
     <link rel="apple-touch-icon" sizes="180x180" href="{{ favicon }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ favicon }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ favicon }}">
@@ -28,11 +25,9 @@
 
     <link rel="stylesheet" href="/assets/ls_shop/css/tailwind.css">
     
-    <!-- Dynamic Theme CSS -->
     {{ format_theme_css()|safe }}
 
     
-    <!-- https://alpinejs.dev/start-here -->
     <script src="/assets/ls_shop/js/vendor/alpinejs/plugins/persist.js"></script>
     <script src="/assets/ls_shop/js/vendor/alpinejs/plugins/collapse.js"></script>
     
@@ -51,24 +46,15 @@
 
 <script src="/assets/ls_shop/js/utils/synced-query-params.js"></script>
 <script >
-    // Initialize with options
     const querySync = new QuerySync({
         defaultValues: { page: 1 }
     });
 
-    // Access the proxy state object
     const { state } = querySync;
 
     window.query_state = state;
 
-    // Subscribe to changes (URL → state)
-    /*
-    const unsubscribe = querySync.subscribe((params) => {
-        console.log('State changed:', params);
-    });
-    */
 </script>
-<!-- Alpine specific style -->
 <style>
     /* Alpine specific style */
     [x-cloak] {
@@ -76,8 +62,6 @@
     }
 </style>
 
-{# Bound once per render so the header, the mobile drawer and any theme override all read the same
-   menu; a page controller may pre-supply it to avoid the second lookup. #}
 {% set header_data = header_data if header_data is defined and header_data else get_header_data() %}
 
 <body x-data dir="auto">

@@ -2,7 +2,7 @@
     document.addEventListener('alpine:init', () => {
         Alpine.store('wishlist', {
             items: Alpine.$persist([]).as("wishlist_items"),
-            route_set: new Set(), // internal cache for fast lookup
+            route_set: new Set(),
 
             init() {
                 this.refresh_route_set();

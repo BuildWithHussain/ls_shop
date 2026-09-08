@@ -3,7 +3,7 @@
         Alpine.store('i18n', {
             i18n: Alpine.$persist([]).as("i18n_data"),
             lastFetched: Alpine.$persist(null).as("i18n_last_fetched"),
-            ttl: 60 * 60 * 24 * 1000, // 1 hour
+            ttl: 60 * 60 * 24 * 1000,
 
             async init() {
                 const now = Date.now();

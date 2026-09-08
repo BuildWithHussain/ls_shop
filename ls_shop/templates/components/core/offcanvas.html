@@ -8,7 +8,6 @@
 {% endif %}
 
 <div x-data="{ is_offcanvas_open: false }" @keydown.escape.window="is_offcanvas_open = false">
-    <!-- Toggle Button -->
     <div @click="is_offcanvas_open = true">
         {% block offcanvas_button %}
         <button class="hover:bg-dark flex rounded-md  bg-white px-2 py-1 text-black hover:text-white md:hidden">
@@ -19,7 +18,6 @@
         </button>
         {% endblock %}
     </div>
-    <!-- Off-Canvas Panel -->
     <div
     id="offcanvas"
     :class="`fixed {{ position }} z-52 overflow-y-auto bg-white {{ transition_class }} ${is_offcanvas_open ? '{{ transform_classes.split()[0] }}' : '{{ transform_classes.split()[1] }}'} {{width}} {{height}}` "
@@ -30,12 +28,10 @@
     >
         <div class="p-4 mt-2">
             {% block offcanvas_header %} Off-Canvas {% endblock %}
-            <!-- Content -->
             <div class="mt-4">
                 {% block offcanvas_content %} No content {% endblock %}
             </div>
         </div>
     </div>
-    <!-- Backdrop -->
     <div x-show="is_offcanvas_open" class="fixed inset-0 z-51 bg-gray-900 opacity-25 md:hidden" @click="is_offcanvas_open = false" x-cloak></div>
 </div>

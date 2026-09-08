@@ -4,8 +4,7 @@ from frappe.utils.password import get_decrypted_password
 
 TELR_GATEWAY = "Telr"
 
-# Telr Payment Request field -> Gateway Payment Request field. Everything else on the old doctype is
-# either a section break or already named the same.
+# Telr Payment Request field -> Gateway Payment Request field; everything else is already named the same.
 FIELD_MAP = {
 	"telr_order_ref": "order_ref",
 	"telr_order_url": "order_url",
@@ -54,8 +53,7 @@ def get_retired_single_value(doctype: str, field: str):
 
 
 def telr_was_enabled() -> int:
-	# The old on/off switch lived on Lifestyle Settings; the field is gone from the meta by the time
-	# this runs, so the stored value has to come off the Singles table.
+	# The field is gone from the meta by the time this runs, so the value comes off the Singles table.
 	return cint(get_retired_single_value("Lifestyle Settings", "telr_enabled"))
 
 
@@ -67,8 +65,7 @@ def migrate_settings():
 	if target.store_id:
 		return
 
-	# The old controller module is already gone, so the retired Single is read off its stored values
-	# rather than through get_single().
+	# The old controller module is gone, so the retired Single is read off Singles, not get_single().
 	for field in ("test_mode", "store_id", "currency", "authorised_url", "declined_url", "cancelled_url"):
 		target.set(field, get_retired_single_value("Telr Settings", field))
 	for field in ("auth_key", "remote_auth_key"):
@@ -110,8 +107,7 @@ def migrate_payment_requests():
 
 def drop_retired_doctypes():
 	for doctype in ("Telr Payment Request", "Telr Settings"):
-		# Dashboard links on other doctypes survive the delete and then collide with the replacement
-		# link when customizations are synced later in the same migrate.
+		# DocType Links survive the delete and collide when customizations sync later in the same migrate.
 		frappe.db.delete("DocType Link", {"link_doctype": doctype})
 		if frappe.db.exists("DocType", doctype):
 			frappe.delete_doc("DocType", doctype, force=True, ignore_missing=True)

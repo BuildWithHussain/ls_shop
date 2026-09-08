@@ -24,8 +24,7 @@ def fetch_stats(days=30):
 		"end_time": cint(end_time.timestamp()),
 		"limit": 100,
 	}
-	# Token goes in the Authorization header, never the URL: query strings end up
-	# in tracebacks and the Error Log on any HTTP failure.
+	# Token in the Authorization header, never the URL: query strings leak into tracebacks and Error Log.
 	headers = {"Authorization": f"Bearer {token}"}
 	url = f"{GRAPH_URL}/{settings.fb_pixel_id}/stats"
 	buckets = []
@@ -42,8 +41,7 @@ def fetch_stats(days=30):
 def summarize(buckets):
 	"""Reduce hourly buckets to per-event totals plus a sorted day-to-PageView-count dict.
 
-	Live /stats bucket shape (aggregation=event):
-	{"start_time": "2026-07-15T19:00:00+0000", "data": [{"value": "PageView", "count": 6}]}
+	Bucket shape (aggregation=event): {"start_time": "...", "data": [{"value": "PageView", "count": 6}]}
 	"""
 	totals = dict.fromkeys(EVENTS, 0)
 	daily_pageviews = {}

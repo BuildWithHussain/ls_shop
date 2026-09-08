@@ -46,7 +46,6 @@
     }">
 	<nav aria-label="pagination">
 		<ul class="flex shrink-0 items-center gap-2 text-sm font-medium">
-			<!-- Previous button -->
 			<li>
 				<a href="#" @click.prevent="if(has_previous) { go_to_page(current_page - 1) }"
 					:class="{'text-gray-400 cursor-not-allowed': !has_previous, 'text-gray-700 hover:text-gray-900 cursor-pointer': has_previous}"
@@ -60,9 +59,7 @@
 				</a>
 			</li>
 
-			<!-- Page numbers and ellipses -->
 			<template x-for="(page, index) in pages_to_show" :key="index">
-				<!-- Regular page number -->
 				<li x-show="page !== 'ellipsis_start' && page !== 'ellipsis_end'">
 					<a href="#" @click.prevent="go_to_page(page)"
 						:class="current_page === page ? 'text-gray-900  ' : 'text-gray-300 hover:text-gray-900'"
@@ -71,7 +68,6 @@
 						x-text="page"></a>
 				</li>
 
-				<!-- Ellipsis (more pages indicator) -->
 				<li x-show="page === 'ellipsis_start' || page === 'ellipsis_end'">
 					<span class="flex size-6 items-center justify-center rounded-lg p-1 text-gray-900"
 						aria-label="more pages">
@@ -84,7 +80,6 @@
 				</li>
 			</template>
 
-			<!-- Next button -->
 			<li>
 				<a href="#" @click.prevent="if(has_next) { go_to_page(current_page + 1) }"
 					:class="{'text-gray-400 cursor-not-allowed': !has_next, 'text-gray-700 hover:text-gray-900 cursor-pointer': has_next}"

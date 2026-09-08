@@ -1,13 +1,4 @@
-{#
-  Storefront navigation rendered from header_data.navigation_menu.
-
-  Every node arrives ordered, filtered to visible entries and with `href` already built by
-  Ecommerce Category — never query or build a URL here. A node without an `href` is a heading:
-  it prints its label as plain text instead of a link.
-
-  Labels and hrefs are shop-owner authored and Frappe builds its Jinja environment without
-  autoescape, so every node value is piped through `| e` here rather than trusted.
-#}
+{# Frappe's Jinja environment has no autoescape, so every shop-owner authored label and href is piped through `| e`. #}
 
 {% macro nav_label(node, class_names, with_caret=false, caption=none, on_click=none) %}{% set text = caption or node.label %}{% if node.href %}<a href="{{ node.href | e }}"{% if class_names %} class="{{ class_names }}"{% endif %}{% if on_click %} @click="{{ on_click }}"{% endif %}>{{ text | e }}{% if with_caret %}<img src="/assets/ls_shop/icons/arrow-down.svg" alt="" class="h-6 w-6 p-1" :class="{ 'transition-transform duration-200 transform rotate-180': open }">{% endif %}</a>{% else %}<span{% if class_names %} class="{{ class_names }}"{% endif %}>{{ text | e }}{% if with_caret %}<img src="/assets/ls_shop/icons/arrow-down.svg" alt="" class="h-6 w-6 p-1" :class="{ 'transition-transform duration-200 transform rotate-180': open }">{% endif %}</span>{% endif %}{% endmacro %}
 
@@ -41,7 +32,6 @@
       {{ mega_menu_column(column) }}
       {% endfor %}
       {% else %}
-      {# A tab with no third level has nothing to spread across the row, so it keeps one column. #}
       {{ mega_menu_column(node, _('View all') ~ ' ' ~ node.label) }}
       {% endif %}
     </div>
@@ -70,7 +60,6 @@
 
 {% macro mobile_nav_item(node, class_names, key, depth) %}
 {% if node.children %}
-{# Each level owns its `open_item`, so a branch behaves as its own accordion the way the flat markup did. #}
 {% set toggle_expression = "open_item = open_item === '" ~ key ~ "' ? null : '" ~ key ~ "'" %}
 <button type="button" class="{{ class_names }}" @click="{{ toggle_expression }}">
   <span>{{ node.label | e }}</span>
@@ -80,7 +69,6 @@
   </svg>
 </button>
 <div x-show="open_item === '{{ key }}'" x-collapse>
-  {# Deeper branches step in once more so a third level still reads as nested inside the second. #}
   <ul class="{{ 'ps-4' if depth > 1 else '' }}" x-data="{ open_item: null }">
     {% if node.href %}
     <li>{{ nav_label(node, 'flex w-full items-center p-3 ps-8 text-sm text-gray-600', false, _('All') ~ ' ' ~ node.label, 'is_offcanvas_open = false') }}</li>

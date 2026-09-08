@@ -168,12 +168,8 @@ class LifestyleSettings(Document):
 		return "\n".join(RESULT_CARD_CATALOG)
 
 	@frappe.whitelist()
-	def get_content_field_options(self, search_doctype):
-		"""Newline-joined indexable field names of `search_doctype` for the Search Content Field Select.
-
-		Served from Python so the grid offers exactly what the index will accept — duplicating the
-		fieldtype allowlist in the client let the two drift and offered fields the build then dropped.
-		"""
+	def get_content_field_options(self, search_doctype: str):
+		"""Newline-joined indexable field names of `search_doctype` for the Search Content Field Select."""
 		if search_doctype not in ALLOWED_CONTENT_DOCTYPES:
 			return ""
 		fields = [
@@ -207,6 +203,7 @@ class LifestyleSettings(Document):
 		frappe.enqueue(
 			"ls_shop.lifestyle_shop_ecommerce.doctype.lifestyle_settings.lifestyle_settings.generate_configurators_for_all_templates",
 			queue="long",
+			enqueue_after_commit=True,
 			attribute=attribute,
 			log_name=log.name,
 		)
@@ -226,13 +223,27 @@ class LifestyleSettings(Document):
 
 	@frappe.whitelist()
 	def install_demo_data(self):
-		"""Install demo data for testing LS Shop"""
-		from ls_shop.install_demo_data import install_demo_data
+		"""Seed the Pixio demo storefront in the store's own currency.
+		Not install_demo_data: its price lists are hardcoded USD, which blocks every Sales Invoice on a non-USD company.
+		"""
+		from ls_shop.install_pixio_demo import (
+			CURRENCY_PROFILES,
+			DEFAULT_CURRENCY,
+			get_company_currency,
+			install_pixio_demo,
+		)
+
+		# A store already trading in a supported currency keeps it; anything else gets the default.
+		currency = get_company_currency()
+		if currency not in CURRENCY_PROFILES:
+			currency = DEFAULT_CURRENCY
 
 		frappe.enqueue(
-			install_demo_data,
+			install_pixio_demo,
 			queue="long",
 			timeout=3000,
+			enqueue_after_commit=True,
+			currency=currency,
 		)
 
 		return "Demo data installation has been queued. This may take a few minutes. Check the background jobs for progress."
@@ -246,6 +257,7 @@ class LifestyleSettings(Document):
 			publish_all_demo_items,
 			queue="default",
 			timeout=600,
+			enqueue_after_commit=True,
 		)
 
 		return "Publishing all items to website. This may take a moment. Refresh the page after completion."
@@ -337,6 +349,7 @@ def generate_configurators_for_all_templates(attribute: str, log_name: str):
 			}
 		).insert(ignore_permissions=True)
 		variants_generated = configurator.get_total_variants()
+		# nosemgrep: frappe-manual-commit  # job checkpoint, a crash keeps the configurators already made
 		frappe.db.commit()
 		configurator_log.append(
 			"configurators",

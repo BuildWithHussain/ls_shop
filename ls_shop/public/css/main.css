@@ -1,6 +1,14 @@
-@import "tailwindcss";
+/* Automatic source detection would pull Bootstrap grid classes out of ls_shop/themes/ into this
+   Tailwind-only sheet. source(none) works on Tailwind v4.0+, unlike the v4.1-only `@source not`. */
+@import "tailwindcss" source(none);
 @import "./font.css";
 @import "./theme.css";
+
+@source "../../templates";
+@source "../../www";
+@source "../js";
+/* get_currency_symbol() renders the only Tailwind markup that lives in Python. */
+@source "../../utils.py";
 
 @utility no-scrollbar {
   @apply [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;

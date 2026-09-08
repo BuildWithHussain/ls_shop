@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="{{ frappe.lang or 'en' }}" dir="{{ 'rtl' if is_rtl else 'ltr' }}">
+{% from "templates/macros/seo.html" import seo_meta, json_ld_block %}
+{% set favicon = get_brand_assets().favicon %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {# Mandatory by theme contract: dropping these silently loses every meta, canonical, hreflang and robots tag. #}
+    {% block seo %}{{ seo_meta(seo if seo is defined and seo else seo_page_meta()) }}{% endblock %}
+    {% block json_ld %}{{ json_ld_block(json_ld if json_ld is defined and json_ld else seo_org_jsonld()) }}{% endblock %}
+
+    {% block analytics_head %}
+    {% include "templates/includes/ga4.html" %}
+    {% include "templates/includes/meta-pixel.html" %}
+    {% include "templates/includes/custom-tracking-scripts.html" %}
+    {% endblock %}
+
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ favicon }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ favicon }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ favicon }}">
+
+    {# A theme's own tokens must not redefine the --ls-* variables the merchant's colour pickers drive. #}
+    {{ format_theme_css()|safe }}
+
+    <script src="{{ shop_theme_asset_url('scripts/vendor/alpinejs/plugins/persist.js') }}"></script>
+    <script src="{{ shop_theme_asset_url('scripts/vendor/alpinejs/plugins/collapse.js') }}"></script>
+
+    {% block alpine_plugins %}{% endblock %}
+
+    <script defer src="{{ shop_theme_asset_url('scripts/vendor/alpinejs/core.js') }}"></script>
+    {% block head %}{% endblock %}
+</head>
+
+{# Alpine stores every other component reads: a themed page missing one renders a cart that never fills. #}
+{% include "templates/includes/cart-state.html" %}
+{% include "templates/includes/i18-state.html" %}
+{% include "templates/includes/wishlist-state.html" %}
+{% include "templates/includes/toast-state.html" %}
+{% include "templates/includes/frappe-call-script.html" %}
+
+<script src="{{ shop_theme_asset_url('scripts/synced-query-params.js') }}"></script>
+<script>
+    const querySync = new QuerySync({ defaultValues: { page: 1 } });
+    const { state } = querySync;
+    window.query_state = state;
+</script>
+<style>
+    [x-cloak] { display: none !important; }
+</style>
+
+<body x-data class="{% block body_class %}{% endblock %}"{% block body_attributes %}{% endblock %}>
+    {% block chrome_top %}{% endblock %}
+
+    <main x-data="toaster">
+        {% block body %}{% endblock %}
+        {% block uncontained_body %}{% endblock %}
+        {% include "templates/includes/toast-teleport.html" %}
+    </main>
+
+    {% block chrome_bottom %}{% endblock %}
+    {% block analytics_events %}{% include "templates/includes/analytics-events.html" %}{% endblock %}
+</body>
+{% block script %}{% endblock %}
+</html>

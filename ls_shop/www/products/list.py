@@ -26,8 +26,7 @@ def get_filter_brands(filters=None):
 	item = DocType("Item")
 
 	query = query.select(item.brand).distinct().orderby(item.brand)
-	# Values are returned raw: they round-trip through the checkbox value and the URL into a
-	# case-sensitive SQLite IN on the index, and the template already display-cases them.
+	# Raw values: they round-trip into a case-sensitive SQLite IN on the index.
 	return [brand for brand in query.run(pluck=True) if brand]
 
 
@@ -55,26 +54,21 @@ def get_filter_sizes(filters=None):
 
 def get_product_filters(selected_filters):
 	"""Fetches available filters like brand, price range, and sizes."""
-	# Define DocTypes
 	category = selected_filters.get("category", "")
 	item_price = DocType("Item Price")
 	sale_price_list = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "sale_price_list")
-	# Get price range (min and max)
 	price_range = (
 		frappe.qb.from_(item_price)
 		.select(
 			Min(item_price.price_list_rate).as_("min_price"),
 			frappe.query_builder.functions.Max(item_price.price_list_rate).as_("max_price"),
 		)
-		.where(item_price.price_list == sale_price_list)  # Adjust price list as needed
+		.where(item_price.price_list == sale_price_list)
 	).run(as_dict=True)
 
-	# The sidebar's category facets are the menu tree, so the navbar and the sidebar can never
-	# disagree about which subcategories a tab has.
 	filters = get_category_facets(category)
 
-	# When SQLite serves the grid the sidebar must be faceted from the same result set, or a listed
-	# brand/colour/size would filter down to nothing.
+	# When SQLite serves the grid, faceting from the same result set stops dead filter options.
 	facets = search_query.listing_facets(selected_filters)
 	if facets:
 		filters.update(facets)
@@ -119,9 +113,7 @@ def get_sort_by(default_sort):
 def get_context(context):
 	page = get_current_page()
 	selected_filters = get_selected_filters()
-	# Fetch updated filters based on selected ones
 	filters, price_range = get_product_filters(selected_filters)
-	# Fetch filtered product list
 	context.page_length = 30
 	context.show_relevance_sort = search_query.relevance_sort_available(selected_filters)
 	context.sort_by = get_sort_by("default" if context.show_relevance_sort else "new_arrival")
@@ -131,13 +123,12 @@ def get_context(context):
 		page_length=context.page_length,
 		sort_by=context.sort_by,
 	)
-	# Pass data to frontend
 	context.products = products
 	context.current_page = page
-	context.total_count = get_total_product_count(filters=selected_filters)  # Adjust for pagination
-	context.filters = filters  # Updated filters
+	context.total_count = get_total_product_count(filters=selected_filters)
+	context.filters = filters
 	context.selected_filters = selected_filters
-	context.price_range = price_range  # Updated price range
+	context.price_range = price_range
 	context.breadcrumbs = [
 		{
 			"label": "Products",

@@ -1,9 +1,5 @@
-"""Jinja-exposed SEO fallbacks for pages whose controller sets no `context.seo`.
-
-Controller methods are unreachable from the Jinja sandbox (`get_cached_doc` resolves to a
-SafeDoc dict wrapper whose methods silently return None), so the storefront reaches the SEO
-builders through these module-level methods registered in `hooks.jinja`.
-"""
+"""SEO fallbacks registered in `hooks.jinja`: the Jinja sandbox wraps docs as SafeDoc, whose methods
+silently return None, so controller methods are unreachable from a template."""
 
 import frappe
 

@@ -1,0 +1,120 @@
+
+{% set attribute_facets = ["brands", "colors", "sizes"] %}
+
+{% macro category_facet_list(nodes) %}
+<ul>
+	{% for node in nodes %}
+	<li class="cat-item">
+		{% if node.is_leaf %}
+		<a href="javascript:void(0);"
+			:class='{ "selected": is_selected("subcategory", {{ node.item_groups | tojson }}) }'
+			@click='toggle_filter("subcategory", {{ node.item_groups | tojson }})'>{{ _(node.display_name) }}</a>
+		{% else %}
+		<span class="cat-parent">{{ _(node.display_name) }}</span>
+		{% endif %}
+		{% if node.children %}{{ category_facet_list(node.children) }}{% endif %}
+	</li>
+	{% endfor %}
+</ul>
+{% endmacro %}
+
+<div class="shop-filter mt-xl-2 mt-0" :class="{ 'active': panel_open }">
+	<aside>
+		<div class="d-flex align-items-center justify-content-between m-b30">
+			<h6 class="title mb-0 fw-normal d-flex">
+				<i class="flaticon-filter me-3"></i>
+				{{ _("Filter") }}
+			</h6>
+		</div>
+
+		<div class="widget widget_search">
+			<div class="form-group">
+				<div class="input-group">
+					<input name="search" type="search" class="form-control"
+						placeholder="{{ _('Search Product') }}"
+						x-model="search_term"
+						@keydown.enter.prevent="set_filter('search', search_term)">
+					<div class="input-group-addon">
+						<button type="button" class="btn" aria-label="{{ _('Search Product') }}"
+							@click="set_filter('search', search_term)">
+							<i class="icon feather icon-search"></i>
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="widget">
+			<h6 class="widget-title">{{ _("Price") }}</h6>
+			<div class="price-slide range-slider" x-data='price_range_filter'>
+				<div class="pixio-range">
+					<div class="pixio-range-fill" :style="fill_style"></div>
+					<input type="range" class="pixio-range-input" aria-label="{{ _('Minimum price') }}"
+						:min="floor" :max="ceiling" x-model.number="minimum"
+						@input="minimum = Math.min(minimum, maximum)"
+						@change="set_filter('min', minimum)">
+					<input type="range" class="pixio-range-input" aria-label="{{ _('Maximum price') }}"
+						:min="floor" :max="ceiling" x-model.number="maximum"
+						@input="maximum = Math.max(minimum, maximum)"
+						@change="set_filter('max', maximum)">
+				</div>
+				{# Concatenating the currency symbol into x-text would escape it, so Jinja emits it beside the amount. #}
+				<span class="example-val">{{ get_currency_symbol() }}<span x-text="Math.round(minimum)"></span></span>
+				<span class="example-val">{{ get_currency_symbol() }}<span x-text="Math.round(maximum)"></span></span>
+			</div>
+		</div>
+
+		{% if filters.colors %}
+		<div class="widget">
+			<h6 class="widget-title">{{ _("Color") }}</h6>
+			<div class="btn-group product-size color-chips">
+				{% for color in filters.colors %}
+				<input type="checkbox" class="btn-check" id="filter-color-{{ loop.index }}"
+					:checked='is_selected("colors", {{ color | tojson }})'
+					@change='toggle_filter("colors", {{ color | tojson }})'>
+				<label class="btn" for="filter-color-{{ loop.index }}">{{ _(color) }}</label>
+				{% endfor %}
+			</div>
+		</div>
+		{% endif %}
+
+		{% if filters.sizes %}
+		<div class="widget">
+			<h6 class="widget-title">{{ _("Size") }}</h6>
+			<div class="btn-group product-size">
+				{% for size in filters.sizes %}
+				<input type="checkbox" class="btn-check" id="filter-size-{{ loop.index }}"
+					:checked='is_selected("sizes", {{ size | tojson }})'
+					@change='toggle_filter("sizes", {{ size | tojson }})'>
+				<label class="btn" for="filter-size-{{ loop.index }}">{{ size }}</label>
+				{% endfor %}
+			</div>
+		</div>
+		{% endif %}
+
+		{% for facet_name, facet_nodes in filters.items() if facet_name not in attribute_facets and facet_nodes %}
+		<div class="widget widget_categories">
+			<h6 class="widget-title">{{ _(facet_name) }}</h6>
+			{{ category_facet_list(facet_nodes) }}
+		</div>
+		{% endfor %}
+
+		{% if filters.brands %}
+		<div class="widget widget_categories">
+			<h6 class="widget-title">{{ _("Brand") }}</h6>
+			<ul>
+				{% for brand in filters.brands %}
+				<li class="cat-item">
+					<a href="javascript:void(0);"
+						:class='{ "selected": is_selected("brands", {{ brand | tojson }}) }'
+						@click='toggle_filter("brands", {{ brand | tojson }})'>{{ brand }}</a>
+				</li>
+				{% endfor %}
+			</ul>
+		</div>
+		{% endif %}
+
+		<a href="javascript:void(0);" class="btn btn-sm font-14 btn-secondary btn-sharp"
+			@click="reset_filters()">{{ _("RESET") }}</a>
+	</aside>
+</div>

@@ -1,7 +1,4 @@
-"""
-Quick script to publish all demo items to the website
-Run this if products don't show on the website after running install_demo_data
-"""
+"""Publish all demo items to the website, if products do not show after install_demo_data."""
 
 import frappe
 
@@ -11,13 +8,11 @@ def publish_all_demo_items():
 
 	print("Publishing demo items to website...")
 
-	# Get warehouse
 	warehouse = frappe.db.get_value("Warehouse", {"is_group": 0}, "name")
 	if not warehouse:
 		print("❌ No warehouse found")
 		return
 
-	# Get all items
 	items = frappe.get_all(
 		"Item",
 		filters={"has_variants": 0, "is_stock_item": 1},
@@ -31,7 +26,6 @@ def publish_all_demo_items():
 		wi_name = frappe.db.get_value("Website Item", {"item_code": item.name}, "name")
 
 		if not wi_name:
-			# Create Website Item
 			wi = frappe.get_doc(
 				{
 					"doctype": "Website Item",
@@ -49,10 +43,8 @@ def publish_all_demo_items():
 			wi.insert(ignore_permissions=True)
 			created += 1
 		else:
-			# Update existing
 			frappe.db.set_value("Website Item", wi_name, {"published": 1, "website_warehouse": warehouse})
 
-			# Ensure website_item_groups is set
 			wi = frappe.get_doc("Website Item", wi_name)
 			if not wi.website_item_groups and item.item_group:
 				wi.append("website_item_groups", {"item_group": item.item_group})
@@ -66,7 +58,6 @@ def publish_all_demo_items():
 
 	for sav in savs:
 		if sav.route:
-			# Remove any language/products prefix
 			clean_route = sav.route.replace("en/products/", "").replace("ar/products/", "")
 			if clean_route != sav.route:
 				frappe.db.set_value("Style Attribute Variant", sav.name, "route", clean_route)
@@ -86,10 +77,8 @@ def publish_all_demo_items():
 	routed = 0
 
 	for wi in website_items:
-		# Generate clean route (just the slug)
 		item_code = wi.item_code.lower().replace("_", "-").replace(" ", "-")
 
-		# Remove any existing prefix and ensure it's just the slug
 		if wi.route:
 			clean_route = wi.route.replace("en/products/", "").replace("ar/products/", "")
 			if clean_route != item_code:
@@ -98,7 +87,7 @@ def publish_all_demo_items():
 		else:
 			frappe.db.set_value("Website Item", wi.name, "route", item_code)
 			routed += 1
-	# nosemgrep: manual commit required for demo item publishing completion
+	# nosemgrep: frappe-manual-commit  # job only, a crash keeps the items already published
 	frappe.db.commit()
 	frappe.clear_cache()
 

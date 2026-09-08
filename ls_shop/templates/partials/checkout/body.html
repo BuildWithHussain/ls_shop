@@ -149,7 +149,6 @@
     async function add_billing_address(state, refs) {
 
         const data = form_to_object(refs.checkout_form);
-        // Validate Billing Address
         if (data.billing_tab === 'saved_address') {
             if (!data.billing_combo) {
                 state.errors.push('Please select an address from saved billing addresses.');
@@ -165,7 +164,6 @@
                 state.errors.push('Please enter a valid billing phone number.');
             }
         }
-        // Validate Shipping Address (only if "same as billing" is not checked)
         if (!data.shipping_address_same_as_billing_address) {
             if (data.shipping_tab === 'saved_address') {
                 if (!data.shipping_combo) {
@@ -215,7 +213,7 @@
                 city: data.shipping_tab === 'new_address' ? data.shipping_city : null,
                 po_box: data.shipping_tab === 'new_address' ? data.shipping_po_box : null
             },
-            shipping_same_as_billing: !!data.shipping_address_same_as_billing_address // Ensure boolean value
+            shipping_same_as_billing: !!data.shipping_address_same_as_billing_address
         };
         try {
             const response_data = await frappe_call(
@@ -237,7 +235,6 @@
         state.billing_address_filled = false;
         state.address_loading = true;
         state.errors = [];
-        // For Store Pickup
         if (refs.checkout_form.delivery_option.value === 'store_pickup') {
             add_pickup_address(state, refs)
             return;
@@ -308,7 +305,6 @@
                         </span>
                     </label>
                 </div>
-                <!-- Store Pickup Section -->
                 <div x-show="delivery_option === 'store_pickup'" class="mt-6 "
                     x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="opacity-0 transform -translate-y-4"
@@ -335,7 +331,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- Home Delivery Section -->
                 <div x-show="delivery_option === 'home_delivery'" x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="opacity-0 transform -translate-y-4"
                     x-transition:enter-end="opacity-100 transform translate-y-0">
@@ -418,7 +413,6 @@
                 </div>
             </template>
         </div>
-        <!-- Cart Summary -->
         <div class="hidden rounded-lg border border-gray-300 md:block md:w-[40%] p-6 h-fit">
             <div class="flex justify-between items-end mb-4 pb-4 border-b border-gray-300">
                 <h3 class="text-lg font-medium capitalize">{{ _('your cart') }}</h3>

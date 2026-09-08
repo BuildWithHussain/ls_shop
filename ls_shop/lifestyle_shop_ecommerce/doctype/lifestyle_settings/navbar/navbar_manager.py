@@ -127,7 +127,12 @@ def create_node(parent, display_name, link_type=None, link_target=None, display_
 
 
 @frappe.whitelist(methods=["POST"])
-def add_node(parent=None, display_name=None, link_type=None, link_target=None):
+def add_node(
+	parent: str | None = None,
+	display_name: str | None = None,
+	link_type: str | None = None,
+	link_target: str | list | None = None,
+):
 	frappe.has_permission("Ecommerce Category", "create", throw=True)
 
 	display_name = require_value(display_name, frappe._("Display name is required."))
@@ -138,17 +143,17 @@ def add_node(parent=None, display_name=None, link_type=None, link_target=None):
 
 @frappe.whitelist(methods=["POST"])
 def update_node(
-	name,
-	display_name=None,
-	link_type=None,
-	link_target=None,
-	route_slug=None,
-	icon=None,
-	image=None,
-	meta_title=None,
-	meta_description=None,
-	og_image=None,
-	noindex=None,
+	name: str,
+	display_name: str | None = None,
+	link_type: str | None = None,
+	link_target: str | list | None = None,
+	route_slug: str | None = None,
+	icon: str | None = None,
+	image: str | None = None,
+	meta_title: str | None = None,
+	meta_description: str | None = None,
+	og_image: str | None = None,
+	noindex: int | str | None = None,
 ):
 	frappe.has_permission("Ecommerce Category", "write", throw=True)
 
@@ -186,7 +191,7 @@ def count_descendants(name):
 
 
 @frappe.whitelist()
-def get_delete_preview(name):
+def get_delete_preview(name: str):
 	frappe.has_permission("Ecommerce Category", "read", throw=True)
 
 	node = get_menu_node(name)
@@ -194,7 +199,7 @@ def get_delete_preview(name):
 
 
 @frappe.whitelist(methods=["POST"])
-def delete_node(name):
+def delete_node(name: str):
 	frappe.has_permission("Ecommerce Category", "delete", throw=True)
 
 	for entry in get_subtree_names(name):
@@ -224,7 +229,7 @@ def delete_all_nodes():
 
 
 @frappe.whitelist(methods=["POST"])
-def reorder_nodes(parent, ordered_names):
+def reorder_nodes(parent: str, ordered_names: list | str):
 	frappe.has_permission("Ecommerce Category", "write", throw=True)
 	ordered_names = parse_list(ordered_names)
 
@@ -243,7 +248,7 @@ def reorder_nodes(parent, ordered_names):
 
 
 @frappe.whitelist(methods=["POST"])
-def move_node(name, to_parent=None, target_index=0):
+def move_node(name: str, to_parent: str | None = None, target_index: int | str = 0):
 	frappe.has_permission("Ecommerce Category", "write", throw=True)
 
 	to_parent = (to_parent or "").strip()
@@ -310,14 +315,11 @@ def get_linked_nodes():
 	return linked
 
 
-@frappe.whitelist(methods=["POST"])
-def import_from_item_group(item_group=None, parent=None):
-	frappe.has_permission("Ecommerce Category", "create", throw=True)
-
-	parent = (parent or "").strip()
+def seed_categories_from_item_groups(item_group=None, parent=""):
+	"""Copy the Item Group tree into the menu - a one-time copy, never a live mirror, and safe to re-run."""
 	root_names, source_groups = get_source_item_groups(item_group)
 	if not source_groups:
-		return get_menu_editor_data()
+		return
 
 	linked_nodes = get_linked_nodes()
 	base_level = get_depth(parent) + 1
@@ -362,11 +364,27 @@ def import_from_item_group(item_group=None, parent=None):
 	finally:
 		frappe.local.flags.ignore_ecommerce_category_nsm = previous_flag
 
+
+def seed_menu_when_empty():
+	"""Give a store with no menu one copied from its Item Group tree. Install and upgrade only - never
+	on every migrate, or a menu the shop owner emptied on purpose gets refilled."""
+	if frappe.db.count("Ecommerce Category"):
+		return
+
+	seed_categories_from_item_groups()
+
+
+@frappe.whitelist(methods=["POST"])
+def import_from_item_group(item_group: str | None = None, parent: str | None = None):
+	frappe.has_permission("Ecommerce Category", "create", throw=True)
+
+	seed_categories_from_item_groups(item_group, (parent or "").strip())
+
 	return get_menu_editor_data()
 
 
 @frappe.whitelist(methods=["POST"])
-def set_visibility(name, visible):
+def set_visibility(name: str, visible: int | str):
 	frappe.has_permission("Ecommerce Category", "write", throw=True)
 
 	frappe.db.set_value("Ecommerce Category", name, "enabled", cint(visible))
@@ -507,7 +525,9 @@ def get_cascade_page(item_groups, start, page_length, search=None):
 
 
 @frappe.whitelist()
-def get_cascade_products(name, start=0, page_length=PRODUCT_PAGE_LENGTH, search=None):
+def get_cascade_products(
+	name: str, start: int | str = 0, page_length: int | str = PRODUCT_PAGE_LENGTH, search: str | None = None
+):
 	frappe.has_permission("Ecommerce Category", "read", throw=True)
 	frappe.has_permission(PRODUCT_DOCTYPE, "read", throw=True)
 
@@ -529,7 +549,7 @@ def get_cascade_products(name, start=0, page_length=PRODUCT_PAGE_LENGTH, search=
 
 
 @frappe.whitelist()
-def get_publish_preview(name, publish):
+def get_publish_preview(name: str, publish: int | str):
 	frappe.has_permission("Ecommerce Category", "read", throw=True)
 	frappe.has_permission(PRODUCT_DOCTYPE, "write", throw=True)
 
@@ -538,7 +558,12 @@ def get_publish_preview(name, publish):
 
 
 @frappe.whitelist(methods=["POST"])
-def set_published(name, publish, excluded_names=None, included_names=None):
+def set_published(
+	name: str,
+	publish: int | str,
+	excluded_names: list | str | None = None,
+	included_names: list | str | None = None,
+):
 	frappe.has_permission("Ecommerce Category", "read", throw=True)
 	frappe.has_permission(PRODUCT_DOCTYPE, "write", throw=True)
 

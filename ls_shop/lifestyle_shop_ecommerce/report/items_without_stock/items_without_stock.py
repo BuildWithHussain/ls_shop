@@ -88,7 +88,6 @@ def get_data(filters=None):
 	website_slideshow_item = DocType("Website Slideshow Item")
 	available_qty_expr = Sum(bin.actual_qty - bin.reserved_qty)
 
-	# CASE expressions to compute the checkboxes
 	published_no_stock = (
 		Case()
 		.when(
@@ -142,7 +141,7 @@ def get_data(filters=None):
 
 
 @frappe.whitelist()
-def bulk_unpublish(filters):
+def bulk_unpublish(filters: dict | str):
 	filters = frappe.parse_json(filters) if filters else {}
 	data = get_data(filters)
 
@@ -156,7 +155,7 @@ def bulk_unpublish(filters):
 
 
 @frappe.whitelist()
-def bulk_publish(filters):
+def bulk_publish(filters: dict | str):
 	filters = frappe.parse_json(filters) if filters else {}
 
 	data = get_data(filters)

@@ -1,0 +1,15 @@
+{
+	"minLines": 6,
+	"minTokens": 50,
+	"reporters": ["console"],
+	"absolute": false,
+	"gitignore": true,
+	"ignore": [
+		"**/node_modules/**",
+		"**/dist/**",
+		"**/public/dist/**",
+		"**/*.min.js",
+		"**/migrations/**",
+		"**/patches/**"
+	]
+}

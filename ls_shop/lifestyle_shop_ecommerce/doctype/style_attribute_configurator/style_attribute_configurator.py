@@ -31,14 +31,12 @@ class StyleAttributeConfigurator(Document):
 
 	@frappe.whitelist()
 	def generate_variants(self):
-		# Fetch all variant attributes for the template item
 		all_attributes = frappe.db.get_all(
 			"Item Variant Attribute",
 			filters={"parenttype": "Item", "variant_of": self.item_template},
 			fields=["attribute", "attribute_value", "parent"],
 		)
 
-		# Group attributes by parent item
 		grouped_by_parent_items = {}
 		attribute_name_field = frappe.get_cached_value(
 			"Lifestyle Settings", "Lifestyle Settings", "attribute_name_field"
@@ -46,10 +44,8 @@ class StyleAttributeConfigurator(Document):
 		for item in all_attributes:
 			grouped_by_parent_items.setdefault(item.parent, []).append(item)
 
-		# Create the result dictionary organized by the specified attribute
 		result = {}
 		for parent, variant_attributes in grouped_by_parent_items.items():
-			# Find the value of the specified attribute (e.g., color) for this item
 			color_value = next(
 				(
 					attr["attribute_value"]
@@ -68,13 +64,11 @@ class StyleAttributeConfigurator(Document):
 			)
 
 			if color_value:
-				# Create a dictionary of other attributes for this item
 				item_info = {"item_code": parent}
 				for attr in variant_attributes:
 					if attr["attribute"] != self.item_attribute:
 						item_info[attr["attribute"].lower()] = attr["attribute_value"]
 
-				# Add to the result dictionary
 				if color_value not in result:
 					result[color_value] = {
 						"attribute_name": attribute_name,

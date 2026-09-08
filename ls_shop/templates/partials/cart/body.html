@@ -85,12 +85,10 @@
 							"image": cart_item.item.images[0]?.image
 						}
 					}'>
-							<!-- Product Image -->
 							<a :href="`/{{frappe.lang}}/products/${cart_item.item.route}`">
 						<img :src="cart_item.item.images.length > 0 ? cart_item.item.images[0].image : '/assets/ls_shop/images/1.jpg'"
 								alt="Product Image" class="w-35 h-50 md:w-45 md:h-60 object-cover rounded-lg" />
 							</a>
-						<!-- Product Details -->
 							<div class="mt-4 md:mt-6 flex flex-4 justify-between">
 								<div>
 									<h3 class="mb-2.5 text-sm font-medium text-brand md:text-base"
@@ -105,7 +103,6 @@
 
 									</h4>
 								
-									<!-- Size dropdown -->
 									{% include 'templates/components/cart_product_size_dropdown.html'   %}
 									<div class="text-sm font-medium mt-2 md:mt-9 flex">
 										<template x-if="cart_item.default_price && cart_item.default_price !== cart_item.price">

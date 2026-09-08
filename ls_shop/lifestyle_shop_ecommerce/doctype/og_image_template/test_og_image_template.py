@@ -15,8 +15,7 @@ def get_published_variant():
 
 class TestOGImageTemplate(IntegrationTestCase):
 	def make_template(self, **kwargs):
-		# autoname is field:for_doctype, so only one row per DocType can exist; clear any
-		# leftover (generate_preview commits a File + db_set, which can outlive rollback).
+		# autoname is field:for_doctype (one row per DocType), and generate_preview commits past rollback.
 		frappe.db.delete("OG Image Template", {"for_doctype": "Style Attribute Variant"})
 		values = {
 			"doctype": "OG Image Template",
@@ -45,8 +44,7 @@ class TestOGImageTemplate(IntegrationTestCase):
 		self.assertEqual(doc.template_html, marker)
 
 	def test_generate_preview_requires_system_manager(self):
-		# frappe.only_for is a no-op while local.flags.in_test is set (frappe/__init__.py
-		# only_for), so the SSTI permission gate must be exercised with the flag cleared.
+		# frappe.only_for is a no-op while local.flags.in_test is set, so the gate needs the flag cleared.
 		doc = self.make_template()
 		original_user = frappe.session.user
 		original_in_test = frappe.local.flags.in_test
@@ -106,7 +104,6 @@ class TestOGImageTemplate(IntegrationTestCase):
 			doc.reload()
 			second_url = doc.generate_preview()
 
-		# Exactly one preview File attached after a re-preview (prior is deleted).
 		files = frappe.get_all(
 			"File",
 			filters={

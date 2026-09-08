@@ -1,17 +1,12 @@
-{# SEO head macros. `seo` is the per-page dict from the backend controller
-   (or the seo_page_meta() store default). All values flow through Jinja
-   autoescaping; `| tojson` keeps json-ld script-safe. #}
 
 {% macro seo_meta(seo) %}
     {# macros don't inherit the caller's {% set settings %}, so fetch it here (frappe is a jinja global) #}
     {% set settings = frappe.get_cached_doc("Lifestyle Settings", "Lifestyle Settings") %}
-    {# Same fallback as seo.get_store_name(), so og:site_name can never disagree with the title. #}
     {% set site_name = settings.store_name or "Store" %}
     {% if seo.title %}<title>{{ seo.title }}</title>{% endif %}
     {% if seo.description %}<meta name="description" content="{{ seo.description }}">{% endif %}
     {% if seo.url %}<link rel="canonical" href="{{ seo.url }}">{% endif %}
 
-    {# robots: controllers may set seo.noindex on private/utility pages; default is indexable #}
     {% if seo.noindex %}
     <meta name="robots" content="noindex, follow">
     {% else %}
@@ -21,23 +16,19 @@
     {% for alt in seo.alternates or [] %}
     <link rel="alternate" hreflang="{{ alt.lang }}" href="{{ alt.href }}">
     {% endfor %}
-    {# x-default points at the en variant so engines pick a sane fallback #}
     {% for alt in seo.alternates or [] %}
         {% if alt.lang == "en" %}<link rel="alternate" hreflang="x-default" href="{{ alt.href }}">{% endif %}
     {% endfor %}
 
-    {# Open Graph #}
     {# OG/FB want full locales (en_US, ar_AR), not the bare lang code Frappe uses #}
     {% set og_locales = {"en": "en_US", "ar": "ar_AR"} %}
-    {# derive lang from the canonical url (always carries the /en|/ar prefix) so it's
-       correct even when frappe.local.lang isn't set at macro-render time #}
+    {# Derived from the canonical url because frappe.local.lang may not be set at macro-render time. #}
     {% set lang = "ar" if (seo.url and "/ar/" in seo.url) else (frappe.local.lang or "en") %}
     <meta property="og:type" content="{{ seo.type or 'website' }}">
     {% if seo.title %}<meta property="og:title" content="{{ seo.title }}">{% endif %}
     {% if seo.description %}<meta property="og:description" content="{{ seo.description }}">{% endif %}
     {% if seo.url %}<meta property="og:url" content="{{ seo.url }}">{% endif %}
     {% if seo.image %}<meta property="og:image" content="{{ seo.image }}">
-    {# the dynamic OG card and the shared social asset are both 1200x630 #}
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="{{ seo.title or site_name }}">{% endif %}
@@ -52,14 +43,11 @@
         {% if seo.availability %}<meta property="product:availability" content="{{ seo.availability }}">{% endif %}
     {% endif %}
 
-    {# Twitter / X card #}
     <meta name="twitter:card" content="summary_large_image">
     {% if seo.title %}<meta name="twitter:title" content="{{ seo.title }}">{% endif %}
     {% if seo.description %}<meta name="twitter:description" content="{{ seo.description }}">{% endif %}
     {% if seo.image %}<meta name="twitter:image" content="{{ seo.image }}">{% endif %}
-    {# twitter:site/creator want an @handle; Lifestyle Settings only stores a
-       twitter_url, so emit nothing unless a dedicated handle field is added.
-       .get() keeps this safe if the field is absent entirely. #}
+    {# twitter:site wants an @handle and Lifestyle Settings stores only a twitter_url, so nothing is emitted until a handle field exists. #}
     {% set twitter_handle = settings.get("twitter_handle") %}
     {% if twitter_handle %}
     <meta name="twitter:site" content="{{ twitter_handle }}">

@@ -32,10 +32,25 @@ def _get_default_territory() -> str:
 	return frappe.db.get_single_value("Selling Settings", "territory") or get_root_of("Territory")
 
 
+def get_default_customer_group() -> str:
+	"""Resolve a leaf Customer Group for storefront party creation."""
+	# get_root_of() is wrong here: the Customer Group root is is_group=1 and Customer rejects a group.
+	configured = frappe.db.get_single_value("Selling Settings", "customer_group") or frappe.db.get_default(
+		"customer_group"
+	)
+	if configured and not frappe.db.get_value("Customer Group", configured, "is_group"):
+		return configured
+
+	leaf_group = frappe.get_all(
+		"Customer Group", filters={"is_group": 0}, order_by="lft", limit=1, pluck="name"
+	)
+	return leaf_group[0] if leaf_group else ""
+
+
 def _create_party_for_user(user: str):
 	fullname = get_fullname(user) or user
 	customer = frappe.new_doc("Customer")
-	customer_group = frappe.db.get_single_value("Lifestyle Settings", "Lifestyle Settings", "customer_group")
+	customer_group = get_default_customer_group()
 	customer.update(
 		{
 			"customer_name": fullname,

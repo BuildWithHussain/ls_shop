@@ -1,6 +1,13 @@
 {% extends "templates/layout.html" %}
 
 {% block body %}
+{% if login_url %}
+<div class=" shadow p-5 m-4">
+    <h1 class="text-xl font-semibold text-gray-800">{{ _('Your payment has been received') }}</h1>
+    <p>{{ _('Please sign in to confirm this order. You will come straight back to this page.') }}</p>
+    <a class="underline" href="{{ login_url }}">{{ _('Sign in to confirm your order') }}</a>
+</div>
+{% else %}
 <div class=" shadow p-5 m-4">
     <h1 class="text-xl font-semibold text-gray-800">{{ _('Checking payment status') }}</h1>
     <p>{{ _('Please do not refresh') }}...</p>
@@ -9,18 +16,17 @@
 <script defer>
     const url_params = new URLSearchParams(window.location.search);
     const payment_mode = url_params.get('payment_mode');
-    // Legacy gateway redirects still come back with `payment_id` instead of `reference_id`.
-    const reference_id = url_params.get('reference_id') || url_params.get('payment_id');
+// Legacy gateway redirects return `payment_id` and Stripe substitutes `session_id`; all three resolve through Gateway Payment Request.order_ref.
+    const reference_id = url_params.get('reference_id') || url_params.get('payment_id') || url_params.get('session_id');
     function track_purchase(data, order_name) {
-        // The first-party `purchase` event is logged server-side at order creation; the
-        // capture endpoint rejects it from the client, so only the pixels fire here.
+// The first-party `purchase` event is logged server-side at order creation; the capture endpoint rejects it from the client.
         const dedup_key = 'fb_purchase_' + order_name;
         if (sessionStorage.getItem(dedup_key)) return;
         sessionStorage.setItem(dedup_key, '1');
 
         const order_value = parseFloat(data.grand_total || data.amount || 0) || 0;
 
-        // eventID lets Meta dedupe this browser hit against a future server-side Purchase.
+// eventID lets Meta dedupe this browser hit against a future server-side Purchase.
         if (window.fbq) fbq('track', 'Purchase',
             { value: order_value, currency: data.currency || window.fb_currency },
             { eventID: order_name });
@@ -33,7 +39,7 @@
     }
 
     async function confirm_payment() {
-        // TODO: handle errors, unpaid, etc.
+// TODO: handle errors, unpaid, etc.
         const args = { reference_id };
         if (payment_mode) args.payment_mode = payment_mode;
 
@@ -52,4 +58,5 @@
 
     confirm_payment();
 </script>
+{% endif %}
 {% endblock %}

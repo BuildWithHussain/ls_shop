@@ -5,15 +5,30 @@ from bwh_payments.bwh_payments.utils import resolve_payment_mode
 from erpnext.accounts.doctype.journal_entry.journal_entry import get_default_bank_cash_account
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from erpnext.accounts.doctype.pricing_rule.utils import validate_coupon_code
-from erpnext.selling.doctype.quotation.mapper import _make_sales_order
-from erpnext.selling.doctype.sales_order.mapper import make_sales_invoice
 from frappe import _
 from frappe.utils import getdate
 from frappe.utils.data import flt
 
 from ls_shop.analytics.events import log_purchase, set_attribution_fields
+from ls_shop.api.cart import validate_stock_available
+from ls_shop.api.shipping import (
+	clear_delivery_option,
+	copy_delivery_option_to_order,
+	reprice_selected_option,
+)
 from ls_shop.core import _get_cart_quotation
-from ls_shop.utils import get_cod_configuration
+from ls_shop.utils import COD_CHARGE_DESCRIPTION, get_cod_configuration
+
+# ERPNext moved its transaction mappers to a sibling `mapper` module; both layouts are in the wild.
+try:
+	from erpnext.selling.doctype.quotation.mapper import _make_sales_order
+except ImportError:
+	from erpnext.selling.doctype.quotation.quotation import _make_sales_order
+
+try:
+	from erpnext.selling.doctype.sales_order.mapper import make_sales_invoice
+except ImportError:
+	from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 
 COD_PAYMENT_MODE = "COD"
 
@@ -23,8 +38,7 @@ def is_cod(payment_mode: str | None) -> bool:
 
 
 def get_charge_amount(quotation) -> float:
-	# rounded_total is what the shopper is shown and what ERPNext bills; it is zero when rounding is
-	# disabled on the document, and grand_total is then the billed figure.
+	# rounded_total is 0 when rounding is disabled on the document; grand_total is the billed figure then.
 	return flt(quotation.rounded_total) or flt(quotation.grand_total)
 
 
@@ -42,11 +56,7 @@ def get_open_gateway_payment_request(quotation_name: str) -> str | None:
 
 
 def validate_cart_is_not_in_checkout(quotation_name: str):
-	"""Refuse to edit a cart that a gateway session is already priced against.
-
-	The session freezes an amount but keeps pointing at this draft Quotation, so every edit that lands
-	while it is open widens the gap between what ships and what was paid.
-	"""
+	"""Refuse to edit a cart that a gateway session is already priced against."""
 	# ponytail: an abandoned checkout keeps the cart locked until the gateway expires the session and a
 	# status sync moves it off Pending; give the shopper a "cancel this payment" action if that bites.
 	if not quotation_name or not get_open_gateway_payment_request(quotation_name):
@@ -127,21 +137,41 @@ def gateway_mode_of_payment(gateway: str) -> str:
 def system_user_session():
 	"""Place the accounting documents as Administrator, then hand the session back.
 
-	confirm_payment is whitelisted, so this runs as the shopper, who holds no accounting roles. ERPNext
-	resolves the receivable account through get_party_account, whose account_perm_check calls
-	frappe.has_permission directly (accounts/party.py) — no ignore_permissions flag reaches it, only the
-	user identity does. bwh_payments' webhook switches the same way before applying a gateway status.
+	ERPNext's get_party_account checks frappe.has_permission directly, so no ignore_permissions reaches it.
 	"""
-	session_user = frappe.session.user
+	# frappe.set_user() mutates frappe.local.session in place, stamping "sid" with the username and wiping
+	# local.session.data, so restore the snapshot verbatim rather than calling it again for the shopper.
+	live_session_snapshot = frappe.local.session.copy()
 	try:
-		frappe.set_user("Administrator")
+		# Audited: the docstring above and the snapshot restore below are why this is safe.
+		frappe.set_user("Administrator")  # nosemgrep: frappe-semgrep-rules.rules.security.frappe-setuser
 		yield
 	finally:
-		frappe.set_user(session_user)
+		frappe.local.session.update(live_session_snapshot)
+		frappe.local.cache = {}
+		frappe.local.role_permissions = {}
+		frappe.local.user_perms = None
+
+
+def save_cart_quotation(quotation):
+	"""Persist the shopper's own cart, elevated. Saving resolves the receivable account, and ERPNext's
+	account_perm_check calls frappe.has_permission("Account") directly - no ignore_permissions reaches it."""
+	with system_user_session():
+		quotation.flags.ignore_permissions = True
+		return quotation.save()
+
+
+def stamp_order_owner(sales_order, shopper: str) -> None:
+	"""Hand the order back to the shopper who bought it: insert() runs as Administrator (see
+	system_user_session), and every post-purchase screen gates on owner == frappe.session.user."""
+	if not shopper or shopper == sales_order.owner:
+		return
+	sales_order.db_set("owner", shopper, update_modified=False)
 
 
 def place_order(quotation, payment_mode: str, gateway_amount=None, gateway_reference=None):
 	"""Submit the cart and bill it. Called once per payment; the Quotation docstatus enforces that."""
+	shopper = frappe.session.user
 	with system_user_session():
 		fix_payment_schedule_dates(quotation)
 		quotation.flags.ignore_permissions = True
@@ -149,6 +179,7 @@ def place_order(quotation, payment_mode: str, gateway_amount=None, gateway_refer
 
 		sales_order = _make_sales_order(quotation.name, ignore_permissions=True)
 		sales_order.custom_ecommerce_payment_mode = payment_mode
+		copy_delivery_option_to_order(quotation.name, sales_order)
 		fix_payment_schedule_dates(sales_order)
 		set_attribution_fields(sales_order)
 		sales_order.flags.ignore_permissions = True
@@ -158,8 +189,8 @@ def place_order(quotation, payment_mode: str, gateway_amount=None, gateway_refer
 		if flt(gateway_amount) > 0:
 			create_sales_invoice(sales_order, payment_mode, flt(gateway_amount), gateway_reference)
 
-	# Outside the switch: log_purchase stamps frappe.session.user as the visitor, so running it as
-	# Administrator would attribute every storefront purchase to Administrator.
+	# Outside the switch: log_purchase stamps frappe.session.user, so Administrator would own every purchase.
+	stamp_order_owner(sales_order, shopper)
 	log_purchase(sales_order)
 	return sales_order
 
@@ -208,8 +239,10 @@ def fix_payment_schedule_dates(doc):
 
 @frappe.whitelist()
 def generate_quotation_for_cart(cart: dict):
+	cart = frappe.parse_json(cart)
 	if len(cart.get("items", [])) < 1:
 		frappe.throw(_("Can't checkout with empty cart"))
+	validate_stock_available(cart["items"])
 	quotation = _get_cart_quotation()
 	validate_cart_is_not_in_checkout(quotation.name)
 	cart_quotation = get_quotation_for_cart(cart, quotation)
@@ -234,12 +267,10 @@ def get_quotation_for_cart(cart: dict, unsaved_quotation_doc):
 				"warehouse": ecommerce_warehouse,
 			},
 		)
-	unsaved_quotation_doc.flags.ignore_permissions = True
-	unsaved_quotation_doc.save()
-	# Remove any existing coupon code
+	save_cart_quotation(unsaved_quotation_doc)
 	_remove_coupon_code(unsaved_quotation_doc)
 	set_charges(unsaved_quotation_doc)
-	return unsaved_quotation_doc.save()
+	return save_cart_quotation(unsaved_quotation_doc)
 
 
 def set_charges(quotation):
@@ -258,18 +289,15 @@ def set_cod_charges(quotation):
 	if flt(cod_charges_applicable_below) < flt(quotation.rounded_total):
 		return
 	if not account_head:
-		frappe.throw("Please select a valid account for cod charges.")
+		frappe.throw(_("Please select a valid account for cod charges."))
 
 	cod_charge = {
 		"doctype": "Sales Taxes and Charges",
-		"description": " Cash on Delivery Charges",
+		"description": COD_CHARGE_DESCRIPTION,
 		"charge_type": "Actual",
 		"account_head": account_head,
 		"tax_amount": cod_charge,
-		# ERPNext refuses an inclusive Actual charge outright (accounts/services/taxes.py
-		# validate_inclusive_tax), so pinning this to 0 is what keeps the row from inheriting a site-level
-		# default of 1 and failing the shopper's checkout. iVend set exactly that default, which is why
-		# v15 needed a before_validate hook to scrub the flag; stock ERPNext defaults it to 0.
+		# ERPNext's validate_inclusive_tax refuses an inclusive Actual charge; pinned against a site default of 1.
 		"included_in_print_rate": 0,
 	}
 	quotation.append("taxes", cod_charge)
@@ -283,11 +311,12 @@ def update_quotation_address(address: dict):
 	quotation = _get_cart_quotation()
 	validate_cart_is_not_in_checkout(quotation.name)
 	update_quotation_payment_terms_due_date(quotation)
-	# Handle Store Pickup
 	if address.get("is_store_pickup", False):
 		quotation.custom_store = address.get("store_pickup_warehouse", "")
 		quotation.custom_is_store_pickup = True
-		quotation.save(ignore_permissions=True)
+		# A delivery option picked before store pickup would otherwise still be charged at payment time.
+		clear_delivery_option(quotation)
+		save_cart_quotation(quotation)
 
 		return {"message": _("Addresses updated successfully")}
 	quotation.custom_is_store_pickup = False
@@ -295,39 +324,35 @@ def update_quotation_address(address: dict):
 
 	if address.get("billing_address", {}).get("is_saved"):
 		billing_address_name = address.get("billing_address", {}).get("address_id")
-	else:  # New Billing Address
+	else:
 		billing_address_doc = add_billing_address(quotation.party_name, address)
 		billing_address_name = billing_address_doc.name
 
-	quotation.customer_address = billing_address_name  # Link billing address
+	quotation.customer_address = billing_address_name
 
-	# Handle Shipping Address
-	if address.get("shipping_same_as_billing"):  # Use correct key for matching
+	if address.get("shipping_same_as_billing"):
 		shipping_address_name = billing_address_name
 	elif address.get("shipping_address", {}).get("is_saved"):
 		shipping_address_name = address.get("shipping_address", {}).get("address_id")
-	else:  # New Shipping Address
+	else:
 		shipping_address_doc = add_shipping_address(quotation.party_name, address)
 		shipping_address_name = shipping_address_doc.name
 
-	quotation.shipping_address_name = shipping_address_name  # Link shipping address
+	quotation.shipping_address_name = shipping_address_name
 
-	# Handle Contact (Add Phone Number)
 	contact = frappe.get_doc("Contact", quotation.contact_person)
 	existing_phones = {entry.phone for entry in contact.phone_nos}
 
-	# Add Billing Phone if not in existing contact
 	billing_phone = address.get("billing_address", {}).get("phone_number")
 	if billing_phone and billing_phone not in existing_phones:
 		contact.append("phone_nos", {"phone": billing_phone})
 
-	# Add Shipping Phone if not in existing contact
 	shipping_phone = address.get("shipping_address", {}).get("phone_number")
 	if shipping_phone and shipping_phone not in existing_phones:
 		contact.append("phone_nos", {"phone": shipping_phone})
 
 	contact.save(ignore_permissions=True)
-	quotation.save(ignore_permissions=True)
+	save_cart_quotation(quotation)
 
 	return {"message": _("Addresses updated successfully")}
 
@@ -336,17 +361,13 @@ def update_quotation_address(address: dict):
 def confirm_payment(reference_id: str, payment_mode: str | None = None):
 	"""Resolve the outcome of a checkout the shopper has just come back from.
 
-	`reference_id` is either a Gateway Payment Request (its name or the gateway session id) or, for cash
-	on delivery, the Quotation. Nothing the browser sends decides whether money was taken — that is only
-	ever read back from the gateway.
+	`reference_id` is a Gateway Payment Request (name or gateway session id), or the Quotation for COD.
 	"""
 	payment_request = get_gateway_payment_request(reference_id)
 	if payment_request:
 		validate_reference_owner(payment_request.ref_doctype, payment_request.ref_docname)
 		if is_cod(payment_mode):
-			# payment_mode comes straight off the query string. Without this a shopper appends
-			# &payment_mode=COD, takes the cash-on-delivery branch on a cart that already has money
-			# moving through a gateway, and ends up charged once and holding a COD order as well.
+			# payment_mode is attacker-controlled: without this, &payment_mode=COD double-books a paid cart.
 			frappe.throw(_("A card payment is already in progress for this order."))
 		if payment_request.status == "Pending":
 			payment_request.sync_status()
@@ -366,11 +387,9 @@ def confirm_payment(reference_id: str, payment_mode: str | None = None):
 
 
 def get_gateway_payment_request(reference_id: str):
-	"""Look a request up by gateway session id, falling back to our own name for gateways that cannot
-	echo their session id back on the return URL, and finally to the Quotation it was opened against.
+	"""Look a request up by gateway session id, then by our own name, then by the Quotation it opened against.
 
-	The last lookup is what stops the cash-on-delivery branch from running on a cart that already has a
-	live gateway session: `reference_id` is the Quotation there, which neither of the other two match.
+	The Quotation fallback is what stops the COD branch running on a cart with a live gateway session.
 	"""
 	name = frappe.db.get_value("Gateway Payment Request", {"order_ref": reference_id}, "name")
 	name = name or frappe.db.get_value("Gateway Payment Request", reference_id, "name")
@@ -379,8 +398,7 @@ def get_gateway_payment_request(reference_id: str):
 
 
 def validate_reference_owner(doctype: str, docname: str):
-	# Scope by the contact the cart was created under rather than trusting the id in the request, so a
-	# forged reference simply finds nothing.
+	# Scoped to the cart's own contact, so a forged reference simply finds nothing.
 	if not frappe.db.exists(doctype, {"name": docname, "contact_email": frappe.session.user}):
 		raise frappe.PermissionError
 
@@ -392,9 +410,7 @@ def purchase_summary(payment_request):
 
 
 def sales_order_purchase_summary(sales_order):
-	# Totals for the browser-side Purchase pixels. order_name is the Sales Order name so the
-	# Meta eventID matches the order_id that events.log_purchase writes server-side, which is
-	# what lets Meta dedupe the two hits.
+	# order_name must match events.log_purchase's order_id, or Meta will not dedupe the two Purchase hits.
 	if not sales_order:
 		return {}
 	return {
@@ -420,6 +436,7 @@ def quotation_purchase_summary(quotation_name: str):
 
 
 def place_cod_order(quotation_name: str):
+	shopper = frappe.session.user
 	with system_user_session():
 		quotation = frappe.get_doc("Quotation", quotation_name)
 		set_cod_charges(quotation)
@@ -433,12 +450,13 @@ def place_cod_order(quotation_name: str):
 		sales_order.insert()
 
 	# COD orders count as purchases even while the Sales Order stays draft.
+	stamp_order_owner(sales_order, shopper)
 	log_purchase(sales_order)
 	return sales_order
 
 
 @frappe.whitelist()
-def apply_coupon_code(applied_code):
+def apply_coupon_code(applied_code: str):
 	if not applied_code:
 		frappe.throw(_("Please enter a coupon code"))
 	coupon_name = frappe.db.get_value("Coupon Code", {"coupon_code": applied_code}, "name")
@@ -448,8 +466,7 @@ def apply_coupon_code(applied_code):
 	quotation = _get_cart_quotation()
 	validate_cart_is_not_in_checkout(quotation.name)
 	quotation.coupon_code = coupon_name
-	quotation.flags.ignore_permissions = True
-	quotation.save()
+	save_cart_quotation(quotation)
 	return {"message": _("Coupon code applied successfully")}
 
 
@@ -468,14 +485,16 @@ def _remove_coupon_code(quotation):
 		item.discount_amount = 0
 		item.distributed_discount_amount = 0
 		item.rate = item.price_list_rate
-	quotation.flags.ignore_permissions = True
 	quotation.calculate_taxes_and_totals()
-	quotation.save()
+	save_cart_quotation(quotation)
 	quotation.discount_amount = 0
-	quotation.save()
+	save_cart_quotation(quotation)
 
 
 def add_billing_address(party_name, address):
+	if not party_name:
+		frappe.throw(_("Cannot save an address without a customer"))
+
 	address_doc = frappe.get_doc(
 		{
 			"doctype": "Address",
@@ -491,11 +510,17 @@ def add_billing_address(party_name, address):
 			"first_name": address.get("billing_address", {}).get("first_name"),
 			"last_name": address.get("billing_address", {}).get("last_name"),
 		}
-	).insert(ignore_permissions=True)
+	)
+	# ERPNext resolves a transaction address through Dynamic Link; unlinked addresses are refused.
+	address_doc.append("links", {"link_doctype": "Customer", "link_name": party_name})
+	address_doc.insert(ignore_permissions=True)
 	return address_doc
 
 
 def add_shipping_address(party_name, address):
+	if not party_name:
+		frappe.throw(_("Cannot save an address without a customer"))
+
 	address_doc = frappe.get_doc(
 		{
 			"doctype": "Address",
@@ -511,7 +536,10 @@ def add_shipping_address(party_name, address):
 			"first_name": address.get("shipping_address", {}).get("first_name"),
 			"last_name": address.get("shipping_address", {}).get("last_name"),
 		}
-	).insert(ignore_permissions=True)
+	)
+	# ERPNext resolves a transaction address through Dynamic Link; unlinked addresses are refused.
+	address_doc.append("links", {"link_doctype": "Customer", "link_name": party_name})
+	address_doc.insert(ignore_permissions=True)
 	return address_doc
 
 
@@ -527,7 +555,10 @@ def update_delivery_charges(quotation):
 		quotation.shipping_rule = None
 		quotation.taxes = []
 		quotation.calculate_taxes_and_totals()
-		quotation.save(ignore_permissions=True)
-	else:
+		save_cart_quotation(quotation)
+		return
+
+	# With no option chosen — or bwh_shipping absent — the flat Shipping Rule applies instead.
+	if not reprice_selected_option(quotation):
 		set_charges(quotation)
-		quotation.save(ignore_permissions=True)
+	save_cart_quotation(quotation)

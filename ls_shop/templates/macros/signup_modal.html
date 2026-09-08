@@ -18,18 +18,15 @@
         x-on:keydown.esc.window="is_open = false" x-on:click.self="is_open = false"
         class="fixed inset-0 z-30 flex items-center justify-center bg-black/20 p-4 pb-8 backdrop-blur-md sm:items-center lg:p-8"
         role="dialog" aria-modal="true" aria-labelledby="defaultModalTitle">
-        <!-- Modal Dialog -->
         <div x-show="is_open"
             x-transition:enter="transition ease-out duration-200 delay-100 motion-reduce:transition-opacity"
             x-transition:enter-start="opacity-0 scale-50" x-transition:enter-end="opacity-100 scale-100"
             class="flex flex-col overflow-hidden border border-gray-300 bg-white text-gray-400 rounded-lg max-w-md w-full">
-            <!-- Dialog Header -->
             <div
                 class="flex items-center border-b border-gray-300 bg-gray-50/60 p-4 {% if header_alignment == 'left' %} justify-between {% else %} justify-center {% endif %}">
                 <h3 id="defaultModalTitle" class="font-medium tracking-wide text-lg text-gray-900">{{_("Let's get started")}}</h3>
             </div>
             <div x-data="{ selected_tab: 'login' }" class="w-full p-2 md:p-10 flex flex-col items-center">
-                <!-- Tabs are hidden when OTP verification is shown -->
                 <div x-show="!otp_sent" x-on:keydown.right.prevent="$focus.wrap().next()"
                     x-on:keydown.left.prevent="$focus.wrap().previous()" class="flex w-fit bg-gray-200 rounded-lg p-1"
                     role="tablist" aria-label="tab options">
@@ -46,12 +43,10 @@
 
                 </div>
                 <div class="px-2 py-4 mt-6 max-w-sm w-full">
-                    <!-- OTP Verification Form -->
                     <div x-show="otp_sent" id="tabpanelOTP" role="tabpanel" aria-label="OTP Verification">
                         <h3 class="text-center mb-4 font-medium">Enter the verification code sent to your email</h3>
                         <form @submit.prevent="verify_otp($data,$refs)">
                             <div class="flex justify-between mb-6">
-                                <!-- Individual OTP input fields -->
                                 <input type="text" x-model="otp[0]" x-ref="otp0"
                                     @input="handle_digit_input($data,$refs,$event, 0)"
                                     @keydown.backspace="handle_backspace($refs,$event, 0)"
@@ -124,7 +119,6 @@
                         </form>
                     </div>
 
-                    <!-- Sign In Form -->
                     <div x-cloak x-show="selected_tab === 'sign_in' && !otp_sent" id="tabpanelsign_in" role="tabpanel"
                         aria-label="sign_in">
                         <form @submit.prevent="sign_up_user($data,$refs)">
@@ -162,7 +156,6 @@
                         </form>
                     </div>
 
-                    <!-- Login Form -->
                     <div x-cloak x-show="selected_tab === 'login' && !otp_sent" id="tabpanellogin" role="tabpanel"
                         aria-label="login">
                         <form @submit.prevent="login_user($data,$refs)">
@@ -189,179 +182,6 @@
     </div>
 </div>
 
-<script>
-    async function sign_up_user(signup_data, ref) {
-        const email = signup_data.email;
-        if (!email) {
-            toast("Please enter a valid email", { type: "warning" });
-            return;
-        }
-        const args = {
-            'email': email
-        };
-        const btn = ref.sign_in_btn
-        const spinner = btn.querySelector(".animate-spin");
-        btn.disabled = true;
-        spinner.classList.remove("hidden");
-        try {
-            const data = await frappe_call('/api/v2/method/ls_shop.api.signup.send_signup_otp', args);
-
-            toast("OTP sent successfully, please check you email.", { type: "success" });
-            signup_data.otp_sent = true;
-
-
-        } catch (error) {
-
-        }
-        finally {
-            btn.disabled = false;
-            spinner.classList.add("hidden");
-        }
-    }
-
-    function handle_digit_input(data, refs, event, index) {
-        // Allow only numbers
-        event.target.value = event.target.value.replace(/[^0-9]/g, '').substring(0, 1);
-
-        // Update the model
-        data.otp[index] = event.target.value;
-
-        // Auto-focus next input after entering a digit
-        if (event.target.value && index < 5) {
-            refs['otp' + (index + 1)].focus();
-        }
-    }
-
-    function handle_backspace(refs, event, index) {
-        // If current field is empty and there's a previous field, focus on it
-        if (!event.target.value && index > 0) {
-            refs['otp' + (index - 1)].focus();
-        }
-    }
-
-    function handle_paste(data, refs, event, startIndex) {
-        event.preventDefault();
-        const clipboardData = event.clipboardData || window.clipboardData;
-        const pastedData = clipboardData.getData('Text').trim();
-
-        // Check if pasted content contains only numbers
-        if (!/^\d+$/.test(pastedData)) return;
-
-        // Fill the OTP input fields with pasted data
-        for (let i = 0; i < 6; i++) {
-            if (i < pastedData.length) {
-                data.otp[i] = pastedData.charAt(i);
-            } else {
-                data.otp[i] = '';
-            }
-        }
-
-        // Focus on the appropriate field based on the length of pasted data
-        if (pastedData.length < 6) {
-            // Focus on the next empty field
-            refs['otp' + Math.min(startIndex + pastedData.length, 5)].focus();
-        } else {
-            // If all fields are filled, focus on the last field
-            refs.otp5.focus();
-        }
-    }
-
-    async function verify_otp(x_data, ref) {
-        const otpValue = x_data.otp.join('');
-        if (otpValue.length !== 6) {
-            toast("Please enter a valid 6-digit OTP", { type: "warning" });
-            return;
-        }
-        let url;
-        let args;
-        if (x_data.selected_tab === 'login') {
-            url = '/api/v2/method/ls_shop.api.signup.verify_login_otp';
-            args = {
-                'email': x_data.email,
-                'otp': otpValue,
-            };
-        } else {
-            url = '/api/v2/method/ls_shop.api.signup.verify_signup_otp';
-            args = {
-                'email': x_data.email,
-                'otp': otpValue,
-                'first_name': x_data.first_name,
-                'last_name': x_data.last_name
-
-            }
-        }
-        const btn = ref.verify_otp_btn
-        const spinner = btn.querySelector(".animate-spin");
-        btn.disabled = true;
-        spinner.classList.remove("hidden");
-        try {
-            const data = await frappe_call(url, args);
-            let message = "Logged in successfully"
-            if (url === '/api/v2/method/ls_shop.api.signup.verify_signup_otp') {
-                message = "Account created successfully"
-            }
-            toast(message, { type: "success" });
-            setTimeout(() => {
-                window.location.reload()
-            }, 1000);
-        } catch (error) {
-
-        }
-        finally {
-            btn.disabled = false;
-            spinner.classList.add("hidden");
-        }
-    }
-    function start_resend_timer(x_data) {
-        x_data.resend_timer = 15;
-        x_data.resend_interval = setInterval(() => {
-            if (x_data.resend_timer > 0) {
-                x_data.resend_timer--;
-            } else {
-                clearInterval(x_data.resend_interval);
-                x_data.resend_interval = null;
-            }
-        }, 1000);
-    }
-    function resend_otp(x_data, ref) {
-        if (x_data.resend_timer > 0) return;
-        start_resend_timer(x_data);
-        if (x_data.selected_tab === 'login') {
-            login_user(x_data, ref);
-        }
-        else {
-            sign_up_user(x_data, ref);
-        }
-    }
-
-    async function login_user(x_data, ref) {
-        const email = x_data.email;
-        if (!email) {
-            toast("Please enter a valid email", { type: "warning" });
-            return;
-        }
-        const args = {
-            'email': email
-        };
-        const btn = ref.login_otp_btn
-        const spinner = btn.querySelector(".animate-spin");
-        btn.disabled = true;
-        spinner.classList.remove("hidden");
-        try {
-            const data = await frappe_call('/api/v2/method/ls_shop.api.signup.send_login_otp', args);
-
-            // Show OTP verification screen
-            toast("OTP sent successfully, please check you email.", { type: "success" });
-            x_data.otp_sent = true;
-
-
-        } catch (error) {
-        }
-        finally {
-            btn.disabled = false;
-            spinner.classList.add("hidden");
-        }
-    }
-</script>
+{% include "templates/macros/auth_script.html" %}
 
 {% endmacro %}

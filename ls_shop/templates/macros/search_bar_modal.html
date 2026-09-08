@@ -1,7 +1,7 @@
 {% macro search_bar() %}
 {% from "templates/macros/icon.html" import icon %}
 {% set settings = frappe.get_cached_doc("Lifestyle Settings", "Lifestyle Settings") %}
-{% set brand_logo = settings.brand_logo or "/assets/ls_shop/icons/lifestyle.svg" %}
+{% set brand_logo = get_brand_assets().logo %}
 {% set store_name = settings.store_name or "Lifestyle" %}
 {% set card_fields = get_search_result_fields() %}
 <div x-data="{
@@ -36,10 +36,8 @@
     <div x-cloak x-show="is_open" x-on:keydown.esc.window="is_open = false" x-on:click.self="is_open = false"
         class="fixed inset-0 z-110  items-start justify-start bg-black/20  backdrop-blur-sm  hidden md:flex"
         role="dialog" aria-modal="true" aria-labelledby="defaultModalTitle">
-        <!-- Modal Dialog -->
         <div x-show="is_open"
             class="flex w-full h-1/2 flex-col gap-4 overflow-hidden border border-gray-300 bg-white text-gray-600 ">
-            <!-- Dialog Header -->
             <div class="max-w-7xl mx-auto px-6 md:px-10 py-5 flex items-center justify-between w-full">
                 <a class="rtl:space-x-reverse" href="/">
                     <img src="{{ brand_logo }}" alt="{{ store_name }} Logo" class="w-20 h-10 object-fit" />
@@ -52,7 +50,6 @@
                     <p class="text-sm ms-1 capitalize">{{_('close')}}</p>
                 </button>
             </div>
-            <!-- Dialog Body -->
             <div class="max-w-4xl w-full mx-auto mt-10 px-6 md:px-10">
                 <h3 class="text-sm my-4" x-show="products.length > 0">{{_("Search Results")}}</h3>
                 <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-6">

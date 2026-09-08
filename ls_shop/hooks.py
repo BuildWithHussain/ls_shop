@@ -5,7 +5,8 @@ app_description = "Ecommerce extension for ERPNext"
 app_email = "rahul@buildwithhussain.com"
 app_license = "agpl-3.0"
 
-required_apps = ["frappe/erpnext", "frappe/payments", "Rl0007/bwh_payments"]
+# frappe/payments deliberately absent: bwh_payments ships its own Payment Gateway Profile and base_class.
+required_apps = ["frappe/erpnext", "bwhtech/bwh_payments", "bwhtech/bwh_shipping"]
 
 
 website_redirects = [
@@ -25,6 +26,8 @@ website_redirects = [
 # website_path_resolver = "ls_shop.utils.resolve_bilingual_path"
 
 website_route_rules = [
+	# SPA client-side routing: every /commera deep link resolves to the same shell so a reload does not 404.
+	{"from_route": "/commera/<path:app_path>", "to_route": "/commera"},
 	# ------------
 	# English Routes
 	# ------------
@@ -87,21 +90,16 @@ website_route_rules = [
 
 before_request = ["ls_shop.utils.before_request"]
 
-# Instantiated before every core renderer (frappe/website/path_resolver.py). can_render()
-# returns False whenever Shop Theme Settings.active_theme is unset or the theme ships no
-# page for the route, which is the safety valve that leaves stock routing untouched.
+# Runs before every core renderer (frappe/website/path_resolver.py); can_render() opts out when no theme.
 page_renderer = ["ls_shop.shop_themes.theme_resolver.ThemePageRenderer"]
 
-# The theme engine memoises the active theme and the compiled route table on frappe.local to
-# keep them off the per-request redis path, and frappe.clear_cache() flushes redis without
-# touching frappe.local - so a theme switch would stay invisible for the rest of the request.
+# frappe.clear_cache() flushes redis but not frappe.local, where the theme engine memoises - hence these.
 clear_cache = [
 	"ls_shop.shop_themes.doctype.shop_theme.shop_theme.clear_theme_cache",
 	"ls_shop.shop_themes.doctype.shop_theme_settings.shop_theme_settings.clear_settings_cache",
 ]
 
-# Records of a custom doctype do not import on migrate at all without this
-# (frappe/model/sync.py). The module folder is an export target only.
+# Without this, records of a custom doctype never import on migrate (frappe/model/sync.py).
 importable_doctypes = ["Shop Theme"]
 
 doctype_js = {
@@ -156,6 +154,7 @@ doc_events = {
 jinja = {
 	"filters": ["ls_shop.utils.can_return"],
 	"methods": [
+		"ls_shop.branding.get_brand_assets",
 		"ls_shop.utils.format_theme_css",
 		"ls_shop.utils.get_currency_symbol",
 		"ls_shop.search.result_card.get_search_result_fields",
@@ -169,8 +168,7 @@ jinja = {
 
 update_website_context = "ls_shop.website_context.update_website_context"
 
-# GDPR erasure: the event log stores the signed-in email as plain Data (guests have none),
-# so core's data-deletion flow needs to be told which column to redact.
+# GDPR erasure: the event log stores the signed-in email as plain Data, so core is told which column to redact.
 user_data_fields = [
 	{
 		"doctype": "Storefront Analytics Event",
@@ -179,10 +177,7 @@ user_data_fields = [
 	},
 ]
 
-# Deliberately NOT registered as frappe's `sqlite_search` hook. Registering enlists core's global
-# `*` doc_events update_doc_index/delete_doc_index, which fires an index_exists() probe on every save
-# of every doctype site-wide. search/sync.py owns incremental writes; search/build.py owns the build,
-# the nightly reconcile, and (via ensure_index_built) resuming an interrupted build.
+# Deliberately NOT frappe's `sqlite_search` hook: it enlists a global `*` doc_events probe on every save.
 
 
 ignore_links_on_delete = [
@@ -277,16 +272,12 @@ ignore_links_on_delete = [
 
 # Integration Setup
 # ------------------
-# To set up dependencies/integrations with other apps
-# Name of the app being installed is passed as an argument
 
 # before_app_install = "ls_shop.utils.before_app_install"
 # after_app_install = "ls_shop.utils.after_app_install"
 
 # Integration Cleanup
 # -------------------
-# To clean up dependencies/integrations with other apps
-# Name of the app being uninstalled is passed as an argument
 
 # before_app_uninstall = "ls_shop.utils.before_app_uninstall"
 # after_app_uninstall = "ls_shop.utils.after_app_uninstall"
@@ -299,7 +290,6 @@ ignore_links_on_delete = [
 
 # Permissions
 # -----------
-# Permissions evaluated in scripted ways
 
 # permission_query_conditions = {
 # 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
@@ -319,7 +309,6 @@ ignore_links_on_delete = [
 
 # Document Events
 # ---------------
-# Hook on document methods and events
 
 # doc_events = {
 # 	"*": {
@@ -353,7 +342,7 @@ ignore_links_on_delete = [
 # Testing
 # -------
 
-# before_tests = "ls_shop.install.before_tests"
+before_tests = "ls_shop.install.before_tests"
 
 # Overriding Methods
 # ------------------------------
@@ -440,6 +429,11 @@ fixtures = [
 ]
 
 scheduler_events = {
+	# Long queue, not the short one: sync_status() is a gateway round-trip per pending request, so a
+	# slow gateway would otherwise sit on a worker the whole storefront shares.
+	"hourly_long": [
+		"ls_shop.jobs.sync_pending_gateway_payments",
+	],
 	"daily": [
 		"ls_shop.jobs.delete_notified_oos",
 		"ls_shop.jobs.delete_old_draft_quotations",

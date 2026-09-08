@@ -1,0 +1,39 @@
+{% extends "components/base.html" %}
+
+{% set header_data = header_data if header_data is defined and header_data else get_header_data() %}
+
+{% block head %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+
+    {# The five icon fonts are @imported by style.css from ../icons/, so a second link would fetch iconly twice and miss the rest. #}
+    <link rel="stylesheet" href="{{ shop_theme_asset_url('css/swiper-bundle.min.css') }}">
+    <link rel="stylesheet" href="{{ shop_theme_asset_url('css/animate.css') }}">
+
+    {# style.css carries Bootstrap and the Lufga @font-face rules and must win over animate.css, hence the order. #}
+    <link class="main-css" rel="stylesheet" href="{{ shop_theme_asset_url('css/style.css') }}">
+    <link class="skin" rel="stylesheet" href="{{ shop_theme_asset_url('css/skin-1.css') }}">
+    <link rel="stylesheet" href="{{ shop_theme_asset_url('css/pixio.css') }}">
+    <link rel="stylesheet" href="{{ shop_theme_asset_url('css/currency.css') }}">
+    <link rel="stylesheet" href="{{ shop_theme_asset_url('css/auth-dialog.css') }}">
+{% endblock %}
+
+{% block body_class %}theme-pixio bg-light{% endblock %}
+
+{% block body_attributes %} id="bg"{% endblock %}
+
+{% block chrome_top %}
+<div class="page-wraper">
+    {% block site_header %}{% include "components/includes/site_header.html" %}{% endblock %}
+{% endblock %}
+
+{# .page-wraper opens in chrome_top and closes here, so it wraps the <main> the base emits between them. #}
+{% block chrome_bottom %}
+    {% block site_footer %}{% include "components/includes/site_footer.html" %}{% endblock %}
+</div>
+{% endblock %}
+
+{% block script %}
+    <script defer src="{{ shop_theme_asset_url('js/pixio.js') }}"></script>
+{% endblock %}

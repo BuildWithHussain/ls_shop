@@ -1,6 +1,5 @@
 
 <script>
-    // Carousel
     function carousel_component() {
         return {
 
@@ -23,10 +22,8 @@
 
                 const setup_dots = (embla_api, dots_node) => {
                     const slides = embla_api.slideNodes()
-                    // Clear existing dots
                     dots_node.innerHTML = ''
 
-                    // Create a button for each slide
                     slides.forEach((_, index) => {
                         let dot_button = document.createElement('button')
                         dot_button.classList.add('embla__dot')
@@ -34,7 +31,6 @@
                         dots_node.appendChild(dot_button)
                     })
 
-                    // Update dots on select
                     const update_dots = () => {
                         const dots = dots_node.querySelectorAll('.embla__dot')
                         const selected_index = embla_api.selectedScrollSnap()
@@ -43,7 +39,6 @@
                             dot.classList.toggle('embla__dot--selected', index === selected_index)
                         })
                     }
-                    // Initial update and add listeners
                     update_dots()
                     embla_api.on('select', update_dots)
                     embla_api.on('reInit', update_dots)
@@ -69,7 +64,6 @@
 
 </script>
 <script>
-    // Image zoom
     function debounce(fn, delay) {
         let timer;
         return function (...args) {
@@ -87,12 +81,12 @@
         const handle_mouse_enter = debounce(() => {
             image.style.transform = 'scale(2)';
             image.style.opacity = '0.95';
-        }, 100); // Delay zoom-in by 100ms
+        }, 100);
 
         const handle_mouse_leave = debounce(() => {
             image.style.transform = 'scale(1)';
             image.style.opacity = '1';
-        }, 50); // Delay zoom-out slightly
+        }, 50);
 
         const handle_mouse_move = (e) => {
             const rect = container.getBoundingClientRect();
@@ -110,7 +104,6 @@
     });
 </script>
 <script>
-    // State management for product size
     function update_size(size) {
         state.size = `${size}`;
         window.location.reload();

@@ -2,8 +2,7 @@
 // For license information, please see license.txt
 
 // Frappe concatenates every `doctype_js` file for a doctype into one `new Function()` scope
-// (script_manager.js `setup`), so anything declared at the top level here would collide with the
-// other scripts registered on Item. This closure keeps the file's names its own.
+// (script_manager.js `setup`), so a top-level name here would collide with the other scripts.
 (() => {
 	const PANEL_STYLES = `<style>
 		.sf-panel { margin-top: 4px; }
@@ -289,10 +288,8 @@
 
 		$button.prop('disabled', true).text(__('Publishing…'));
 		try {
-			// bulk_publish_variants owns the only bulk write to `is_published`, and therefore the only
-			// search-index enqueue; publishing from here directly would leave the index stale. This goes
-			// to set_variants_published rather than the Single's bulk_toggle_publish, which would also
-			// AND in whatever filters were last left on the Bulk Publish Variants form.
+			// set_variants_published owns the only bulk write to `is_published` and its search-index
+			// enqueue; bulk_toggle_publish would AND in the Bulk Publish Variants form's last filters.
 			const response = await frappe.call({
 				method: PUBLISH_METHOD,
 				args: {
@@ -798,7 +795,7 @@
 							? __('Priced {0} size item(s), skipped {1}', [
 									changed_count,
 									counts.skipped || 0,
-								])
+							  ])
 							: __('No price changes — every size item already had a price'),
 						indicator: changed_count ? 'green' : 'blue',
 					},
@@ -1206,16 +1203,16 @@
 				variant.images.length
 					? `<span class="sf-clear-images" data-sf-action="clear-images" data-sf-variant="${escape_html(
 							variant.name,
-						)}" title="${escape_html(__('Remove all images'))}">${__(
+					  )}" title="${escape_html(__('Remove all images'))}">${__(
 							'Clear all',
-						)}</span>${
+					  )}</span>${
 							variant.images.length > 4
 								? `<span class="text-muted" style="font-size: var(--text-xs);">${__(
 										'+{0} more',
 										[variant.images.length - 4],
-									)}</span>`
+								  )}</span>`
 								: ''
-						}`
+					  }`
 					: ''
 			}</div></td>
 			<td class="sf-size-cell"><div class="sf-size-col">${size_lines}</div></td>
@@ -1262,11 +1259,13 @@
 			<div class="sf-card">
 				<table class="sf-variant-grid">
 					<thead><tr>
-						<th>${__('Variant')}</th><th>${__('Images')}</th><th>${__('Size')}</th><th>${__(
-							'Price',
-						)}</th><th>${__('Stock')}</th><th>${__('Readiness')}</th><th>${__(
-							'SEO',
-						)}</th><th style="text-align: center;">${__('Published')}</th>
+						<th>${__('Variant')}</th><th>${__('Images')}</th><th>${__(
+							'Size',
+						)}</th><th>${__('Price')}</th><th>${__('Stock')}</th><th>${__(
+							'Readiness',
+						)}</th><th>${__('SEO')}</th><th style="text-align: center;">${__(
+							'Published',
+						)}</th>
 					</tr></thead>
 					<tbody>${rows}</tbody>
 				</table>

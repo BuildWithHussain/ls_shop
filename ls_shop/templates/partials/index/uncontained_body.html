@@ -48,7 +48,6 @@
     </h1>
 
     <div class="py-6 md:py-15 flex items-center">
-      <!-- Product Carousel -->
       {% call item_carousel.item_carousel(items=new_arrivals,navigation = True, pagination = True) %}
       {% endcall %}
     </div>
@@ -78,10 +77,8 @@
 <script type="text/javascript">
   const setupDots = (emblaApi, dotsNode) => {
     var slides = emblaApi.slideNodes()
-    // Clear existing dots
     dotsNode.innerHTML = ''
 
-    // Create a button for each slide
     slides.forEach((_, index) => {
       var dotButton = document.createElement('button')
       dotButton.classList.add('embla__dot')
@@ -89,7 +86,6 @@
       dotsNode.appendChild(dotButton)
     })
 
-    // Update dots on select
     const updateDots = () => {
       var dots = dotsNode.querySelectorAll('.embla__dot')
       var selectedIndex = emblaApi.selectedScrollSnap()
@@ -98,20 +94,16 @@
         dot.classList.toggle('embla__dot--selected', index === selectedIndex)
       })
     }
-    // Initial update and add listeners
     updateDots()
     emblaApi.on('select', updateDots)
     emblaApi.on('reInit', updateDots)
   }
 
   const setupNavButtons = (emblaApi, prevButton, nextButton, options) => {
-    // Prev button click handler
     prevButton.addEventListener('click', () => emblaApi.scrollPrev())
 
-    // Next button click handler
     nextButton.addEventListener('click', () => emblaApi.scrollNext())
 
-    // Update button states (for disabling when at beginning/end if not looping)
     const updateNavButtons = () => {
       if (!options.loop) {
         prevButton.disabled = !emblaApi.canScrollPrev();
@@ -128,7 +120,7 @@
 
     const autoplay = () => {
       if (!emblaApi.canScrollNext()) {
-        emblaApi.scrollTo(0); // Go back to start if end is reached
+        emblaApi.scrollTo(0);
       } else {
         emblaApi.scrollNext();
       }
@@ -141,7 +133,7 @@
 
     const stopAutoplay = () => clearInterval(autoplayInterval);
 
-    emblaApi.on('pointerDown', stopAutoplay); // Pause on interaction
+    emblaApi.on('pointerDown', stopAutoplay);
     emblaApi.on('init', startAutoplay);
     emblaApi.on('reInit', startAutoplay);
   };

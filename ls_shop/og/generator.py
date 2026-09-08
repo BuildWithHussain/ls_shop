@@ -1,4 +1,4 @@
-"""Shared OG card render core, reused by the live /og-image endpoint and the admin preview button so both are byte-identical."""
+"""Shared OG card render core for the live /og-image endpoint and the admin preview button."""
 
 import base64
 import os
@@ -12,8 +12,7 @@ from frappe.utils import flt, get_files_path
 from ls_shop import seo
 from ls_shop.shop_themes.render import render_themed_template
 
-# resvg-js is pathologically slow on large embedded images (a 1220x1760 source took ~58s;
-# downscaled it renders in <1s), so product photos are inlined at this longest-edge px.
+# resvg-js is pathologically slow on large embedded images (~58s for 1220x1760, <1s downscaled).
 CARD_PHOTO_PX = 700
 
 # Social card spec used by Facebook/X/LinkedIn; 1.91:1 ratio.
@@ -36,8 +35,7 @@ def render_og_png(html_str, width, height):
 	]
 	payload = {"html": html_str, "width": width, "height": height, "fonts": fonts}
 
-	# .mjs, not .js: satori is ESM-only and the app root also holds CJS tooling, so the
-	# extension carries the module type instead of package.json "type": "module".
+	# .mjs, not .js: satori is ESM-only and the app root also holds CJS tooling.
 	script_path = frappe.get_app_path("ls_shop", "og", "og_satori.mjs")
 	payload_bytes = frappe.as_json(payload).encode()
 	# node is on PATH on benches; the satori toolchain resolves via the app's node_modules.
@@ -50,7 +48,6 @@ def render_og_png(html_str, width, height):
 			timeout=30,
 		)
 	except subprocess.TimeoutExpired:
-		# Don't let a wedged node pin the worker; the endpoint falls back to the photo.
 		frappe.throw(frappe._("OG card render timed out"))
 
 	if result.returncode != 0:
@@ -60,8 +57,6 @@ def render_og_png(html_str, width, height):
 
 
 def build_variant_card_context(variant_doc):
-	# Source price/brand/photo from the same product-detail builder the product page
-	# and JSON-LD use, so the card can't advertise a different price than the page.
 	from ls_shop.product_detail import get_product_detail
 
 	detail = get_product_detail(variant_doc.route)
@@ -112,9 +107,6 @@ def resolve_template(for_doctype):
 
 def render_card_for_doc(for_doctype, doc):
 	context = context_builder_for(for_doctype)(doc)
-	# Renders through the active theme's loader when one is set, outside any request; falls
-	# back to frappe.render_template when no theme is active - the rest of the pipeline is
-	# already template-agnostic.
 	# nosemgrep: frappe-ssti  # template is admin-authored OG Image Template, not end-user input
 	html_str = render_themed_template(resolve_template(for_doctype), context)
 	return render_og_png(html_str, DEFAULT_OG_WIDTH, DEFAULT_OG_HEIGHT)
@@ -148,9 +140,7 @@ def product_image_data_uri(image_url):
 
 	image = Image.open(path)
 	image.thumbnail((CARD_PHOTO_PX, CARD_PHOTO_PX))
-	# Always emit JPEG: a downscaled photo as PNG can still be ~800KB, and resvg is
-	# slow on large inlined blobs. Transparency is flattened onto white to match the
-	# card's white photo panel.
+	# Always emit JPEG: a downscaled PNG can still be ~800KB, and resvg is slow on large blobs.
 	if image.mode == "RGBA" or (image.mode == "P" and "transparency" in image.info):
 		flattened = Image.new("RGB", image.size, (255, 255, 255))
 		rgba = image.convert("RGBA")
@@ -165,8 +155,7 @@ def product_image_data_uri(image_url):
 	return f"data:image/jpeg;base64,{encoded}"
 
 
-# The cache is keyed on route+modified, so every edit strands the previous card. Bound the
-# directory rather than letting it grow one PNG per publish, forever.
+# Keyed on route+modified, so every edit strands the previous card; bound the directory.
 CARD_CACHE_MAX_AGE_DAYS = 30
 
 
@@ -180,7 +169,5 @@ def clear_old_cards(days=CARD_CACHE_MAX_AGE_DAYS):
 		if not filename.endswith(".png"):
 			continue
 		path = os.path.join(cache_dir, filename)
-		# A card still linked from a live page is regenerated on the next request, so
-		# deleting a warm-but-old entry costs one render, not a broken image.
 		if os.path.getmtime(path) < cutoff:
 			os.remove(path)

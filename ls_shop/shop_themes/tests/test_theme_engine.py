@@ -1,7 +1,5 @@
 # Copyright (c) 2026, ivend and Contributors
-# Theme engine tests: name validation + path containment (unit), inheritance + asset
-# resolution + routing + the two anti-regression contracts (shadow audit, SEO block
-# contract) that guard the menu manager/footer editor and the SEO pipeline (real-DB).
+# Theme engine tests: name validation, path containment, inheritance, asset resolution, routing.
 
 import os
 import re
@@ -63,8 +61,6 @@ class UnitTestShopTheme(UnitTestCase):
 
 class IntegrationTestShopTheme(IntegrationTestCase):
 	def test_get_theme_names_walks_child_first_and_guards_cycles(self):
-		# Exercised end-to-end against the shipped reference theme rather than mocked, since
-		# the whole point under test is the real inheritance chain.
 		names = get_theme_names("Shop Default Theme")
 		self.assertEqual(names, ["Shop Default Theme", "Shop Base Theme"])
 
@@ -85,8 +81,6 @@ class IntegrationTestShopTheme(IntegrationTestCase):
 		frappe.clear_cache()
 
 	def test_a_theme_name_that_scrubs_onto_an_existing_theme_is_rejected(self):
-		# "Shop-Default-Theme" scrubs to shop_default_theme, the folder the shipped theme owns.
-		# on_trash rmtrees by slug, so allowing both would let deleting one delete the other.
 		# Validated without inserting: after_insert scaffolds real directories under the app.
 		collision = frappe.new_doc("Shop Theme", theme_name="Shop-Default-Theme")
 		self.assertRaises(frappe.ValidationError, collision.validate)
@@ -128,7 +122,12 @@ class IntegrationTestShopTheme(IntegrationTestCase):
 		config = shop_theme_config()
 		self.assertEqual(config.doctype, "Shop Default Theme Settings")
 
+	def seeded_route_patterns(self):
+		return sorted(row.url_pattern for row in frappe.get_single("Shop Theme Settings").routes)
+
 	def test_route_table_compiles_and_matches_named_groups(self):
+		# after_install seeds these, but the site may have been installed before they shipped.
+		seed_default_routes()
 		compiled = build_compiled_routes()
 		matched_route, match = match_route(compiled["routes"], "en/products/some-slug")
 		self.assertIsNotNone(matched_route)
@@ -136,6 +135,7 @@ class IntegrationTestShopTheme(IntegrationTestCase):
 		self.assertEqual(match.group("route"), "some-slug")
 
 	def test_route_table_no_match_for_unknown_path(self):
+		seed_default_routes()
 		compiled = build_compiled_routes()
 		matched_route, _match = match_route(compiled["routes"], "en/not-a-real-route")
 		self.assertIsNone(matched_route)
@@ -146,9 +146,13 @@ class IntegrationTestShopTheme(IntegrationTestCase):
 		self.assertRaises(frappe.ValidationError, settings.save)
 
 	def test_seed_default_routes_is_idempotent_on_url_pattern(self):
-		count_before = frappe.db.count("Shop Themed Route")
+		# Scoped to the settings' own rows, and compared as a list so a duplicated pattern shows up.
 		seed_default_routes()
-		self.assertEqual(frappe.db.count("Shop Themed Route"), count_before)
+		patterns_before = self.seeded_route_patterns()
+
+		seed_default_routes()
+
+		self.assertEqual(self.seeded_route_patterns(), patterns_before)
 
 	def test_seed_default_routes_never_reenables_dynamic_pages(self):
 		frappe.db.set_single_value("Shop Theme Settings", "dynamic_pages_enabled", 0)
@@ -165,8 +169,7 @@ class IntegrationTestShopTheme(IntegrationTestCase):
 		self.assertTrue(is_dynamic_page(settings, "en/foo"))
 
 	def test_is_dynamic_page_rejects_traversal_segments(self):
-		# werkzeug hands the renderer an already percent-decoded path, so %2e%2e%2f is ".."
-		# by the time it reaches here and would land in the template path verbatim.
+		# werkzeug percent-decodes before the renderer, so %2e%2e%2f arrives as ".." verbatim.
 		settings = {"routes": [], "dynamic_pages_enabled": True}
 		self.assertFalse(is_dynamic_page(settings, "en/../../../etc/passwd"))
 		self.assertFalse(is_dynamic_page(settings, "en/.."))
@@ -179,14 +182,10 @@ class IntegrationTestShopTheme(IntegrationTestCase):
 
 
 class IntegrationTestThemeShadowAudit(IntegrationTestCase):
-	"""§9.4 - the most dangerous failure mode: a theme shipping its own copy of a shared
-	include silently disconnects the menu manager and footer editor with no error."""
+	"""A theme shipping its own copy of a shared include silently disconnects the menu/footer editors."""
 
 	def is_one_line_passthrough(self, absolute_path, app_relative_path):
-		# The theme contract requires exactly this shape for header/footer: a bare
-		# {% include "templates/<same path>" %} that delegates instead of duplicating. That
-		# is safe by construction - the loader still serves the real templates/ file, this
-		# file just forwards to it - so it is not a shadow.
+		# A bare {% include "templates/<same path>" %} delegates to the real file, so it is not a shadow.
 		with open(absolute_path) as theme_file:
 			content = theme_file.read().strip()
 		expected = '{%% include "templates/%s" %%}' % app_relative_path
@@ -236,12 +235,7 @@ class IntegrationTestThemeBaseContract(IntegrationTestCase):
 
 class IntegrationTestThemeEnvironmentIsolation(IntegrationTestCase):
 	"""The theme environment must carry THIS request's identity, never the first request's.
-
-	A jinja overlay keeps a reference to the globals dict it was built from, and jinja
-	memoises the module of a context-less `{% import %}` on the Template object. Caching
-	either across requests freezes user, lang and csrf_token - and theme dirs are bench-wide
-	app paths, so a cache keyed on them is shared by every site on the bench.
-	"""
+	A jinja overlay holds its globals dict, and jinja memoises a context-less {% import %} on the Template."""
 
 	def setUp(self):
 		self.theme_dir = tempfile.mkdtemp(prefix="shop_theme_isolation_")
@@ -252,8 +246,7 @@ class IntegrationTestThemeEnvironmentIsolation(IntegrationTestCase):
 			"components/probe_macros.html",
 			"{% macro identity() %}lang={{ frappe.lang }} user={{ frappe.session.user }}{% endmacro %}",
 		)
-		# Imported WITHOUT context, exactly as the shipped theme imports item_carousel.html
-		# and search_bar_modal.html - that is the import form that freezes.
+		# Imported WITHOUT context — that is the import form jinja memoises and freezes.
 		self.write_theme_file(
 			"pages/probe.html",
 			"{% import 'components/probe_macros.html' as probe %}"
@@ -280,8 +273,7 @@ class IntegrationTestThemeEnvironmentIsolation(IntegrationTestCase):
 	def render_as(self, user, lang):
 		frappe.set_user(user)
 		frappe.local.lang = lang
-		# get_jenv() memoises the per-request environment on frappe.local; dropping it is what
-		# makes one call here equivalent to one fresh request.
+		# get_jenv() memoises on frappe.local; dropping it makes this call equal one fresh request.
 		for local_key in ("jenv_restricted", "jenv_unrestricted"):
 			if hasattr(frappe.local, local_key):
 				delattr(frappe.local, local_key)
@@ -316,8 +308,7 @@ class IntegrationTestThemeEnvironmentIsolation(IntegrationTestCase):
 		self.assertIs(get_theme_environment(jenv, [self.theme_dir]).globals, jenv.globals)
 
 	def test_bytecode_cache_is_scoped_to_the_site(self):
-		# The only thing shared across requests. Theme dirs are app paths every site on the
-		# bench resolves identically, so an unkeyed cache would be one bench-wide cache.
+		# Theme dirs resolve identically on every site, so an unkeyed cache would be bench-wide.
 		original_site = frappe.local.site
 		self.addCleanup(setattr, frappe.local, "site", original_site)
 
@@ -329,9 +320,7 @@ class IntegrationTestThemeEnvironmentIsolation(IntegrationTestCase):
 
 class IntegrationTestThemeBaseContext(IntegrationTestCase):
 	def test_base_context_does_not_mint_a_csrf_token(self):
-		# No template reads context.csrf_token - they read frappe.session.csrf_token from the
-		# jinja globals. Calling get_csrf_token() here minted a throwaway token per anonymous
-		# request and made a themed page differ from the same page unthemed.
+		# get_csrf_token() here minted a throwaway token and made a themed page differ from an unthemed one.
 		self.assertNotIn("csrf_token", build_base_context(None))
 
 

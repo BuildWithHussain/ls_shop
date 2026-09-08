@@ -1,0 +1,196 @@
+{# The size radios reload the page: price, stock and the cart variant are all resolved per size by the controller. #}
+<div class="col-xl-8 col-md-8" x-data='{
+		product: JSON.parse({{ product_variant.as_json() | tojson }}),
+		selected_variant: {{ (json.dumps(selected_item) if size_selected else "") | tojson }},
+		sizes: {{ available_sizes | tojson }},
+		price: {{ (selected_price or 0) | tojson }},
+		default_price: {{ (default_price or 0) | tojson }},
+		brand: {{ (product.brand or "") | tojson }},
+		qty: 1,
+		max_qty: {{ (selected_item.stock_detail.stock_qty or 0) | round | int | tojson }},
+		increment() {
+			if (this.qty < this.max_qty) {
+				this.qty += 1;
+				return;
+			}
+			toast($store.i18n.t("Only") + " " + this.max_qty + " " + $store.i18n.t("left in stock"), { type: "warning" });
+		},
+		decrement() {
+			if (this.qty > 1) {
+				this.qty -= 1;
+			}
+		},
+		select_size(size) {
+			const url = new URL(window.location.href);
+			url.searchParams.set("size", size);
+			window.location.assign(url.toString());
+		},
+		add_to_cart() {
+			if (!this.selected_variant) {
+				toast($store.i18n.t("Please select a size first!"), { type: "warning" });
+				return;
+			}
+			$store.cart.add(this.product, this.selected_variant, this.price, this.default_price, this.brand, this.sizes, this.qty);
+			toast($store.i18n.t("Item added to your bag"), { type: "success" });
+		},
+		get in_wishlist() {
+			return $store.wishlist.is_in_wishlist(this.product);
+		},
+		toggle_wishlist() {
+			this.in_wishlist ? $store.wishlist.remove(this.product) : $store.wishlist.add(this.product);
+		},
+		async notify_when_available() {
+			await frappe_call("/api/v2/method/ls_shop.api.utils.notify_user_product", { item: {{ selected_item.item_code | tojson }} });
+			toast($store.i18n.t("You will be notified when item is available"), { type: "success" });
+		}
+	}'>
+	<div class="row">
+		<div class="col-xl-7">
+			<div class="dz-product-detail style-2 p-t20 ps-0">
+				<div class="dz-content">
+					<div class="dz-content-footer">
+						<div class="dz-content-start">
+							{% if discount_percent %}
+							<span class="badge bg-secondary mb-2">{{ _("Sale {0}% Off").format(discount_percent | round | int) }}</span>
+							{% endif %}
+							<h4 class="title mb-1">
+								{% if frappe.lang == "ar" %}{{ product.custom_item_name_ar or product_variant.display_name }}{% else %}{{ product_variant.display_name }}{% endif %}
+							</h4>
+							<div class="review-num">
+								<a href="/{{ frappe.lang or 'en' }}/products?brands={{ product.brand | urlencode }}">{{ product.brand }}</a>
+							</div>
+						</div>
+					</div>
+
+					{% if selected_item.description and selected_item.description != selected_item.item_code %}
+					<p class="para-text">
+						{% if frappe.lang == "ar" %}{{ selected_item.description_ar or selected_item.description }}{% else %}{{ selected_item.description }}{% endif %}
+					</p>
+					{% endif %}
+
+					<div class="product-num">
+						{% if product_in_stock and size_selected %}
+						<div class="btn-quantity light">
+							<label class="form-label">{{ _("Quantity") }}</label>
+							<div class="bootstrap-touchspin">
+								<input type="text" :value="qty" aria-label="{{ _('Quantity') }}" readonly>
+								<div class="input-group-btn-vertical">
+									<button class="btn" type="button" @click="increment()" aria-label="{{ _('Increase quantity') }}">
+										<i class="icon feather icon-plus"></i>
+									</button>
+									<button class="btn" type="button" @click="decrement()" aria-label="{{ _('Decrease quantity') }}">
+										<i class="icon feather icon-minus"></i>
+									</button>
+								</div>
+							</div>
+						</div>
+						{% endif %}
+						{# One size is no choice at all - the controller pre-selects it and the picker stays hidden. #}
+						{% if available_sizes | length > 1 %}
+						<div class="d-block">
+							<label class="form-label">{{ _("Size") }}</label>
+							<div class="btn-group product-size m-0">
+								{% for size in available_sizes %}
+								<input type="radio" class="btn-check" name="product_size" id="product-size-{{ loop.index }}"
+									{% if size_selected and selected_size == size.size %}checked{% endif %}
+									{% if not size.stock_detail.in_stock %}disabled{% endif %}
+									@change='select_size({{ size.size | tojson }})'>
+								<label class="btn" for="product-size-{{ loop.index }}">{{ size.size }}</label>
+								{% endfor %}
+							</div>
+						</div>
+						{% endif %}
+					</div>
+
+					{% if other_variants %}
+					<div class="meta-content mb-4">
+						<label class="form-label">{{ _("Colour") }}</label>
+						<ul class="product-colour-list">
+							<li>
+								<a href="/{{ frappe.lang or 'en' }}/products/{{ product_variant.route }}" class="is-active" aria-current="page">
+									<img src="{{ images[0] }}" alt="{{ product_variant.attribute_value }}">
+									<span>{{ product_variant.attribute_value }}</span>
+								</a>
+							</li>
+							{% for variant in other_variants %}
+							<li>
+								<a href="/{{ frappe.lang or 'en' }}/products/{{ variant.route }}">
+									<img src="{{ variant.image or '/assets/ls_shop/images/1.jpg' }}" alt="{{ variant.attribute_value }}">
+									<span>{{ variant.attribute_value }}</span>
+								</a>
+							</li>
+							{% endfor %}
+						</ul>
+					</div>
+					{% endif %}
+
+					<div class="dz-info">
+						<ul>
+							<li><strong>{{ _("SKU") }}:</strong></li>
+							<li>{{ selected_item.item_code }}</li>
+						</ul>
+						<ul>
+							<li><strong>{{ _("Category") }}:</strong></li>
+							<li><a href="/{{ frappe.lang or 'en' }}/products?item_groups={{ product_variant.item_group | urlencode }}">{{ product_variant.item_group }}</a></li>
+						</ul>
+						{% if selected_item.material %}
+						<ul>
+							<li><strong>{{ _("Material") }}:</strong></li>
+							<li>{{ selected_item.material }}</li>
+						</ul>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-xl-5">
+			<div class="cart-detail">
+				{% if product_in_stock %}
+				<div class="save-text">
+					<i class="icon feather icon-check-circle"></i>
+					<span class="m-l10">
+						{% if size_selected %}
+						{{ _("Only {0} left in stock").format(selected_item.stock_detail.stock_qty | round | int) }}
+						{% else %}
+						{{ _("In stock - pick a size to continue") }}
+						{% endif %}
+					</span>
+				</div>
+				{% endif %}
+				<table>
+					<tbody>
+						{% if discount_percent %}
+						<tr>
+							<td><h6 class="mb-0">{{ _("You save") }}</h6></td>
+							<td class="price">{{ get_currency_symbol() }}{{ "%.2f" | format(default_price - selected_price) }}</td>
+						</tr>
+						{% endif %}
+						<tr class="total">
+							<td><h6 class="mb-0">{{ _("Total") }}</h6></td>
+							<td class="price">
+								{{ get_currency_symbol() }}{{ "%.2f" | format(selected_price or 0) }}
+								{% if discount_percent %}<del>{{ get_currency_symbol() }}{{ "%.2f" | format(default_price or 0) }}</del>{% endif %}
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<button type="button" class="btn btn-outline-secondary btn-icon m-b20 w-100" @click="toggle_wishlist()">
+					<i class="icon feather icon-heart" x-show="!in_wishlist"></i>
+					<i class="icon feather icon-heart-on" x-show="in_wishlist" x-cloak></i>
+					<span x-text='in_wishlist ? {{ _("Remove From Wishlist") | tojson }} : {{ _("Add To Wishlist") | tojson }}'></span>
+				</button>
+				<button type="button" class="btn btn-secondary w-100" @click="add_to_cart()" {% if not product_in_stock %}disabled{% endif %}>
+					{{ _("Add To Cart") }}
+				</button>
+				{% if not product_in_stock and frappe.session.user != "Guest" %}
+				<button type="button" class="btn btn-link w-100 mt-2"
+					@click.debounce.300ms="notify_when_available()">
+					{{ _("Notify me when available") }}
+				</button>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</div>
+

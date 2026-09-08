@@ -1,0 +1,121 @@
+{# The quantity stepper is hand-written with bootstrap-touchspin's own class names, so style.css still shapes it. #}
+
+{% set language = frappe.lang or "en" %}
+<div class="offcanvas dz-offcanvas offcanvas-end" tabindex="-1" role="dialog"
+	aria-label="{{ _('Cart') }}"
+	:class="cart_open ? 'show' : ''"
+	x-trap.noscroll="cart_open"
+	@keydown.escape.window="cart_open = false">
+	<button type="button" class="btn-close" @click="cart_open = false" aria-label="{{ _('Close') }}">
+		&times;
+	</button>
+	<div class="offcanvas-body">
+		<div class="product-description">
+			<div class="dz-tabs">
+				<ul class="nav nav-tabs center" role="tablist">
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" type="button" role="tab" @click="cart_tab = 'cart'"
+							:class="cart_tab === 'cart' ? 'active' : ''" :aria-selected="cart_tab === 'cart'">
+							{{ _("Shopping Cart") }}
+							<span class="badge badge-light" x-text="$store.cart.count"></span>
+						</button>
+					</li>
+					<li class="nav-item" role="presentation">
+						<button class="nav-link" type="button" role="tab" @click="cart_tab = 'wishlist'"
+							:class="cart_tab === 'wishlist' ? 'active' : ''" :aria-selected="cart_tab === 'wishlist'">
+							{{ _("Wishlist") }}
+							<span class="badge badge-light" x-text="$store.wishlist.count"></span>
+						</button>
+					</li>
+				</ul>
+				<div class="tab-content pt-4" id="dz-shopcart-sidebar">
+
+					<div class="tab-pane fade" role="tabpanel" :class="cart_tab === 'cart' ? 'show active' : ''">
+						<div class="shop-sidebar-cart">
+							<ul class="sidebar-cart-list">
+								<template x-for="cart_item in $store.cart.items" :key="cart_item.variant.item_code">
+									<li>
+										<div class="cart-widget">
+											<div class="dz-media me-3">
+												<img :src="cart_item.item.images.length > 0 ? cart_item.item.images[0].image : '/assets/ls_shop/images/1.jpg'" :alt="cart_item.variant.item_name">
+											</div>
+											<div class="cart-content">
+												<h6 class="title">
+													<a :href="`/{{ language }}/products/${cart_item.item.route}`" x-text="{% if language == 'en' %}cart_item.variant.item_name{% else %}cart_item.variant.item_name_ar || cart_item.variant.item_name{% endif %}"></a>
+												</h6>
+												<div class="d-flex align-items-center">
+													<div class="btn-quantity light quantity-sm me-3">
+														<div class="input-group bootstrap-touchspin">
+															<input type="text" class="form-control" readonly :value="cart_item.qty" :aria-label="`${cart_item.variant.item_name} {{ _('quantity') }}`">
+															<span class="input-group-btn-vertical">
+																<button class="btn btn-default bootstrap-touchspin-up" type="button"
+																	@click="$store.cart.increment(cart_item.item.name, cart_item.variant)"
+																	aria-label="{{ _('Increase quantity') }}"><i class="fa-solid fa-plus"></i></button>
+																<button class="btn btn-default bootstrap-touchspin-down" type="button"
+																	@click="$store.cart.decrement(cart_item.item.name, cart_item.variant)"
+																	aria-label="{{ _('Decrease quantity') }}"><i class="fa-solid fa-minus"></i></button>
+															</span>
+														</div>
+													</div>
+													<h6 class="dz-price mb-0">{{ get_currency_symbol() }}<span x-text="(cart_item.price * cart_item.qty).toFixed(2)"></span></h6>
+												</div>
+											</div>
+											<a href="javascript:void(0);" class="dz-close"
+												@click="$store.cart.removeItem(cart_item.item.name, cart_item.variant)"
+												aria-label="{{ _('Remove') }}">
+												<i class="ti-close"></i>
+											</a>
+										</div>
+									</li>
+								</template>
+							</ul>
+							<p class="text-center" x-show="!$store.cart.items.length">{{ _("Your cart is empty.") }}</p>
+							<div class="cart-total" x-show="$store.cart.items.length">
+								<h5 class="mb-0">{{ _("Subtotal") }}:</h5>
+								<h5 class="mb-0">{{ get_currency_symbol() }}<span x-text="$store.cart.total.toFixed(2)"></span></h5>
+							</div>
+							<div class="mt-auto">
+								<a href="/{{ language }}/cart/checkout" class="btn btn-outline-secondary btn-block m-b20">{{ _("Checkout") }}</a>
+								<a href="/{{ language }}/cart" class="btn btn-secondary btn-block">{{ _("View Cart") }}</a>
+							</div>
+						</div>
+					</div>
+
+					<div class="tab-pane fade" role="tabpanel" :class="cart_tab === 'wishlist' ? 'show active' : ''">
+						<div class="shop-sidebar-cart">
+							<ul class="sidebar-cart-list">
+								<template x-for="wishlist_item in $store.wishlist.items" :key="wishlist_item.route">
+									<li>
+										<div class="cart-widget">
+											<div class="dz-media me-3">
+												<img :src="wishlist_item.image || '/assets/ls_shop/images/1.jpg'" :alt="wishlist_item.item_name">
+											</div>
+											<div class="cart-content">
+												<h6 class="title">
+													<a :href="`/{{ language }}/products/${wishlist_item.route}`" x-text="{% if language == 'en' %}wishlist_item.item_name{% else %}wishlist_item.custom_item_name_ar || wishlist_item.item_name{% endif %}"></a>
+												</h6>
+												<div class="d-flex align-items-center">
+													<h6 class="dz-price mb-0">{{ get_currency_symbol() }}<span x-text="Number(wishlist_item.sale_price || 0).toFixed(2)"></span></h6>
+												</div>
+											</div>
+											<a href="javascript:void(0);" class="dz-close"
+												@click="$store.wishlist.remove(wishlist_item)"
+												aria-label="{{ _('Remove') }}">
+												<i class="ti-close"></i>
+											</a>
+										</div>
+									</li>
+								</template>
+							</ul>
+							<p class="text-center" x-show="!$store.wishlist.items.length">{{ _("Your wishlist is empty.") }}</p>
+							<div class="mt-auto">
+								<a href="/{{ language }}/account/wishlist" class="btn btn-secondary btn-block">{{ _("Check Your Favourite") }}</a>
+							</div>
+						</div>
+					</div>
+
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

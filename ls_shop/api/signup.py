@@ -1,11 +1,23 @@
 import frappe
 from frappe import _
 from frappe.rate_limiter import rate_limit
+from frappe.utils import cint
 
 from ls_shop.core import send_otp
 
 
-@frappe.whitelist(allow_guest=True)
+def verify_otp(email: str, otp: str):
+	"""Check the OTP and burn it, a code is single-use."""
+	cache_key = f"otp:{email}"
+	stored_otp = frappe.cache.get_value(cache_key)
+	if not stored_otp or cint(otp) != cint(stored_otp):
+		frappe.throw(_("Invalid OTP"))
+
+	frappe.cache.delete_value(cache_key)
+
+
+# Pre-login by definition; writes nothing but the cached OTP, and is rate limited.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
 @rate_limit(limit=30, seconds=60 * 60)
 def send_signup_otp(email: str):
 	user_exist = frappe.db.exists("User", {"email": email})
@@ -14,7 +26,8 @@ def send_signup_otp(email: str):
 	send_otp(email)
 
 
-@frappe.whitelist(allow_guest=True)
+# Pre-login by definition; writes nothing but the cached OTP, and is rate limited.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
 @rate_limit(limit=30, seconds=60 * 60)
 def send_login_otp(email: str):
 	user_exists = frappe.db.exists("User", email)
@@ -24,13 +37,12 @@ def send_login_otp(email: str):
 	send_otp(email)
 
 
-@frappe.whitelist(allow_guest=True)
-@rate_limit(limit=30, seconds=60 * 60)
+# Pre-login by definition; the OTP proves the caller owns the address.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
+# Keyed on email, not the caller IP: an IP-bound limit leaves a 6-digit code brute-forceable.
+@rate_limit(key="email", limit=5, seconds=60 * 5)
 def verify_signup_otp(email: str, first_name: str, last_name: str, otp: str):
-	stored_otp = frappe.cache.get_value(f"otp:{email}")
-	otp = int(otp) if otp else 0
-	if stored_otp != otp:
-		frappe.throw(_("Invalid OTP"))
+	verify_otp(email, otp)
 
 	user = frappe.get_doc(
 		{
@@ -46,14 +58,9 @@ def verify_signup_otp(email: str, first_name: str, last_name: str, otp: str):
 	frappe.local.login_manager.login_as(email)
 
 
-@frappe.whitelist(allow_guest=True)
-@rate_limit(limit=30, seconds=60 * 60)
+# Pre-login by definition; the OTP proves the caller owns the address.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
+@rate_limit(key="email", limit=5, seconds=60 * 5)
 def verify_login_otp(email: str, otp: str):
-	"""Check OTP from Redis instead of DB"""
-
-	stored_otp = frappe.cache.get_value(f"otp:{email}")
-	otp = int(otp) if otp else 0
-	if stored_otp != otp:
-		frappe.throw(_("Invalid OTP"))
-
+	verify_otp(email, otp)
 	frappe.local.login_manager.login_as(email)

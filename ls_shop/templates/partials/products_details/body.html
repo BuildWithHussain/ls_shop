@@ -20,9 +20,6 @@
     background-color: var(--ls-carousel-dot) !important;
     }
 </style>
-<!-- Product variant is style attribute variant -->
-<!-- Product is the item style template -->
-<!-- Selected item is currently selected item -->
 
 <div class=" mx-auto py-8 " x-data='{ 
     product: {{ product_variant.as_json() }}, 
@@ -50,12 +47,10 @@
     },
     }'>
     <div class="flex flex-col ipad:flex-row md:gap-8">
-        <!-- Image Gallery -->
         <div class="flex flex-1 justify-center" x-data="carousel_component()" x-init="init_embla">
             {% include 'templates/components/product_details_carousel.html' %}
         </div>
 
-        <!-- Product Details -->
         <div class="flex flex-2 flex-col pt-6">
             <div class="ipad:max-w-md">
 
@@ -71,7 +66,6 @@
                     {% endif %}
                 </h2>
                 <div class="mb-5 flex items-center md:mb-6.5">
-                    <!-- Disounted price -->
                     {% if discount_percent %}
                     <span
                         class="text-base font-normal text-strikethrough line-through decoration-[1px] md:text-xl flex">{{get_currency_symbol()}}{{"%.2f"|format(default_price)}}</span>
@@ -218,12 +212,9 @@
                     </div>
                     {% endif %}
                 </div>
-                <!-- Product Details Accordion -->
                 <div class="mb-5 border-b border-gray-300 py-7 md:mt-8">
                     <div x-data="{ active_accordion: 'web_long_description' }">
-                        <!-- Accordion Item -->
                         <div class="accordion-item">
-                            <!-- Accordion Trigger -->
                             <button
                                 @click="active_accordion = active_accordion === 'web_long_description' ? null : 'web_long_description'"
                                 class="flex w-full items-center justify-between text-xl font-medium"
@@ -241,7 +232,6 @@
                                         clip-rule="evenodd" />
                                 </svg>
                             </button>
-                            <!-- Accordion Content -->
                             <div x-show="active_accordion === 'web_long_description'"
                                 x-transition:enter="transition ease-out duration-200"
                                 x-transition:enter-start="opacity-0 transform -translate-y-2"

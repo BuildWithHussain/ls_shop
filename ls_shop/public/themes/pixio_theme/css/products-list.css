@@ -1,0 +1,156 @@
+/* Gaps the products listing leaves in style.css, all of them left by vendor JS this theme does
+   not load. Nothing here restyles a widget the reference already dresses. */
+
+/* --- Price range: the noUiSlider mount point --- */
+
+/* style.css only reserves the .price-slide box; every pixel inside #slider-tooltips2 was drawn by
+   nouislider.min.js, so the track, fill and thumbs are rebuilt here for two native ranges. */
+.price-slide .pixio-range {
+	position: relative;
+	height: 20px;
+	margin-bottom: 15px;
+}
+
+.price-slide .pixio-range::before {
+	content: "";
+	position: absolute;
+	inset-inline: 0;
+	top: 50%;
+	height: 4px;
+	transform: translateY(-50%);
+	border-radius: 4px;
+	background-color: var(--border-color);
+}
+
+.price-slide .pixio-range-fill {
+	position: absolute;
+	top: 50%;
+	height: 4px;
+	transform: translateY(-50%);
+	border-radius: 4px;
+	background-color: var(--primary);
+}
+
+/* Both inputs occupy the same track, so the upper one has to let clicks through to the lower;
+   only the thumbs take pointer events back. */
+.price-slide .pixio-range-input {
+	position: absolute;
+	inset-inline: 0;
+	top: 0;
+	width: 100%;
+	height: 20px;
+	margin: 0;
+	padding: 0;
+	appearance: none;
+	-webkit-appearance: none;
+	background: transparent;
+	pointer-events: none;
+}
+
+.price-slide .pixio-range-input::-webkit-slider-thumb {
+	appearance: none;
+	-webkit-appearance: none;
+	pointer-events: auto;
+	width: 18px;
+	height: 18px;
+	border: 2px solid var(--primary);
+	border-radius: 50%;
+	background-color: #fff;
+	cursor: pointer;
+}
+
+.price-slide .pixio-range-input::-moz-range-thumb {
+	pointer-events: auto;
+	width: 18px;
+	height: 18px;
+	border: 2px solid var(--primary);
+	border-radius: 50%;
+	background-color: #fff;
+	cursor: pointer;
+}
+
+.price-slide .example-val + .example-val {
+	float: inline-end;
+}
+
+/* --- Sidebar state classes dz.ajax.js used to stamp --- */
+
+/* .widget_categories only carries a :hover colour; the reference's selected facet was marked
+   by the script that reloaded the grid, so a checked category or brand has no resting style. */
+.shop-filter .widget_categories ul li a.selected {
+	color: var(--primary);
+	font-weight: 600;
+}
+
+/* A parent facet is a heading, not a link, so it must not inherit the anchor's row rhythm. */
+.shop-filter .widget_categories ul li .cat-parent {
+	display: block;
+	font-weight: 600;
+	color: var(--title);
+	text-transform: capitalize;
+}
+
+/* .product-size's 34px circle is the only chip style.css offers and a colour NAME is clipped
+   inside it; this catalogue stores attribute names rather than the reference's hex swatches. */
+.shop-filter .product-size.color-chips .btn {
+	width: auto;
+	min-width: 34px;
+	padding: 0 14px;
+	border-radius: 17px !important;
+	text-transform: capitalize;
+}
+
+/* --- Toolbar sort control: the bootstrap-select gap --- */
+
+/* bootstrap-select.min.js replaces this <select> with a .dropdown-toggle button that style.css
+   puts the toolbar's padding, colour and caret on; the native control has to carry them itself. */
+.filter-wrapper .filter-right-area select.default-select {
+	/* style.css sets padding:0 on select.default-select with !important, for the wrapper that
+	   is not here. */
+	padding: 7px 34px 7px 20px !important;
+	border: 0;
+	background-color: transparent;
+	color: var(--secondary);
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 1.5;
+	outline: none;
+	/* The reference's caret is a fontawesome ::after on the toggle button; a <select> has no
+	   pseudo-element box, so the same chevron rides in as a background image. */
+	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23111'%3E%3Cpath d='M8 11L3.5 6h9z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+	background-size: 12px 12px;
+}
+
+.filter-wrapper .filter-right-area select.default-select:dir(rtl) {
+	padding: 7px 20px 7px 34px !important;
+	background-position: left 12px center;
+}
+
+/* --- Empty result set --- */
+
+/* The reference has no empty state: its grid is hand-authored and always full. */
+.dz-empty-listing {
+	padding: 60px 0;
+	text-align: center;
+}
+
+.dz-empty-listing .title {
+	margin-bottom: 8px;
+}
+
+.dz-empty-listing p {
+	margin-bottom: 24px;
+}
+
+/* --- Mobile toolbar --- */
+
+/* .filter-right-area is a flex row and .panel-btn is the only text item in it, so it is the one
+   that gets squeezed: below 768px "Filter" wraps under its own icon. */
+.filter-wrapper .filter-right-area .panel-btn {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	white-space: nowrap;
+}

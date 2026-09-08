@@ -18,8 +18,9 @@ def send_order_success_acknowledgement(doc, method):
 			"order_confirmation_email_template",
 		)
 		email_template = frappe.get_doc("Email Template", order_confirmation_template_name)
-		message = frappe.render_template(email_template.response_, doc_args)
-		subject = frappe.render_template(email_template.subject, doc_args)
+		# The template is Desk-authored on Email Template, so it is as trusted as the code itself.
+		message = frappe.render_template(email_template.response_, doc_args)  # nosemgrep: frappe-ssti
+		subject = frappe.render_template(email_template.subject, doc_args)  # nosemgrep: frappe-ssti
 
 		emails = frappe.get_all("Portal User", {"parent": doc.customer}, ["user"], limit=1)
 		email = emails[0].get("user", "")
@@ -42,8 +43,9 @@ def send_order_cancel_acknowledgement(doc, method):
 			"order_cancellation_email_template",
 		)
 		email_template = frappe.get_doc("Email Template", order_confirmation_template_name)
-		message = frappe.render_template(email_template.response_, doc_args)
-		subject = frappe.render_template(email_template.subject, doc_args)
+		# The template is Desk-authored on Email Template, so it is as trusted as the code itself.
+		message = frappe.render_template(email_template.response_, doc_args)  # nosemgrep: frappe-ssti
+		subject = frappe.render_template(email_template.subject, doc_args)  # nosemgrep: frappe-ssti
 
 		emails = frappe.get_all("Portal User", {"parent": doc.customer}, ["user"], limit=1)
 		email = emails[0].get("user", "")
@@ -143,8 +145,9 @@ def notify_users_if_item_in_stock(item_code):
 		"company": "Lifestyle",
 		"website_url": get_url(f"{frappe.local.lang}/products/{style_attribute_variant.route}"),
 	}
-	message = frappe.render_template(email_template.response_, doc_args)
-	subject = frappe.render_template(email_template.subject, doc_args)
+	# The template is Desk-authored on Email Template, so it is as trusted as the code itself.
+	message = frappe.render_template(email_template.response_, doc_args)  # nosemgrep: frappe-ssti
+	subject = frappe.render_template(email_template.subject, doc_args)  # nosemgrep: frappe-ssti
 
 	user_subscriptions = frappe.get_all(
 		"OOS Notify Subscription",
@@ -173,7 +176,6 @@ def delete_notified_oos():
 
 
 def delete_old_draft_quotations():
-	# Delete draft quotations older than 6 hours
 	cutoff_time = add_to_date(now_datetime(), hours=-6)
 
 	old_drafts = frappe.get_all(
@@ -190,3 +192,38 @@ def delete_old_draft_quotations():
 			frappe.delete_doc("Quotation", quotation)
 		except Exception as e:
 			frappe.log_error(title=frappe._("Error in deleting the quotation {0}: {1}").format(quotation, e))
+
+
+def sync_pending_gateway_payments():
+	"""Settle checkouts the shopper's browser never confirmed, so captured money always reaches an order."""
+	# ponytail: a request older than the lookback is left to manual reconciliation - delete_old_draft_
+	# quotations already removes the draft cart it points at after 6 hours, so the order can no longer
+	# be placed from it. Widen both windows together, never this one alone.
+	now = now_datetime()
+	pending_requests = frappe.get_all(
+		"Gateway Payment Request",
+		filters={
+			"status": "Pending",
+			# Upper bound skips requests too new to have settled - the shopper is likely still on the gateway.
+			"creation": ("between", [add_to_date(now, hours=-6), add_to_date(now, minutes=-10)]),
+		},
+		# Oldest money first: those are the requests closest to losing the draft cart they point at.
+		order_by="creation asc",
+		pluck="name",
+	)
+
+	for payment_request in pending_requests:
+		# Savepoint, not a bare rollback: a full rollback would discard every order the sweep already placed.
+		savepoint = f"sweep_{payment_request}"
+		try:
+			frappe.db.savepoint(savepoint)
+			frappe.get_doc("Gateway Payment Request", payment_request).sync_status()
+			frappe.db.commit()
+		except Exception:
+			frappe.db.rollback(save_point=savepoint)
+			frappe.log_error(
+				title="Pending gateway payment sweep failed",
+				reference_doctype="Gateway Payment Request",
+				reference_name=payment_request,
+			)
+			frappe.db.commit()

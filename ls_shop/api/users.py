@@ -4,9 +4,7 @@ from frappe import _
 
 @frappe.whitelist()
 def delete_user_address(address_id: str):
-	"""
-	Deletes a user address by its ID.
-	"""
+	"""Delete a user address by its ID."""
 	if not address_id:
 		frappe.throw(_("Address ID is required."))
 

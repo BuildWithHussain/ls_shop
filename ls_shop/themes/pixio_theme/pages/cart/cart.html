@@ -1,0 +1,211 @@
+
+{% extends "components/theme_layout.html" %}
+
+{% set language = frappe.lang or "en" %}
+{% set currency_symbol = get_currency_symbol() %}
+
+{% block head %}
+	{{ super() }}
+	<link rel="stylesheet" href="{{ shop_theme_asset_url('css/cart.css') }}">
+{% endblock %}
+
+{% block uncontained_body %}
+	<div class="dz-bnr-inr">
+		<div class="container">
+			<div class="dz-bnr-inr-entry">
+				<h1>{{ _("Shop Cart") }}</h1>
+				<nav aria-label="{{ _('breadcrumb') }}" class="breadcrumb-row">
+					<ul class="breadcrumb">
+						<li class="breadcrumb-item"><a href="/{{ language }}">{{ _("Home") }}</a></li>
+						{% for breadcrumb in breadcrumbs %}
+							<li class="breadcrumb-item">{{ _(breadcrumb.label) }}</li>
+						{% endfor %}
+					</ul>
+				</nav>
+			</div>
+		</div>
+	</div>
+
+	<section class="content-inner shop-account"
+		x-data="pixio_cart({{ delivery_charge | tojson }}, {{ delivery_charge_applicable_below | tojson }})">
+		<div class="container">
+			<div class="cart-empty text-center" x-show="!$store.cart.items.length" x-cloak>
+				<i class="flaticon flaticon-cart"></i>
+				<h4 class="title">{{ _("Your cart is empty") }}</h4>
+				<p>{{ _("Browse the shop and add something you love.") }}</p>
+				<a href="/{{ language }}/products" class="btn btn-secondary">{{ _("Continue Shopping") }}</a>
+			</div>
+
+			<div class="row" x-show="$store.cart.items.length" x-cloak>
+				<div class="col-lg-8">
+					<div class="table-responsive">
+						<table class="table check-tbl">
+							<thead>
+								<tr>
+									<th>{{ _("Product") }}</th>
+									<th></th>
+									<th>{{ _("Price") }}</th>
+									<th>{{ _("Quantity") }}</th>
+									<th>{{ _("Subtotal") }}</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								<template x-for="cart_item in $store.cart.items" :key="cart_item.variant.item_code">
+									<tr>
+										<td class="product-item-img">
+											<a :href="`/{{ language }}/products/${cart_item.item.route}`">
+												<img :src="cart_item.item.images.length > 0 ? cart_item.item.images[0].image : '/assets/ls_shop/images/1.jpg'"
+													:alt="cart_item.variant.item_name">
+											</a>
+										</td>
+										<td class="product-item-name">
+											<a :href="`/{{ language }}/products/${cart_item.item.route}`"
+												x-text="{% if language == 'en' %}cart_item.variant.item_name{% else %}cart_item.variant.item_name_ar || cart_item.variant.item_name{% endif %}"></a>
+										</td>
+										<td class="product-item-price">
+											<template x-if="cart_item.default_price && cart_item.default_price !== cart_item.price">
+												<span>{{ currency_symbol }}<span x-text="format_amount(cart_item.default_price)"></span></span>
+											</template>
+											<strong>{{ currency_symbol }}<span x-text="format_amount(cart_item.price)"></span></strong>
+										</td>
+										<td class="product-item-quantity">
+											{# Written out by hand with bootstrap-touchspin's own class names, so style.css still shapes it. #}
+											<div class="btn-quantity">
+												<div class="input-group bootstrap-touchspin">
+													<input type="text" class="form-control" readonly :value="cart_item.qty"
+														:aria-label="`${cart_item.variant.item_name} {{ _('quantity') }}`">
+													<span class="input-group-btn-vertical">
+														<button class="btn btn-default bootstrap-touchspin-up" type="button"
+															@click="$store.cart.increment(cart_item.item.name, cart_item.variant)"
+															aria-label="{{ _('Increase quantity') }}"><i class="fa-solid fa-plus"></i></button>
+														<button class="btn btn-default bootstrap-touchspin-down" type="button"
+															@click="$store.cart.decrement(cart_item.item.name, cart_item.variant)"
+															aria-label="{{ _('Decrease quantity') }}"><i class="fa-solid fa-minus"></i></button>
+													</span>
+												</div>
+											</div>
+										</td>
+										<td class="product-item-totle">
+											{{ currency_symbol }}<span x-text="format_amount(cart_item.price * cart_item.qty)"></span>
+										</td>
+										<td class="product-item-close">
+											<a href="javascript:void(0);" aria-label="{{ _('Remove') }}"
+												@click="$store.cart.removeItem(cart_item.item.name, cart_item.variant)">
+												<i class="ti-close"></i>
+											</a>
+										</td>
+									</tr>
+								</template>
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<div class="col-lg-4">
+					<h4 class="title mb15">{{ _("Cart Total") }}</h4>
+					<div class="cart-detail">
+						<div class="icon-bx-wraper style-4 m-b15">
+							<div class="icon-bx"><i class="flaticon flaticon-free-delivery"></i></div>
+							<div class="icon-content">
+								<span class="font-14" x-show="!delivery_amount">{{ _("FREE") }}</span>
+								<h6 class="dz-title">{{ _("Delivery") }}</h6>
+							</div>
+						</div>
+						<div class="save-text" x-show="free_delivery_shortfall > 0">
+							<i class="icon feather icon-check-circle"></i>
+							<span class="m-l10">
+								{{ _("Add") }} {{ currency_symbol }}<span x-text="format_amount(free_delivery_shortfall)"></span>
+								{{ _("more to get free delivery") }}
+							</span>
+						</div>
+						<table>
+							<tbody>
+								<tr>
+									<td>{{ _("Subtotal") }} (<span x-text="$store.cart.count"></span> {{ _("items") }})</td>
+									<td class="price">{{ currency_symbol }}<span x-text="format_amount(subtotal)"></span></td>
+								</tr>
+								<tr>
+									<td>{{ _("Delivery Charge") }}</td>
+									<td class="price">
+										<span x-show="!delivery_amount">{{ _("Free") }}</span>
+										<span x-show="delivery_amount">{{ currency_symbol }}<span x-text="format_amount(delivery_amount)"></span></span>
+									</td>
+								</tr>
+								<tr class="total">
+									<td><h6 class="mb-0">{{ _("Total") }}</h6></td>
+									<td class="price">{{ currency_symbol }}<span x-text="format_amount(total)"></span></td>
+								</tr>
+							</tbody>
+						</table>
+						{% if frappe.session.user == "Guest" %}
+							<button type="button" class="btn btn-secondary w-100"
+								@click="$dispatch('open-auth')">
+								{{ _("Sign In to Checkout") }}
+							</button>
+						{% else %}
+							<button type="button" class="btn btn-secondary w-100" :disabled="checkout_loading"
+								@click="save_quotation_for_checkout()">
+								{{ _("Place Order") }}
+							</button>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+{% endblock %}
+
+{% block script %}
+	{{ super() }}
+	<script>
+		document.addEventListener("alpine:init", () => {
+			Alpine.data("pixio_cart", (delivery_charge, delivery_charge_applicable_below) => ({
+				delivery_charge: delivery_charge,
+				delivery_charge_applicable_below: delivery_charge_applicable_below,
+				checkout_loading: false,
+
+				async init() {
+					await this.$store.cart.fetch_detail_for_cart();
+				},
+
+				format_amount(amount) {
+					return (Number(amount) || 0).toFixed(2);
+				},
+
+				get subtotal() {
+					return this.$store.cart.total;
+				},
+
+				get delivery_amount() {
+					if (!this.$store.cart.count) return 0;
+					return this.subtotal < this.delivery_charge_applicable_below ? this.delivery_charge : 0;
+				},
+
+				get total() {
+					return this.subtotal + this.delivery_amount;
+				},
+
+				get free_delivery_shortfall() {
+					if (!this.delivery_charge) return 0;
+					return Math.max(this.delivery_charge_applicable_below - this.subtotal, 0);
+				},
+
+				async save_quotation_for_checkout() {
+					this.checkout_loading = true;
+					try {
+						const items = this.$store.cart.items;
+						if (!await this.$store.cart.validate_stock_before_checkout(items)) return;
+
+						await frappe_call("/api/v2/method/ls_shop.api.payments.generate_quotation_for_cart", {
+							cart: { items: items },
+						});
+						window.location.href = "/{{ language }}/cart/checkout";
+					} finally {
+						this.checkout_loading = false;
+					}
+				},
+			}));
+		});
+	</script>
+{% endblock %}

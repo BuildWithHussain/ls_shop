@@ -8,12 +8,10 @@
         x-on:keydown.esc.window="is_open = false" x-on:click.self="is_open = false"
         class="fixed inset-0 z-100 flex items-center justify-center bg-black/20 p-4 pb-8 backdrop-blur-md sm:items-center lg:p-8"
         role="dialog" aria-modal="true" aria-labelledby="defaultModalTitle">
-        <!-- Modal Dialog -->
         <div x-show="is_open"
             x-transition:enter="transition ease-out duration-200 delay-100 motion-reduce:transition-opacity"
             x-transition:enter-start="opacity-0 scale-50" x-transition:enter-end="opacity-100 scale-100"
             class="flex  flex-col overflow-hidden border border-gray-300 bg-white text-gray-600   rounded-lg {{modal_classes}}">
-            <!-- Dialog Header -->
             <div class="flex items-center  border-b border-gray-300 bg-gray-50/60 p-4  {% if header_alignment == 'left' %} justify-between {% else %} justify-center {% endif %}">
                 <h3 id="defaultModalTitle" class="font-medium tracking-wide text-lg text-gray-900 ">{{_(modal_header)}}
                 </h3>
@@ -24,7 +22,6 @@
                     </svg>
                 </button>
             </div>
-            <!-- Dialog Body -->
             {{caller()}}
         </div>
     </div>

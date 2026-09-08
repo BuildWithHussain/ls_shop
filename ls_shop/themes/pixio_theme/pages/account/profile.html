@@ -1,0 +1,114 @@
+
+{% extends "components/theme_layout.html" %}
+{% from "components/core/account_shell.html" import account_shell %}
+
+{% block head %}
+	{{ super() }}
+	<link rel="stylesheet" href="{{ shop_theme_asset_url('css/account.css') }}">
+{% endblock %}
+
+{% block uncontained_body %}
+{% call account_shell(_("Profile")) %}
+
+{# Synchronous on purpose: Alpine's core is deferred in the base head, so a deferred script here would register after alpine:init. #}
+<script>
+	document.addEventListener("alpine:init", () => {
+		Alpine.data("pixio_account_profile", (profile) => ({
+			profile,
+			errors: [],
+			saving: false,
+
+			async save() {
+				this.errors = [];
+				if (!/^(\+?\d{1,3}[-.\s]?)?(\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}$/.test(this.profile.mobile_no || "")) {
+					this.errors.push("Please enter a valid phone number.");
+					return;
+				}
+
+				this.saving = true;
+				try {
+// Keyed on the User document name, not the email field - they differ for accounts created before the login id was set.
+					await frappe_call(`/api/v2/document/User/${encodeURIComponent(this.profile.name)}`, {
+						first_name: this.profile.first_name,
+						last_name: this.profile.last_name,
+						mobile_no: this.profile.mobile_no,
+					}, "PUT");
+					toast(this.$store.i18n.t("Profile updated successfully"), { type: "success" });
+// The header and the sidebar render the name server-side, so they only pick it up on a reload.
+					window.location.reload();
+				} catch (error) {
+					toast(this.$store.i18n.t("Something went wrong"), { type: "danger" });
+					this.saving = false;
+				}
+			},
+		}));
+	});
+</script>
+
+{% set profile_data = {
+	"name": user_details.name,
+	"first_name": user_details.first_name or "",
+	"last_name": user_details.last_name or "",
+	"email": user_details.email,
+	"mobile_no": user_details.mobile_no or "",
+} %}
+
+{# Single-quoted on purpose: tojson leaves double quotes unescaped and they would close a double-quoted attribute. #}
+<div class="account-card" x-data='pixio_account_profile({{ profile_data | tojson }})'>
+	<div class="profile-edit">
+		<div class="thumb">
+			<img src="{{ user_details.user_image or '/assets/ls_shop/icons/user.svg' }}"
+				width="100" height="100" alt="{{ user_details.full_name }}">
+		</div>
+		<div class="clearfix">
+			<h2 class="title mb-0">{{ user_details.full_name }}</h2>
+			<span class="text text-primary">{{ user_details.email }}</span>
+		</div>
+	</div>
+
+	<form class="row" @submit.prevent="save()">
+		<div class="col-lg-6">
+			<div class="form-group m-b25">
+				<label class="label-title" for="first_name">{{ _("First Name") }}</label>
+				<input id="first_name" class="form-control" required x-model="profile.first_name">
+			</div>
+		</div>
+		<div class="col-lg-6">
+			<div class="form-group m-b25">
+				<label class="label-title" for="last_name">{{ _("Last Name") }}</label>
+				<input id="last_name" class="form-control" x-model="profile.last_name">
+			</div>
+		</div>
+		<div class="col-lg-6">
+			<div class="form-group m-b25">
+				<label class="label-title" for="email">{{ _("Email address") }}</label>
+				{# The login id is the document key; changing it here would move the account. #}
+				<input id="email" type="email" class="form-control" disabled :value="profile.email">
+			</div>
+		</div>
+		<div class="col-lg-6">
+			<div class="form-group m-b25">
+				<label class="label-title" for="mobile_no">{{ _("Phone") }}</label>
+				<input id="mobile_no" type="tel" class="form-control" required x-model="profile.mobile_no">
+			</div>
+		</div>
+
+		<div class="col-12" x-show="errors.length" x-cloak>
+			<div class="alert alert-danger">
+				<ul class="mb-0">
+					<template x-for="error in errors" :key="error">
+						<li x-text="$store.i18n.t(error)"></li>
+					</template>
+				</ul>
+			</div>
+		</div>
+
+		<div class="col-12">
+			<button class="btn btn-primary" type="submit" :disabled="saving">
+				<span x-text="saving ? $store.i18n.t('Saving...') : $store.i18n.t('Update profile')">{{ _("Update profile") }}</span>
+			</button>
+		</div>
+	</form>
+</div>
+{% endcall %}
+{% endblock %}

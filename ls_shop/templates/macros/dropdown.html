@@ -35,7 +35,6 @@
         x-on:focusin.window="! $refs.panel.contains($event.target) && close()" x-id="['dropdown-{{ id }}']"
         class="relative">
 
-        <!-- Button -->
         <button x-ref="button" x-on:click="toggle()" :aria-expanded="open" :aria-controls="$id('dropdown-{{ id }}')"
             type="button"
             class="relative flex items-center whitespace-nowrap justify-center cursor-pointer {{ button_classes }}">
@@ -50,7 +49,6 @@
             </span>
         </button>
 
-        <!-- Badge (optional) -->
         {% if show_badge %}
         <span
             class="absolute -top-3 ltr:-right-4 rtl:-left-4 bg-badge text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
@@ -60,7 +58,6 @@
         </span>
         {% endif %}
 
-        <!-- Panel -->
         <div x-ref="panel" x-show="open" x-transition.origin.top.{{ position }} x-on:click.outside="close($refs.button)"
             :id="$id('dropdown-{{ id }}')" x-cloak
             class="absolute {{ 'ltr:left-1 rtl:right-1' if position == 'left' else 'ltr:-right-5 rtl:-left-5' }} rounded-2xl shadow-sm mt-2 z-50 origin-top-{{ position }} bg-white p-2 outline-none border border-gray-200 {{ width }} {{ panel_classes }}">

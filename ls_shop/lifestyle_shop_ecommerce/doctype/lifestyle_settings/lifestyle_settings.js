@@ -71,7 +71,7 @@ frappe.ui.form.on('Lifestyle Settings', {
 	install_demo_data(frm) {
 		frappe.confirm(
 			__(
-				'This will create demo products, brands, price lists, and configure settings. Continue?',
+				'This will seed the Pixio demo storefront: catalogue, menu, footer, banners and settings. Continue?',
 			),
 			() => {
 				frm

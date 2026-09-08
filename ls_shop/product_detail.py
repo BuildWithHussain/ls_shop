@@ -1,6 +1,7 @@
 import frappe
+from frappe.utils import flt
 
-from ls_shop.utils import get_available_stock
+from ls_shop.utils import get_available_stock, get_discount_percent
 
 DEFAULT_PRODUCT_IMAGE = "/assets/ls_shop/images/1.jpg"
 
@@ -8,9 +9,6 @@ SIZE_ORDER = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"]
 
 
 def get_product_detail(route, selected_size=None):
-	# Single source of truth for a product's price, stock and imagery. The product page,
-	# its JSON-LD and the OG card all read this, so a share card can never advertise a
-	# price the page does not show.
 	try:
 		product_variant = frappe.get_doc("Style Attribute Variant", {"route": route})
 	except frappe.DoesNotExistError:
@@ -28,8 +26,9 @@ def get_product_detail(route, selected_size=None):
 	if not selected_item:
 		selected_item = available_sizes[0] if available_sizes else None
 
-	default_price = get_price(selected_item, lifestyle_settings.get_default_price_list())
+	default_price = flt(get_price(selected_item, lifestyle_settings.get_default_price_list()))
 	sale_price = get_price(selected_item, lifestyle_settings.get_sale_price_list())
+	selected_price = sale_price if sale_price is not None else default_price
 
 	images = (
 		[image.image for image in product_variant.images]
@@ -46,6 +45,8 @@ def get_product_detail(route, selected_size=None):
 		"selected_item": selected_item,
 		"default_price": default_price,
 		"sale_price": sale_price,
+		"selected_price": selected_price,
+		"discount_percent": get_discount_percent(default_price, sale_price),
 		"in_stock": (selected_item or {}).get("stock_detail", {}).get("stock_qty", 0) > 0,
 		"warehouse": warehouse,
 	}
@@ -84,11 +85,13 @@ def get_selected_item(available_sizes, selected_size):
 
 
 def get_price(selected_item, price_list):
+	"""Rate for the item on this price list, or None when it has no row there."""
+	# None and 0.0 must stay distinguishable: "not on this list" falls back, "free" does not.
 	if not selected_item:
-		return 0.0
+		return None
 	price = frappe.get_cached_value(
 		"Item Price",
 		{"item_code": selected_item["item_code"], "price_list": price_list},
 		"price_list_rate",
 	)
-	return price if price is not None else 0.0
+	return flt(price) if price is not None else None
