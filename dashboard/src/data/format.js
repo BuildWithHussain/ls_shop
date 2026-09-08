@@ -81,7 +81,6 @@ const THEMES = {
   fulfilled: 'green',
   active: 'green',
   published: 'green',
-  paid: 'green',
   pending: 'orange',
   partial: 'orange',
   partially_refunded: 'orange',

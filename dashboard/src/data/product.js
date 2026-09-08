@@ -1,5 +1,29 @@
 import { computed, unref } from 'vue'
 
+// What a shopper is actually charged for a priced row (a size, or a pricing-screen row): the
+// storefront reads the sale price list and only falls back to the default one when there is no
+// row there at all — ls_shop/product_detail.py's get_product_detail and ls_shop/api/cart.py's
+// get_cart_price both resolve it that way. So the test is "a sale rate exists", never
+// "sale_rate < default_rate": the two are equal for the whole life of a discount that has been
+// levelled off, and reading that as "no sale" hands back the struck-through price and edits a
+// field nobody is charged on.
+export function shownPrice(rated) {
+  return rated?.sale_rate ?? rated?.default_rate ?? 0
+}
+
+// The struck-through reference, which says nothing once it is not above what is charged.
+export function compareAtPrice(rated) {
+  const compareAt = rated?.default_rate
+  return compareAt != null && compareAt > shownPrice(rated) ? compareAt : null
+}
+
+// The rate half of a set_variant_price / save_product_prices payload, aimed at the price list
+// actually in force. Safe to send one of the two on its own: set_variant_prices() builds
+// rate_by_price_list from the rates it was given, so the other list keeps what it had.
+export function pricePayload(rated, rate) {
+  return rated?.sale_rate != null ? { sale_rate: rate } : { default_rate: rate }
+}
+
 // Everything the product screen needs to summarise a product at a glance,
 // derived from catalog.get_product's real shape: a product's sellable units
 // are its variants' *sizes* (Color Size Item rows), not the variants
@@ -14,7 +38,11 @@ export function useProductStats(source) {
 
     const onHand = sizes.reduce((sum, size) => sum + (size.stock ?? 0), 0)
     const committed = sizes.reduce((sum, size) => sum + (size.committed ?? 0), 0)
-    const rates = sizes.map((size) => size.default_rate).filter((rate) => rate != null)
+    // The range a shopper sees, so it reads the charged rate too — a size priced on the sale
+    // list alone has no default_rate at all and would otherwise drop out of the range entirely.
+    const rates = sizes
+      .filter((size) => size.sale_rate != null || size.default_rate != null)
+      .map((size) => shownPrice(size))
 
     const sales = product.recent_sales ?? { units_sold: 0, order_count: 0, revenue: 0 }
 

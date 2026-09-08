@@ -99,7 +99,7 @@ async function saveSetting(field, value) {
               @click="selectedName = theme.name"
             >
               <span
-                class="grid size-9 shrink-0 place-items-center rounded-4 bg-surface-white text-ink-gray-6"
+                class="grid size-9 shrink-0 place-items-center rounded-4 bg-surface-base text-ink-gray-6"
               >
                 <span class="lucide-palette size-4" aria-hidden="true" />
               </span>

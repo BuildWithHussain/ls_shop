@@ -29,37 +29,10 @@ export const TARGET_FIELDS = [
 
 export const REQUIRED_FIELDS = ['title', 'collection', 'color', 'size']
 
-export const imp = reactive({
-  open: false,
-  step: 0,
-  source: 'csv',
-  imagesMode: 'bulk',
-  file: null,
-  fileUrl: null,
-  parsing: false,
-  parsed: false,
-  // Photos: every file the browser has uploaded, the merchant's manual pick per file, what the
-  // server matched back, and the {group key: [file_url]} map handed to run_import.
-  imageFiles: [],
-  imageChoices: {},
-  imageMatch: null,
-  imageAssignments: {},
-  running: false,
-  finished: false,
-  reviewFilter: 'all',
-  mapping: {},
-  confidence: {},
-  headers: [],
-  rows: [],
-  counts: { total: 0, ready: 0, warnings: 0, errors: 0, products: 0 },
-  created: [],
-  runRowErrors: [],
-  runImageErrors: [],
-  imagesAttached: 0,
-})
-
-export function resetImport() {
-  Object.assign(imp, {
+// `open` is deliberately not part of this shape: resetImport() runs from openImport() while the
+// dialog is being shown, and clearing `open` there would tear the dialog down as it opens.
+function blankImport() {
+  return {
     step: 0,
     source: 'csv',
     imagesMode: 'bulk',
@@ -67,12 +40,17 @@ export function resetImport() {
     fileUrl: null,
     parsing: false,
     parsed: false,
+    // Photos: every file the browser has uploaded, the merchant's manual pick per file, what the
+    // server matched back, and the {group key: [file_url]} map handed to run_import.
     imageFiles: [],
     imageChoices: {},
     imageMatch: null,
     imageAssignments: {},
     running: false,
+    // `finished` means the write landed; a refused run sets `failed` instead, so that a retry is
+    // not mistaken for a completed import (see RunStep).
     finished: false,
+    failed: false,
     reviewFilter: 'all',
     mapping: {},
     confidence: {},
@@ -83,10 +61,14 @@ export function resetImport() {
     runRowErrors: [],
     runImageErrors: [],
     imagesAttached: 0,
-  })
+  }
 }
 
-resetImport()
+export const imp = reactive({ open: false, ...blankImport() })
+
+export function resetImport() {
+  Object.assign(imp, blankImport())
+}
 
 export function openImport() {
   if (imp.finished || imp.file) resetImport()

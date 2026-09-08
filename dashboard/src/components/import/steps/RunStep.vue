@@ -1,8 +1,7 @@
 <script setup>
-import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Alert, Badge, Button, Spinner } from 'frappe-ui'
-import { closeImport, imp } from '../../../data/importFlow'
+import { STEPS, closeImport, imp } from '../../../data/importFlow'
 import { useAdminAction } from '../../../data/api'
 import { openSettings } from '../../../ia/settings'
 import ProductThumb from '../ProductThumb.vue'
@@ -10,7 +9,11 @@ import ProductThumb from '../ProductThumb.vue'
 const runImportAction = useAdminAction('imports.run_import')
 
 async function run() {
+  // `failed` is deliberately not in this guard: going back to Review and running again mounts a
+  // fresh RunStep, and the retry has to be allowed through. `finished` still blocks, because a
+  // landed import must never be written twice.
   if (imp.running || imp.finished) return
+  imp.failed = false
   imp.running = true
 
   await runImportAction.submit({
@@ -19,9 +22,12 @@ async function run() {
     image_assignments: { ...imp.imageAssignments },
   })
   imp.running = false
-  imp.finished = true
 
-  if (runImportAction.error) return
+  if (runImportAction.error) {
+    imp.failed = true
+    return
+  }
+  imp.finished = true
   const result = runImportAction.data
   imp.created = result.created
   imp.runRowErrors = result.row_errors
@@ -29,9 +35,18 @@ async function run() {
   imp.runImageErrors = result.image_errors
 }
 
-onMounted(run)
+// Started in setup rather than onMounted so the `imp.failed = false` above lands before the first
+// render: a retry mounts this component with the previous run's `failed` still set, and on mount
+// the error branch would paint an empty card for a frame before the spinner replaced it.
+run()
 
 const router = useRouter()
+
+const reviewStep = STEPS.findIndex((step) => step.key === 'review')
+
+function backToReview() {
+  imp.step = reviewStep
+}
 
 function finish(path) {
   closeImport()
@@ -48,7 +63,7 @@ const NEXT = [
 <template>
   <div class="space-y-6">
     <!-- Running -->
-    <template v-if="!imp.finished">
+    <template v-if="!imp.finished && !imp.failed">
       <div>
         <h2 class="text-xl text-ink-gray-9">Importing your catalogue</h2>
         <p class="mt-1 text-p-base text-ink-gray-6">This only takes a moment.</p>
@@ -65,7 +80,7 @@ const NEXT = [
     </template>
 
     <!-- Failed outright (e.g. this store has no Color/Size attribute) -->
-    <template v-else-if="runImportAction.error">
+    <template v-else-if="imp.failed">
       <div class="rounded-6 border border-outline-gray-1 px-6 py-8 text-center">
         <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-surface-red-2 text-ink-red-6">
           <span class="lucide-triangle-alert size-6" aria-hidden="true" />
@@ -74,7 +89,10 @@ const NEXT = [
         <p class="mx-auto mt-1.5 max-w-[460px] text-p-base text-ink-gray-6">
           {{ runImportAction.error?.message }}
         </p>
-        <Button class="mt-4" label="Close" @click="closeImport" />
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <Button variant="solid" theme="gray" icon-left="lucide-arrow-left" label="Back to review" @click="backToReview" />
+          <Button label="Close" @click="closeImport" />
+        </div>
       </div>
     </template>
 

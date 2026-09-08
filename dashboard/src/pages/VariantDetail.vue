@@ -7,6 +7,7 @@ import PageBody from '../components/PageBody.vue'
 import Thumb from '../components/Thumb.vue'
 import VariantMedia from '../components/VariantMedia.vue'
 import { useAdminRead, useAdminAction } from '../data/api'
+import { pricePayload, shownPrice } from '../data/product'
 
 const route = useRoute()
 
@@ -22,10 +23,9 @@ const variant = computed(() =>
 
 // One draft row per size — this is the fine-grained editor (the product
 // page's matrix row only offers one bulk price for every size at once).
-// Price is what a shopper pays (sale_rate if a discount is on, otherwise
-// default_rate); Compare at is the higher, struck-through reference
-// (default_rate) and is only meaningful once it is filled in — see
-// ls_shop/product_detail.py's get_discount_percent for the same convention.
+// Price is what a shopper is charged (shownPrice in data/product.js);
+// Compare at is the default price list, held raw so a reference equal to
+// the price still round-trips instead of being erased on save.
 const sizeDrafts = reactive({})
 watch(
   variant,
@@ -33,10 +33,9 @@ watch(
     for (const key of Object.keys(sizeDrafts)) delete sizeDrafts[key]
     if (!value) return
     for (const size of value.sizes) {
-      const hasSale = size.sale_rate != null && size.sale_rate < (size.default_rate ?? Infinity)
       sizeDrafts[size.item_code] = {
-        price: hasSale ? size.sale_rate : (size.default_rate ?? 0),
-        compareAt: hasSale ? size.default_rate : null,
+        price: shownPrice(size),
+        compareAt: size.default_rate ?? null,
         receiveQty: '',
       }
     }
@@ -52,10 +51,13 @@ async function save() {
   const size_prices = variant.value.sizes.map((size) => {
     const draft = sizeDrafts[size.item_code]
     const hasCompareAt = draft.compareAt != null && draft.compareAt !== ''
+    // With no compare-at there is only one price to write, and it has to land on the list
+    // already in force — see pricePayload.
     return {
       item_code: size.item_code,
-      default_rate: hasCompareAt ? draft.compareAt : draft.price,
-      sale_rate: hasCompareAt ? draft.price : undefined,
+      ...(hasCompareAt
+        ? { default_rate: draft.compareAt, sale_rate: draft.price }
+        : pricePayload(size, draft.price)),
     }
   })
   await priceAction.submit({ style_attribute_variant: variant.value.name, size_prices })

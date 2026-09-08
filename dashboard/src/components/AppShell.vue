@@ -1,10 +1,11 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { DesktopShell, ScrollArea, Sidebar, SidebarHeader, call } from 'frappe-ui'
+import { DesktopShell, ScrollArea, Sidebar, SidebarHeader } from 'frappe-ui'
 import { activeNavTarget, productName, sections } from '../ia/nav'
 import logoUrl from '../assets/commera.svg'
 import { openSettings } from '../ia/settings'
+import { useAdminRead, useMethodAction } from '../data/api'
 import NavSection from './NavSection.vue'
 
 const route = useRoute()
@@ -15,22 +16,17 @@ const activeTarget = computed(() => activeNavTarget(route.path))
 // takes a permission not every member of staff holds, and this is a subtitle:
 // a refusal leaves it blank, the way an unconfigured site does, rather than
 // toasting an error over every page a picker or a cashier opens.
-const storeName = ref(null)
+const storeSettings = useAdminRead('settings.get_store_settings', { quiet: true })
 
-onMounted(async () => {
-  try {
-    const settings = await call('ls_shop.api.admin.settings.get_store_settings')
-    storeName.value = settings?.store_name || null
-  } catch {
-    storeName.value = null
-  }
-})
+const storeName = computed(() => storeSettings.data?.store_name || null)
 
 // The storefront is served by this same site, so it is the origin's root — a
 // bare '/' redirects to the shopper's language.
 function openStorefront() {
   window.open('/', '_blank', 'noopener')
 }
+
+const logoutAction = useMethodAction('logout', { quiet: true })
 
 // `location.replace` rather than a router push: the session cookie is gone
 // server-side, so the shell in memory is authenticated against nothing and
@@ -40,7 +36,7 @@ async function logout() {
   // session may be gone, and stranding the merchant on it is worse than sending
   // them to a login page they can retry from.
   try {
-    await call('/api/method/logout')
+    await logoutAction.submit()
   } finally {
     window.location.replace('/login')
   }

@@ -7,6 +7,7 @@ import EditableValue from './EditableValue.vue'
 import VariantDialog from './VariantDialog.vue'
 import { useAdminAction } from '../data/api'
 import { stockTone } from '../data/format'
+import { pricePayload, shownPrice } from '../data/product'
 import { ia } from '../ia/store'
 
 const props = defineProps({ product: { type: Object, required: true } })
@@ -35,27 +36,35 @@ const optionValues = computed(() => [...new Set(props.product.variants.map((v) =
 const priceAction = useAdminAction('catalog.set_variant_price')
 
 async function setPrice(variant, rate) {
-  await priceAction.submit({ style_attribute_variant: variant.name, default_rate: rate })
+  await priceAction.submit({
+    style_attribute_variant: variant.name,
+    ...pricePayload(variant.sizes[0], rate),
+  })
   if (priceAction.error) return
   toast.success(`Price updated for ${variant.option} (${variant.sizes.length} sizes)`)
   emit('saved')
 }
 
 async function bulkSetPrice() {
-  const ids = [...selection.value]
+  const selected = props.product.variants.filter((variant) => selection.value.includes(variant.name))
+  if (!selected.length) return
+
   dialog.prompt({
-    title: `Set price on ${ids.length} ${ids.length === 1 ? 'variant' : 'variants'}`,
+    title: `Set price on ${selected.length} ${selected.length === 1 ? 'variant' : 'variants'}`,
     message: 'Sets the price for every size under each selected variant.',
     fields: [{ name: 'value', label: 'Price', type: 'number', required: true }],
     onConfirm: async ({ values }) => {
       const rate = Math.max(0, Number(values.value) || 0)
-      for (const name of ids) {
-        await priceAction.submit({ style_attribute_variant: name, default_rate: rate })
+      for (const variant of selected) {
+        await priceAction.submit({
+          style_attribute_variant: variant.name,
+          ...pricePayload(variant.sizes[0], rate),
+        })
         // A failure already toasted inside useAdminAction — stop rather than reprice the rest silently.
         if (priceAction.error) return
       }
       selection.value = []
-      toast.success(`Price updated on ${ids.length} ${ids.length === 1 ? 'variant' : 'variants'}`)
+      toast.success(`Price updated on ${selected.length} ${selected.length === 1 ? 'variant' : 'variants'}`)
       emit('saved')
     },
   })
@@ -193,9 +202,11 @@ const columns = ['minmax(7rem,1.3fr)', 'minmax(5rem,1fr)', '6.5rem', '5rem', '4.
                 <!-- One price for the whole row: sets every size under this variant
                      in one pass (catalog.set_variant_price), the same bulk operation
                      create_product uses. Per-size prices are edited on the variant's
-                     own page, where there is room to show them individually. -->
+                     own page, where there is room to show them individually. What is
+                     shown and written is the rate a shopper is charged — see
+                     shownPrice in data/product.js — not the compare-at above it. -->
                 <EditableValue
-                  :model-value="item.sizes[0]?.default_rate ?? 0"
+                  :model-value="shownPrice(item.sizes[0])"
                   label="Price"
                   format="money"
                   @update:model-value="(rate) => setPrice(item, rate)"

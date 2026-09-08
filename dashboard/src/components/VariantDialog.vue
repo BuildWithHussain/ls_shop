@@ -8,6 +8,7 @@ import { computed, ref, watch } from 'vue'
 import { Badge, Button, Dialog, FormControl, toast } from 'frappe-ui'
 import VariantMedia from './VariantMedia.vue'
 import { useAdminAction } from '../data/api'
+import { pricePayload, shownPrice } from '../data/product'
 
 const props = defineProps({
   variant: { type: Object, default: null },
@@ -18,11 +19,11 @@ const open = defineModel('open', { type: Boolean, default: false })
 const emit = defineEmits(['saved'])
 
 // Bulk price editing across every size under this option — the same call
-// the product page's matrix row uses (catalog.set_variant_price). Compare-at
-// (the higher, struck-through reference) writes the default price list;
-// Price (what a shopper actually pays) writes the sale price list — see
-// ls_shop/product_detail.py's get_discount_percent, which treats
-// default_rate as the original and sale_rate as the discounted charge.
+// the product page's matrix row uses (catalog.set_variant_price). Price is
+// what a shopper is charged (shownPrice in data/product.js); Compare-at is
+// the default price list, shown raw rather than through compareAtPrice so
+// that a reference equal to the price still round-trips through the box
+// instead of being erased by a save that only meant to change the price.
 const price = ref(0)
 const compareAt = ref(null)
 watch(
@@ -31,7 +32,7 @@ watch(
     if (!variant) return
     const first = variant.sizes?.[0]
     compareAt.value = first?.default_rate ?? null
-    price.value = first?.sale_rate ?? first?.default_rate ?? 0
+    price.value = shownPrice(first)
   },
   { immediate: true },
 )
@@ -52,10 +53,14 @@ const priceAction = useAdminAction('catalog.set_variant_price')
 
 async function save() {
   const hasCompareAt = compareAt.value != null && compareAt.value !== ''
+  // With no compare-at there is only one price to write, and it has to land on the list already
+  // in force: a product created without one is priced on the sale list alone, so writing the
+  // default list there would leave the shopper paying the old rate.
   await priceAction.submit({
     style_attribute_variant: props.variant.name,
-    default_rate: hasCompareAt ? compareAt.value : price.value,
-    sale_rate: hasCompareAt ? price.value : undefined,
+    ...(hasCompareAt
+      ? { default_rate: compareAt.value, sale_rate: price.value }
+      : pricePayload(props.variant.sizes?.[0], price.value)),
   })
   if (priceAction.error) return
   open.value = false

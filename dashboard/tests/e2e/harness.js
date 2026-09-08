@@ -90,7 +90,10 @@ async function login(session) {
     await page.type('#login_password', PASSWORD)
     await Promise.all([
       page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 60000 }).catch(() => {}),
-      page.click('.btn-login'),
+      // Frappe's login page dropped the `.btn-login` class; the sign-in form is
+      // `.form-login` and the other `type=submit` buttons belong to the hidden
+      // forgot-password and email-link forms, so scope the click to that form.
+      page.click('.form-login button[type="submit"]'),
     ])
   }
   if (page.url().includes('/login')) throw new Error('login failed at ' + BASE)

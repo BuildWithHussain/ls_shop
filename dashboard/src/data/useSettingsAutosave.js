@@ -23,6 +23,24 @@ export function useSettingsAutosave(save) {
   const values = ref({})
   const stored = ref({})
 
+  // Every control in the panel commits through the one `save` action, and a `useCall` is one
+  // request at a time: VueUse's fetch aborts the in-flight request at the top of the next
+  // `execute()`, and `data`/`error` are a single ref pair per instance — so two overlapping
+  // commits abort each other and each `await` resolves reading the other's answer (frappe-ui
+  // #991; its own fix, `useIsolatedCall`, is internal and exported from no entry point). They
+  // overlap in one ordinary gesture: a text box commits on blur, and the control that took the
+  // focus commits on its own mouseup ~50ms later. Chaining every commit onto one promise gives
+  // each its own uncontested request, and last-write-wins ordering on the server for free. The
+  // chain is carried forward with its rejection swallowed, so a commit that throws cannot wedge
+  // the queue for the rest of the session — the caller still sees its own rejection.
+  let queue = Promise.resolve()
+
+  function enqueue(write) {
+    const result = queue.then(write)
+    queue = result.catch(() => {})
+    return result
+  }
+
   // Merged, not replaced: a panel adopts the fields it owns — a group, a section — one answer at
   // a time, and adopting one must not forget the rest.
   function adopt(record) {
@@ -41,16 +59,22 @@ export function useSettingsAutosave(save) {
     if (normalize(value) === normalize(stored.value[fieldname])) return
 
     values.value[fieldname] = value
-    const saved = await save.submit({ [fieldname]: value })
-    if (save.error) {
-      values.value = { ...stored.value }
-      return
-    }
 
-    if (afterSave) await afterSave(saved)
-    else adopt(saved)
+    return enqueue(async () => {
+      const saved = await save.submit({ [fieldname]: value })
+      // The refusal is read off the shared action, which only answers for this commit because
+      // nothing else is in flight. Only the refused box rolls back: replacing the whole map
+      // would wipe what the owner is typing into another field.
+      if (save.error) {
+        values.value[fieldname] = stored.value[fieldname]
+        return
+      }
 
-    toast.success(`${label} saved`)
+      if (afterSave) await afterSave(saved)
+      else adopt(saved)
+
+      toast.success(`${label} saved`)
+    })
   }
 
   return { values, stored, adopt, set, commit }

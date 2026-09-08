@@ -17,13 +17,16 @@ const ADMIN_MODULE = 'ls_shop.api.admin.'
 // A GET read of any whitelisted method, by its full dotted path. Used where the
 // dashboard shares an endpoint with the Desk form rather than owning an admin
 // wrapper of its own (e.g. the Sales Order refund methods).
+// `quiet` opts out of the toast, for a call whose refusal is an expected state
+// rather than an error — a subtitle a cashier has no permission to read, or a
+// write whose caller already redirects away from the screen.
 export function useMethodRead(method, options = {}) {
-  const { onError, ...rest } = options
+  const { onError, quiet = false, ...rest } = options
   return useCall({
     url: METHOD_PREFIX + method,
     method: 'GET',
     onError: (error) => {
-      toast.error(errorMessage(error))
+      if (!quiet) toast.error(errorMessage(error))
       onError?.(error)
     },
     ...rest,
@@ -32,13 +35,13 @@ export function useMethodRead(method, options = {}) {
 
 // A POST write of any whitelisted method, by its full dotted path.
 export function useMethodAction(method, options = {}) {
-  const { onError, ...rest } = options
+  const { onError, quiet = false, ...rest } = options
   return useCall({
     url: METHOD_PREFIX + method,
     method: 'POST',
     immediate: false,
     onError: (error) => {
-      toast.error(errorMessage(error))
+      if (!quiet) toast.error(errorMessage(error))
       onError?.(error)
     },
     ...rest,

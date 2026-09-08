@@ -10,6 +10,7 @@ import BulkBar from '../components/BulkBar.vue'
 import EditableValue from '../components/EditableValue.vue'
 import { useAdminRead, useAdminAction } from '../data/api'
 import { money } from '../data/format'
+import { compareAtPrice, pricePayload, shownPrice } from '../data/product'
 import { ia } from '../ia/store'
 
 const selecting = ref(false)
@@ -33,31 +34,20 @@ const pricingRequest = useAdminRead('catalog.get_pricing_rows', {
   refetch: true,
 })
 
-// Same money semantics as VariantDetail.vue: sale_rate is what a shopper actually pays once a
-// discount is on, default_rate is the higher struck-through reference — see
-// ls_shop/product_detail.py's get_discount_percent, the source of this convention.
 const rows = computed(() =>
-  (pricingRequest.data?.rows ?? []).map((row) => {
-    const hasSale = row.sale_rate != null && row.sale_rate < (row.default_rate ?? Infinity)
-    return {
-      ...row,
-      price: hasSale ? row.sale_rate : (row.default_rate ?? 0),
-      compareAt: hasSale ? row.default_rate : null,
-      hasSale,
-    }
-  }),
+  (pricingRequest.data?.rows ?? []).map((row) => ({
+    ...row,
+    price: shownPrice(row),
+    compareAt: compareAtPrice(row),
+  })),
 )
 
 const priceAction = useAdminAction('catalog.set_variant_price')
 
-// Edits whichever field the shown "Price" actually is — sale_rate once a compare-at exists,
-// default_rate otherwise — the same variant-wide bulk write (catalog.set_variant_price) the
-// product page's own variant matrix uses, applying one rate to every size under the variant.
+// The same variant-wide bulk write (catalog.set_variant_price) the product page's own variant
+// matrix uses, applying one rate to every size under the variant.
 async function setPrice(row, rate) {
-  const payload = row.hasSale
-    ? { style_attribute_variant: row.name, sale_rate: rate }
-    : { style_attribute_variant: row.name, default_rate: rate }
-  await priceAction.submit(payload)
+  await priceAction.submit({ style_attribute_variant: row.name, ...pricePayload(row, rate) })
   if (priceAction.error) return
   toast.success(`Price updated for ${row.title} (${row.size_count} sizes)`)
   pricingRequest.reload()
@@ -76,10 +66,7 @@ function bulkRaisePrice() {
       const pct = Number(values.value) || 0
       for (const row of selected) {
         const rate = Math.round(row.price * (1 + pct / 100) * 100) / 100
-        const payload = row.hasSale
-          ? { style_attribute_variant: row.name, sale_rate: rate }
-          : { style_attribute_variant: row.name, default_rate: rate }
-        await priceAction.submit(payload)
+        await priceAction.submit({ style_attribute_variant: row.name, ...pricePayload(row, rate) })
         // A failure already toasted inside useAdminAction — stop rather than reprice the rest silently.
         if (priceAction.error) return
       }

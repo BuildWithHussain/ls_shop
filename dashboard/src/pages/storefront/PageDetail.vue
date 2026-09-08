@@ -44,7 +44,7 @@ function toForm(data) {
 }
 
 function openStorefront() {
-  window.open(form.value.url, '_blank')
+  window.open(form.value.url, '_blank', 'noopener')
 }
 
 const form = ref(blankPage())
