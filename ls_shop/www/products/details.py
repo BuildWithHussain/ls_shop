@@ -51,9 +51,7 @@ def get_context(context):
 		frappe.db.get_value("Style Attribute Configurator", product_variant.configurator, "item_attribute")
 		!= DEFAULT_OPTION_ATTRIBUTE
 	)
-	context.show_sizes = (
-		len(detail["available_sizes"]) > 1 or detail["selected_size"] != DEFAULT_SIZE_VALUE
-	)
+	context.show_sizes = len(detail["available_sizes"]) > 1 or detail["selected_size"] != DEFAULT_SIZE_VALUE
 	context.recommended_items = get_recommended_products(product_variant)
 	context.other_variants = get_other_variants(product_variant)
 	context.discount_percent = detail["discount_percent"]

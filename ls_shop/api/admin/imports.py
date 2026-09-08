@@ -105,7 +105,11 @@ def parse_and_validate(file_url: str, column_mapping: dict | None = None):
 	data_rows = rows[1:]
 
 	suggested_mapping, confidence = suggest_mapping(headers)
-	mapping = {header: column_mapping.get(header, "") for header in headers} if column_mapping else suggested_mapping
+	mapping = (
+		{header: column_mapping.get(header, "") for header in headers}
+		if column_mapping
+		else suggested_mapping
+	)
 
 	missing_required = [FIELD_LABELS[field] for field in REQUIRED_FIELDS if field not in mapping.values()]
 	if missing_required:
@@ -468,7 +472,10 @@ def receive_group_stock(item_template, rows):
 
 	size_items = frappe.get_all(
 		"Color Size Item",
-		filters={"parent": ["in", [variant.name for variant in variants]], "parenttype": "Style Attribute Variant"},
+		filters={
+			"parent": ["in", [variant.name for variant in variants]],
+			"parenttype": "Style Attribute Variant",
+		},
 		fields=["parent", "size", "item_code"],
 	)
 	item_code_by_variant_size = {(row.parent, cstr(row.size).casefold()): row.item_code for row in size_items}
@@ -505,9 +512,13 @@ def run_import(
 	file_urls_by_key = read_image_assignments(image_assignments)
 
 	if not frappe.db.exists("Item Attribute", OPTION_ATTRIBUTE):
-		frappe.throw(_('This store has no Item Attribute named "{0}" — create it first.').format(OPTION_ATTRIBUTE))
+		frappe.throw(
+			_('This store has no Item Attribute named "{0}" — create it first.').format(OPTION_ATTRIBUTE)
+		)
 	if not frappe.db.exists("Item Attribute", SIZE_ATTRIBUTE):
-		frappe.throw(_('This store has no Item Attribute named "{0}" — create it first.').format(SIZE_ATTRIBUTE))
+		frappe.throw(
+			_('This store has no Item Attribute named "{0}" — create it first.').format(SIZE_ATTRIBUTE)
+		)
 
 	result = parse_and_validate(file_url, column_mapping)
 	groups = group_valid_rows(result["rows"])

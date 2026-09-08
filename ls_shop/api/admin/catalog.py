@@ -263,7 +263,10 @@ def get_size_stock(item_codes):
 		filters={"item_code": ["in", item_codes], "warehouse": warehouse},
 		fields=["item_code", "actual_qty", "reserved_qty"],
 	)
-	return {cstr(row.item_code): {"stock": flt(row.actual_qty), "committed": flt(row.reserved_qty)} for row in rows}
+	return {
+		cstr(row.item_code): {"stock": flt(row.actual_qty), "committed": flt(row.reserved_qty)}
+		for row in rows
+	}
 
 
 def get_restock_level(item_codes):
@@ -629,11 +632,15 @@ def get_top_products(limit: int = TOP_PRODUCTS_LIMIT):
 	templates = [row[0] for row in rows]
 	items_by_name = {
 		row.name: row
-		for row in frappe.get_all("Item", filters={"name": ["in", templates]}, fields=["name", "item_name", "image"])
+		for row in frappe.get_all(
+			"Item", filters={"name": ["in", templates]}, fields=["name", "item_name", "image"]
+		)
 	}
 
 	configurators = frappe.get_all(
-		"Style Attribute Configurator", filters={"item_template": ["in", templates]}, fields=["name", "item_template"]
+		"Style Attribute Configurator",
+		filters={"item_template": ["in", templates]},
+		fields=["name", "item_template"],
 	)
 	template_by_configurator = {row.name: row.item_template for row in configurators}
 	template_variants = (
@@ -645,7 +652,9 @@ def get_top_products(limit: int = TOP_PRODUCTS_LIMIT):
 		if configurators
 		else []
 	)
-	template_by_variant = {row.name: template_by_configurator.get(row.configurator) for row in template_variants}
+	template_by_variant = {
+		row.name: template_by_configurator.get(row.configurator) for row in template_variants
+	}
 	sizes = (
 		frappe.get_all(
 			"Color Size Item",
@@ -671,7 +680,9 @@ def get_top_products(limit: int = TOP_PRODUCTS_LIMIT):
 				"image": items_by_name.get(row[0], {}).get("image"),
 				"units": cint(row[1]),
 				"revenue": flt(row[2]),
-				"stock": sum(stock_by_item_code.get(code, 0) for code in item_codes_by_template.get(row[0], [])),
+				"stock": sum(
+					stock_by_item_code.get(code, 0) for code in item_codes_by_template.get(row[0], [])
+				),
 			}
 			for row in rows
 		],
@@ -739,9 +750,7 @@ def list_collections(search: str | None = None, start: int = 0, page_length: int
 	if search:
 		filters = filters & item_group.name.like(f"%{cstr(search)}%")
 
-	total = (
-		frappe.qb.from_(item_group).select(Count(item_group.name)).where(filters)
-	).run()[0][0]
+	total = (frappe.qb.from_(item_group).select(Count(item_group.name)).where(filters)).run()[0][0]
 
 	names = (
 		frappe.qb.from_(item_group)
@@ -796,7 +805,9 @@ def create_collection(title: str):
 	).run()
 	# A brand-new store with zero collections yet has no leaf to copy a parent from — file
 	# straight under the tree root instead.
-	parent_item_group = parent[0][0] if parent else frappe.db.get_value("Item Group", {"parent_item_group": ""})
+	parent_item_group = (
+		parent[0][0] if parent else frappe.db.get_value("Item Group", {"parent_item_group": ""})
+	)
 
 	collection = frappe.new_doc("Item Group")
 	collection.item_group_name = title
@@ -905,9 +916,7 @@ def check_abbreviations_are_distinct(attribute_doc, abbreviation: str, skip_row_
 	"""Refuse a colliding abbreviation up front: two values sharing one generate the same item code, and the
 	variant insert dies with DuplicateEntryError. Case-insensitive, as Item Attribute.validate_duplication is."""
 	taken = {
-		cstr(row.abbr).casefold()
-		for row in attribute_doc.item_attribute_values
-		if row.name != skip_row_name
+		cstr(row.abbr).casefold() for row in attribute_doc.item_attribute_values if row.name != skip_row_name
 	}
 	if cstr(abbreviation).casefold() in taken:
 		frappe.throw(
@@ -1007,7 +1016,11 @@ def create_product(
 	# An Item is named after its title (autoname "field:item_code"), so a reserved "New Item" prefix and a
 	# repeat title both surface from inside insert() as messages a shop owner cannot act on.
 	if title.startswith("New Item"):
-		frappe.throw(_('A product title cannot start with "New Item" - Frappe reserves that wording for documents it has not saved yet. Try another title.'))
+		frappe.throw(
+			_(
+				'A product title cannot start with "New Item" - Frappe reserves that wording for documents it has not saved yet. Try another title.'
+			)
+		)
 
 	if frappe.db.exists("Item", title):
 		frappe.throw(_("A product called {0} already exists. Give this one a different title.").format(title))
@@ -1026,7 +1039,11 @@ def create_product(
 	# generate_variants() lowercases the attribute name into a "Color Size Item" fieldname, so any other
 	# spelling fails deep inside variant generation with "Value missing for: Size".
 	if cstr(size_attribute) != "Size":
-		frappe.throw(_('The size option must use the attribute named exactly "Size" — {0} will not work.').format(size_attribute))
+		frappe.throw(
+			_('The size option must use the attribute named exactly "Size" — {0} will not work.').format(
+				size_attribute
+			)
+		)
 
 	option_sizes = parse_option_sizes(option_sizes)
 
@@ -1037,8 +1054,12 @@ def create_product(
 		option_attribute,
 		size_attribute,
 		option_sizes,
-		option_abbreviations=frappe.parse_json(option_abbreviations) if isinstance(option_abbreviations, str) else option_abbreviations,
-		size_abbreviations=frappe.parse_json(size_abbreviations) if isinstance(size_abbreviations, str) else size_abbreviations,
+		option_abbreviations=frappe.parse_json(option_abbreviations)
+		if isinstance(option_abbreviations, str)
+		else option_abbreviations,
+		size_abbreviations=frappe.parse_json(size_abbreviations)
+		if isinstance(size_abbreviations, str)
+		else size_abbreviations,
 	)
 
 	item_template = frappe.new_doc("Item")

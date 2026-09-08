@@ -254,10 +254,14 @@ def get_revenue_report(months: int = REPORT_MONTHS_DEFAULT):
 	)
 	refunds_by_order = get_refund_totals_by_order([row.name for row in order_rows])
 
-	series_by_month = {key: {"revenue": 0.0, "orders": 0, "discounts": 0.0, "refunds": 0.0} for key in buckets}
+	series_by_month = {
+		key: {"revenue": 0.0, "orders": 0, "discounts": 0.0, "refunds": 0.0} for key in buckets
+	}
 	for row in order_rows:
 		key = month_key(row.transaction_date)
-		bucket = series_by_month.setdefault(key, {"revenue": 0.0, "orders": 0, "discounts": 0.0, "refunds": 0.0})
+		bucket = series_by_month.setdefault(
+			key, {"revenue": 0.0, "orders": 0, "discounts": 0.0, "refunds": 0.0}
+		)
 		bucket["revenue"] += flt(row.base_grand_total)
 		bucket["orders"] += 1
 		bucket["discounts"] += flt(row.base_discount_amount)
@@ -497,7 +501,9 @@ def get_storefront_report(months: int = REPORT_MONTHS_DEFAULT):
 		return next((row["count"] for row in stages if row["key"] == key), 0)
 
 	add_to_cart_rate = get_rate(stage_count(funnel, "added_to_cart"), stage_count(funnel, "sessions"))
-	checkout_completion_rate = get_rate(stage_count(funnel, "purchased"), stage_count(funnel, "reached_checkout"))
+	checkout_completion_rate = get_rate(
+		stage_count(funnel, "purchased"), stage_count(funnel, "reached_checkout")
+	)
 	previous_add_to_cart_rate = get_rate(
 		stage_count(previous_funnel, "added_to_cart"), stage_count(previous_funnel, "sessions")
 	)
@@ -516,7 +522,10 @@ def get_storefront_report(months: int = REPORT_MONTHS_DEFAULT):
 			},
 		},
 		"sessions_by_month": get_sessions_by_month(start, today),
-		"channels": [{"channel": row["source"], "sessions": row["sessions"]} for row in get_channel_split(from_date, to_date)],
+		"channels": [
+			{"channel": row["source"], "sessions": row["sessions"]}
+			for row in get_channel_split(from_date, to_date)
+		],
 		"funnel": [{"stage": row["label"], "count": row["count"]} for row in funnel],
 		"top_pages": [
 			{"page": row["path"], "views": row["sessions"], "conversion": row["conversion_rate"]}

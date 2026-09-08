@@ -558,9 +558,7 @@ class TestCreateSingleItemProduct(ProductOnboardingTestCase):
 	def test_a_book_with_no_options_at_all_falls_back_to_a_single_hidden_axis(self):
 		book = self.add_book()
 
-		self.assertEqual(
-			self.get_sizes_by_option(book["name"]), {DEFAULT_OPTION_VALUE: [DEFAULT_SIZE_VALUE]}
-		)
+		self.assertEqual(self.get_sizes_by_option(book["name"]), {DEFAULT_OPTION_VALUE: [DEFAULT_SIZE_VALUE]})
 		self.assertTrue(frappe.db.exists("Item Attribute", DEFAULT_OPTION_ATTRIBUTE))
 
 	def test_the_leaf_item_carries_a_real_size_attribute_row(self):

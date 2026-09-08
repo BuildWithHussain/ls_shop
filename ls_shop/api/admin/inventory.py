@@ -282,7 +282,9 @@ def get_product_titles(item_codes):
 	titles = (
 		{
 			row.name: row.item_name
-			for row in frappe.get_all("Item", filters={"name": ["in", item_styles]}, fields=["name", "item_name"])
+			for row in frappe.get_all(
+				"Item", filters={"name": ["in", item_styles]}, fields=["name", "item_name"]
+			)
 		}
 		if item_styles
 		else {}
@@ -303,7 +305,9 @@ def get_movement_reasons(entries):
 		{
 			row.name: row.stock_entry_type
 			for row in frappe.get_all(
-				"Stock Entry", filters={"name": ["in", stock_entry_names]}, fields=["name", "stock_entry_type"]
+				"Stock Entry",
+				filters={"name": ["in", stock_entry_names]},
+				fields=["name", "stock_entry_type"],
 			)
 		}
 		if stock_entry_names
@@ -315,7 +319,9 @@ def get_movement_reasons(entries):
 		key = (row.voucher_type, row.voucher_no)
 		if row.voucher_type == "Stock Entry":
 			stock_entry_type = stock_entry_type_by_name.get(row.voucher_no)
-			reasons[key] = STOCK_ENTRY_REASON_LABELS.get(stock_entry_type, stock_entry_type or row.voucher_type)
+			reasons[key] = STOCK_ENTRY_REASON_LABELS.get(
+				stock_entry_type, stock_entry_type or row.voucher_type
+			)
 		else:
 			reasons[key] = VOUCHER_TYPE_REASON_LABELS.get(row.voucher_type, row.voucher_type)
 	return reasons
