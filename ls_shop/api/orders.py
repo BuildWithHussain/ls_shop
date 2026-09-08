@@ -47,19 +47,16 @@ def make_refund_payment_entry(order_id: str, amount: float | None = None) -> str
 
 	refund_amount = resolve_refund_amount(refund_status["refundable_amount"], amount)
 
-	payment_entry = frappe.get_all(
-		"Payment Entry Reference",
-		filters={"reference_doctype": "Sales Order", "reference_name": order_id},
-		fields=["parent"],
-		# Ordered so a second gateway attempt cannot change which entry the refund is modelled on.
-		order_by="creation asc",
-		limit=1,
-	)
-
-	if not payment_entry:
+	payments = get_order_payments(order_id)
+	if not payments:
 		frappe.throw(_("No Payment Entry found for this Sales Order."))
 
-	payment_entry_doc = frappe.get_doc("Payment Entry", payment_entry[0].parent)
+	payment_entry_doc = frappe.get_doc("Payment Entry", payments[0].name)
+
+	# ponytail: single-currency refunds only, revisit when a gateway settles in another currency.
+	# The reversal swaps the accounts, so equal currencies are what makes received == paid below.
+	if payment_entry_doc.paid_from_account_currency != payment_entry_doc.paid_to_account_currency:
+		frappe.throw(_("This payment crossed currencies; refund it from the accounts desk instead."))
 
 	with system_user_session():
 		new_payment_entry = frappe.get_doc(
@@ -73,7 +70,9 @@ def make_refund_payment_entry(order_id: str, amount: float | None = None) -> str
 				"paid_from": payment_entry_doc.paid_to,
 				"paid_to": payment_entry_doc.paid_from,
 				"paid_amount": refund_amount,
-				# received_amount unset: set_received_amount derives it; hardcoding asserts a wrong 1:1 rate.
+				# validate_mandatory() runs before set_amounts(), so set_received_amount() never gets
+				# to derive this and the entry cannot insert. Equal currencies make the two the same.
+				"received_amount": refund_amount,
 				"reference_no": payment_entry_doc.reference_no,
 				"reference_date": frappe.utils.nowdate(),
 				"remarks": f"Refund for Sales Order {order_id}",
@@ -108,31 +107,75 @@ def validate_can_cancel(order_doc):
 		frappe.throw(_("Action not allowed"))
 
 
-def get_refund_status(order_id: str) -> dict:
+def get_order_payments(order_id: str | int) -> list:
+	"""Submitted captures for one order, oldest first. Checkout books the payment against the Sales Invoice
+	raised from the order, while a Desk advance references the Sales Order itself - both count."""
+	invoice_names = set(
+		frappe.get_all(
+			"Sales Invoice Item",
+			filters={"sales_order": order_id, "docstatus": 1},
+			pluck="parent",
+		)
+	)
+
+	reference_filters = [{"reference_doctype": "Sales Order", "reference_name": order_id}]
+	if invoice_names:
+		reference_filters.append(
+			{"reference_doctype": "Sales Invoice", "reference_name": ["in", sorted(invoice_names)]}
+		)
+
+	payment_entry_names = set()
+	for filters in reference_filters:
+		payment_entry_names.update(frappe.get_all("Payment Entry Reference", filters=filters, pluck="parent"))
+
+	if not payment_entry_names:
+		return []
+
+	return frappe.get_all(
+		"Payment Entry",
+		filters={
+			"name": ["in", sorted(payment_entry_names)],
+			"payment_type": "Receive",
+			"docstatus": 1,
+		},
+		fields=["name", "paid_amount", "reference_no", "mode_of_payment", "party_type", "party", "company"],
+		# Ordered so a second gateway attempt cannot change which entry a refund is modelled on.
+		order_by="creation asc",
+	)
+
+
+def get_refund_refusal(order, reason: str, total_refunded: float = 0.0) -> dict:
+	"""Carries the same keys as a refundable order, so callers never branch on which shape they got."""
+	return {
+		"can_refund": False,
+		"reason": reason,
+		"currency": order.currency,
+		"only_charges": False,
+		"amount_refunded": total_refunded,
+		"refundable_amount": 0.0,
+	}
+
+
+def get_refund_status(order_id: str | int) -> dict:
 	"""Refund math for one order. Callers must authorize access first."""
 	order = frappe.get_doc("Sales Order", order_id)
 	if order.custom_ecommerce_payment_mode == "COD":
-		return {"can_refund": False}
+		return get_refund_refusal(order, _("This order is paid on delivery, so there is nothing to refund."))
 
-	payment_entry = frappe.get_all(
-		"Payment Entry Reference",
-		filters={"reference_doctype": "Sales Order", "reference_name": order_id},
-		fields=["parent"],
-		limit=1,
-	)
-	if not payment_entry:
-		return {"can_refund": False}
-	payment_entry_doc = frappe.get_doc("Payment Entry", payment_entry[0].parent)
+	payments = get_order_payments(order_id)
+	if not payments:
+		return get_refund_refusal(order, _("No payment has been captured for this order yet."))
 
+	capture = payments[0]
 	refund_payment_entries = frappe.get_all(
 		"Payment Entry",
 		filters={
 			"payment_type": "Pay",
-			"reference_no": payment_entry_doc.reference_no,
+			"reference_no": capture.reference_no,
 			# Gateways reuse reference numbers across parties; an unscoped match pulls in another's refund.
-			"party_type": payment_entry_doc.party_type,
-			"party": payment_entry_doc.party,
-			"company": payment_entry_doc.company,
+			"party_type": capture.party_type,
+			"party": capture.party,
+			"company": capture.company,
 			"docstatus": 1,
 		},
 		fields=["paid_amount"],
@@ -141,15 +184,15 @@ def get_refund_status(order_id: str) -> dict:
 	total_refunded = sum(flt(pe.paid_amount) for pe in refund_payment_entries)
 
 	if total_refunded >= order.rounded_total:
-		return {
-			"can_refund": False,
-		}
+		return get_refund_refusal(order, _("This order has already been refunded in full."), total_refunded)
 
 	only_charges = total_refunded >= order.net_total
 	refundable_amount = order.rounded_total - total_refunded
 
 	return {
 		"can_refund": True,
+		"reason": None,
+		"currency": order.currency,
 		"only_charges": only_charges,
 		"amount_refunded": total_refunded,
 		"refundable_amount": refundable_amount,
