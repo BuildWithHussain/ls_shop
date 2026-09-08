@@ -73,11 +73,19 @@ The application includes the following key pages and functionalities:
 
 
 
+## 🔗 Compatibility
+
+This app is compatible with the following versions of Frappe and ERPNext:
+
+| LS Shop branch | Stability   | Frappe branch | ERPNext branch |
+| :------------- | :---------- | :------------ | :------------- |
+| main           | stable      | v16.x & above | v16.x & above  |
+| develop        | maintenance | v15.x         | v15.x          |
+
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Frappe Framework (v13+)
-- ERPNext
+- Frappe Framework and ERPNext — see [Compatibility](#-compatibility) for the branch to install
 - Node.js and npm (for asset compilation)
 
 ### Installation
