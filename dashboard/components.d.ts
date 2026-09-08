@@ -13,6 +13,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AddProductDialog: typeof import('./src/components/AddProductDialog.vue')['default']
     AdvancedSettings: typeof import('./src/components/settings/AdvancedSettings.vue')['default']
+    AppearancePicker: typeof import('./src/components/settings/AppearancePicker.vue')['default']
     AppPageHeader: typeof import('./src/components/AppPageHeader.vue')['default']
     AppSettingsDialog: typeof import('./src/components/settings/AppSettingsDialog.vue')['default']
     AppShell: typeof import('./src/components/AppShell.vue')['default']

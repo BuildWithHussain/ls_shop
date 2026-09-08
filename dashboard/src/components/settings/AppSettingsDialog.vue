@@ -10,10 +10,8 @@ import {
   SettingsPanel,
   SettingsSidebar,
 } from 'frappe-ui'
-// ThemeSwitcher moved out of the frappe-ui root in beta.56 (#1094); the parked copy under
-// /experimental keeps the same props, so this is an import path change only.
-import { ThemeSwitcher } from 'frappe-ui/experimental'
 import AdvancedSettings from './AdvancedSettings.vue'
+import AppearancePicker from './AppearancePicker.vue'
 import AppsSettings from './AppsSettings.vue'
 import CashOnDeliverySettings from './CashOnDeliverySettings.vue'
 import DeliveryOptionsPanel from './DeliveryOptionsPanel.vue'
@@ -119,12 +117,7 @@ watch(
           </div>
         </SettingsHeader>
         <SettingsBody>
-          <!-- The store's own name adds nothing here: these cards are light, dark and system.
-               Dropping it also shortens the light and dark previews, so the previews are held
-               to the height the system card's two clipped frames already sit at. -->
-          <div class="[&_[data-slot=option]>*:first-child]:h-[78px] [&_[data-slot=option]>*:first-child]:overflow-hidden">
-            <ThemeSwitcher name="" label="" description="" />
-          </div>
+          <AppearancePicker />
         </SettingsBody>
       </SettingsPanel>
 

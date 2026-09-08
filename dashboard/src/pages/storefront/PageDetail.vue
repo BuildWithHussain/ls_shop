@@ -172,10 +172,7 @@ function remove() {
         v-if="!isNew"
         :options="[
           { label: 'View on storefront', icon: 'external-link', onClick: openStorefront },
-          {
-            group: 'Danger',
-            options: [{ label: 'Delete page', icon: 'trash-2', theme: 'red', onClick: remove }],
-          },
+          { label: 'Delete page', icon: 'trash-2', theme: 'red', onClick: remove },
         ]"
       >
         <Button icon="lucide-ellipsis" label="More actions" />

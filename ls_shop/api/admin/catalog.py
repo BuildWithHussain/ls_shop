@@ -764,7 +764,7 @@ def list_collections(search: str | None = None, start: int = 0, page_length: int
 	The owner never sees "Item Group" — Collections are the leaf Item Groups a product can actually
 	be filed under. The tree's structural parents (e.g. "All Item Groups", "Ecommerce Website") are
 	excluded by nested-set shape (lft/rgt), not by name, so a new structural node never leaks in.
-	ls_shop has no smart-collection rule engine (confirmed in the wiring map), so no rule/condition
+	ls_shop has no smart-collection rule engine, so no rule/condition
 	is reported: every collection is manual, and a column saying so on every row carries nothing.
 	"""
 	frappe.has_permission("Item Group", ptype="read", throw=True)
@@ -897,7 +897,7 @@ def get_attributes():
 	"""The Attributes screen: every Item Attribute with its values and a live usage count.
 
 	Two queries total, however many attributes exist — one for the value rows, one grouped
-	query for usage — never one query per attribute (the wiring map's stated N+1 trap).
+	query for usage — never one query per attribute, which is the N+1 trap this screen invites.
 	"""
 	frappe.has_permission("Item Attribute", ptype="read", throw=True)
 

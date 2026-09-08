@@ -57,6 +57,7 @@ async function commitField(fieldname, value, label) {
 
     <template v-else-if="advanced.data">
       <Alert
+        class="mt-4"
         theme="amber"
         title="These are setup values, not everyday settings"
         description="Changing one can break your storefront — edit only what you recognise."

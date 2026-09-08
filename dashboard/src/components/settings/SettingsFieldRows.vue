@@ -51,6 +51,13 @@ function hint(field) {
   if (field.fieldtype === 'Link') return `Links to ${field.options}.`
   return plainText(field.description)
 }
+
+// A heading and the first field under it read as one block, so the parent's divide-y rule is
+// dropped between them. The rules that remain separate one field from the next, which is what
+// they are for — a rule directly under a heading only fences it off from what it heads.
+function hasHeading(group) {
+  return Boolean(group.logo || group.toggle || group.label)
+}
 </script>
 
 <template>
@@ -75,8 +82,9 @@ function hint(field) {
     </div>
     <p v-else-if="group.label" class="pt-5 text-sm text-ink-gray-5 !border-t-0">{{ group.label }}</p>
     <SettingsRow
-      v-for="field in groupFields(group)"
+      v-for="(field, index) in groupFields(group)"
       :key="field.fieldname"
+      :class="index === 0 && hasHeading(group) ? '!border-t-0' : undefined"
       :title="field.required ? `${field.label} *` : field.label"
       :description="hint(field)"
     >

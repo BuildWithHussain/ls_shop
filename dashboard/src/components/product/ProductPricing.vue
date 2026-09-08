@@ -14,7 +14,7 @@ defineProps({ product: { type: Object, required: true } })
          Attribute Configurator, so hasVariants is always true. Kept for the
          mock's variant-less products, but its Cost field has no real field
          to bind to either way — confirmed absent from ls_shop entirely
-         (docs/comera-wiring-map.md), the 55% here was always a client-side
+         the 55% here was always a client-side
          guess, never a stored value. -->
     <div v-else class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
       <FormControl :model-value="String(product.price)" type="number" label="Price" />

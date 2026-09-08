@@ -1,6 +1,6 @@
 // The shared entry point for every screen that reads or writes the real
 // ls_shop backend, instead of each screen wiring its own useCall + toast.
-// Task-shaped endpoints live under `ls_shop.api.admin.*` (see docs/comera-wiring-map.md),
+// Task-shaped endpoints live under `ls_shop.api.admin.*`,
 // so callers pass the path below that prefix, e.g. useAdminRead('catalog.get_products').
 import { toast, useCall } from 'frappe-ui'
 import { errorMessage } from './errors'
