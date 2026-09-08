@@ -28,7 +28,7 @@ const { colorScheme, setColorScheme } = useColorScheme()
   <fieldset class="flex flex-col gap-2">
     <legend class="sr-only">Appearance</legend>
 
-    <div class="flex items-stretch gap-3">
+    <div class="flex flex-col items-stretch gap-3 sm:flex-row">
       <label
         v-for="option in OPTIONS"
         :key="option.value"
@@ -49,7 +49,7 @@ const { colorScheme, setColorScheme } = useColorScheme()
         >
           <!-- The mock window: a title bar, a rail and a few lines of content. One frame for
                light and dark, two side by side for system. -->
-          <span class="flex h-20 bg-neutral-100" aria-hidden="true">
+          <span class="flex h-20 bg-gray-100" aria-hidden="true">
             <span
               v-for="frame in option.frames"
               :key="frame"
@@ -57,7 +57,7 @@ const { colorScheme, setColorScheme } = useColorScheme()
             >
               <span
                 class="flex flex-1 flex-col gap-1 rounded-sm p-1.5"
-                :class="frame === 'dark' ? 'bg-neutral-900' : 'bg-white'"
+                :class="frame === 'dark' ? 'bg-gray-900' : 'bg-white'"
               >
                 <span class="flex gap-0.5">
                   <span class="size-1 rounded-full bg-red-400" />
@@ -68,7 +68,7 @@ const { colorScheme, setColorScheme } = useColorScheme()
                   v-for="line in 3"
                   :key="line"
                   class="h-1 rounded-full"
-                  :class="frame === 'dark' ? 'bg-neutral-700' : 'bg-neutral-200'"
+                  :class="frame === 'dark' ? 'bg-gray-600' : 'bg-gray-300'"
                 />
               </span>
             </span>
