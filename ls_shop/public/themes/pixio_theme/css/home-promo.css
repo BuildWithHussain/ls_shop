@@ -1,23 +1,18 @@
 /* Net-new CSS for the two homepage promo bands (everyday_essentials, sponsored_brands).
-
-   Everything here closes a gap the vendored package leaves open. style.css and skin-1.css
-   still own the looks of both sections - nothing cosmetic belongs in this file. */
+   style.css and skin-1.css still own the looks of both sections. */
 
 /* style.css masks the promo photo with ../images/bg-media.svg, which the Pixio package never
-   shipped. A mask-image that fails to load resolves to transparent black, so the whole panel
-   disappears rather than falling back to a plain rectangle - the shape has to be supplied
-   here. preserveAspectRatio + mask-size 100% mean it stretches to whatever the column is,
-   which also drops style.css's auto-height/mask-position guesswork. */
+   shipped, and a mask-image that fails to load resolves to transparent black - the panel vanishes. */
 .about-box.style-1 .dz-media img {
 	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 640' preserveAspectRatio='none'%3E%3Cpath fill='%23fff' d='M64,0 H720 A80,80 0 0 1 800,80 V560 A80,80 0 0 1 720,640 H64 C24,584 48,512 48,448 C48,384 8,368 8,320 C8,272 48,256 48,192 C48,128 24,56 64,0 Z'/%3E%3C/svg%3E");
+	/* preserveAspectRatio=none plus this stretches the mask to whatever width the column is. */
 	mask-size: 100% 100%;
 	mask-repeat: no-repeat;
 	mask-position: center;
 }
 
-/* Embla only moves the track, so the sponsored rail's slide width lives here the way every
-   other Pixio carousel's does in pixio.css. Three-up rather than the reference's four so a
-   catalogue with only a handful of brands still fills the row. */
+/* Embla only moves the track, so the sponsored rail's slide width lives here. Three-up rather than
+   the reference's four so a catalogue with only a handful of brands still fills the row. */
 .swiper-company .swiper-slide {
 	width: 33.333%;
 	padding-inline: 15px;
@@ -35,9 +30,8 @@
 	}
 }
 
-/* .dz-media is a bare positioning context upstream: it sized itself off the backdrop photo
-   and its rounded corners never clipped the 1.2x hover zoom. The colour is the floor under a
-   photo that fails to load, so the label never lands on bare page background. */
+/* Upstream .dz-media is a bare positioning context: it sized itself off the backdrop photo and
+   never clipped the 1.2x hover zoom. The colour is the floor under a photo that fails to load. */
 .company-box.style-1 .dz-media {
 	overflow: hidden;
 	min-height: 220px;

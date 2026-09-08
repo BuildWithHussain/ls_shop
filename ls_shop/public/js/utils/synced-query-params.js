@@ -140,9 +140,8 @@ class QuerySync {
 	}
 
 	/**
-	 * Subscribe to state changes
-	 * @param {Function} callback - Function to call when state changes
-	 * @returns {Function} Unsubscribe function
+	 * @param {Function} callback - called whenever the state changes
+	 * @returns {Function} unsubscribe
 	 */
 	subscribe(callback) {
 		this.listeners.add(callback);

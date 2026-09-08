@@ -16,10 +16,7 @@ def get_cart_item_codes(items) -> list[str]:
 
 def get_cart_price(item_code: str, default_price_list: str, sale_price_list: str) -> tuple[float, float]:
 	"""Struck-through price and the price actually charged, resolved the way the product page does it.
-
-	get_price returns None for "not on this list", which is why the sale price falls back instead of
-	being read as free: an item with no sale row otherwise goes onto the order at zero.
-	"""
+	get_price returns None for "not on this list", so the sale price falls back - it would otherwise book at zero."""
 	default_price = flt(get_price({"item_code": item_code}, default_price_list))
 	sale_price = get_price({"item_code": item_code}, sale_price_list)
 	return default_price, sale_price if sale_price is not None else default_price
@@ -51,10 +48,7 @@ def get_stock_shortfalls(items) -> list[str]:
 
 def validate_stock_available(items):
 	"""Refuse a cart the warehouse cannot fulfil.
-
-	The cart page checks this too, but that check lives in the browser: without this a tampered client
-	posts any quantity it likes and gets an accepted quotation back.
-	"""
+	The cart page's check lives in the browser - a tampered client otherwise posts any quantity it likes."""
 	shortfalls = get_stock_shortfalls(items)
 	if not shortfalls:
 		return

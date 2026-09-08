@@ -1,19 +1,16 @@
-/* Gaps the vendored Pixio sheet leaves on the six account-*.html pages. Every account page
-   links this one file; .account-sidebar, .account-card, .total-contain, .address-card and
-   .table-style-1 are already shaped by style.css and are not restated here. */
+/* Gaps the vendored Pixio sheet leaves on the six account-*.html pages, which all link this one
+   file. Anything style.css already shapes (.account-sidebar, .account-card) is not restated. */
 
-/* header-transparent lifts the bar out of flow, so the account shell clears it itself.
-   .dz-bnr-inr-entry already pays 90px above 575px, but drops to 40px below it - less than the
-   mobile bar is tall, which puts the page heading under the logo. */
+/* header-transparent lifts the bar out of flow, and .dz-bnr-inr-entry drops to 40px below 575px -
+   less than the mobile bar is tall, which puts the page heading under the logo. */
 @media only screen and (max-width: 575px) {
 	.account-banner .dz-bnr-inr-entry {
 		padding-top: 70px;
 	}
 }
 
-/* Upstream pulls the sidebar 170px up so it overlaps the reference's dark bg1.jpg banner.
-   This theme keeps that banner light - header-transparent leaves the nav links dark and they
-   are unreadable over a dark band - so the pull-up would drop the panel on the page heading. */
+/* Upstream pulls the sidebar 170px up to overlap the reference's dark bg1.jpg banner; this theme
+   keeps that banner light, so the pull-up would drop the panel on the page heading. */
 .account-page .account-sidebar-wrapper {
 	margin-top: 0;
 }

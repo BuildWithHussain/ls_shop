@@ -191,10 +191,8 @@ def get_unfulfilled_order_filters() -> list:
 
 
 def get_closed_order_filters() -> list:
-	"""Cancelled or fully delivered: the two ways an order stops needing the owner's attention. A
-	plain filter list can only AND, so this is built as the complement of "still needs work"
-	instead of an OR — and as a `not in` subquery rather than `in`: frappe.get_all's query builder
-	hangs on an `in` filter whose value is a QueryBuilder object, `not in` does not."""
+	"""Cancelled or fully delivered: the two ways an order stops needing attention. Built as the complement
+	of "still open" because a filter list can only AND, and as `not in` - `in` hangs on a QueryBuilder."""
 	sales_order = frappe.qb.DocType("Sales Order")
 	still_open = (
 		frappe.qb.from_(sales_order)
@@ -207,14 +205,8 @@ def get_closed_order_filters() -> list:
 
 
 def build_order_invoices_query():
-	"""Submitted Sales Invoices joined to the Sales Order they were raised against, with nothing
-	selected yet — the one way this file gets from an order to its invoice.
-
-	A payment's Payment Entry Reference points at the Sales Invoice raised for the order, never at
-	the order itself — ls_shop's own checkout (payments.create_sales_invoice) always books payment
-	against the invoice it just raised, not the order, and ERPNext's get_payment_entry doesn't
-	back-reference the order either. So this walks Sales Invoice Item.sales_order — the field
-	ERPNext's own make_sales_invoice mapper stamps on every line — to get from order to invoice."""
+	"""Submitted Sales Invoices joined to the Sales Order they were raised against, nothing selected yet.
+	A payment's reference points at the invoice, never the order - so this walks Sales Invoice Item.sales_order."""
 	sales_invoice_item = frappe.qb.DocType("Sales Invoice Item")
 	sales_invoice = frappe.qb.DocType("Sales Invoice")
 	return (
@@ -226,14 +218,8 @@ def build_order_invoices_query():
 
 
 def read_order_invoices(order_name: str | int) -> list:
-	"""The submitted Sales Invoices raised against one order, newest first — the documents the order
-	screen prints an invoice from. `creation` is selected as well as ordered on because Postgres
-	rejects a SELECT DISTINCT ordered by a column it does not carry.
-
-	Credit notes are excluded. ERPNext's return mapper copies `sales_order` onto the return's lines,
-	so a refunded order's credit note joins here exactly like its invoice does — and "Print invoice"
-	handing the merchant a credit note is the wrong document. A refund is reported by the order's
-	payment state (see describe_payment), not by this list."""
+	"""Submitted Sales Invoices for one order, newest first; credit notes excluded - the return mapper copies
+	`sales_order` onto them too. `creation` is selected: Postgres rejects a DISTINCT ordered by a column it lacks."""
 	sales_invoice_item = frappe.qb.DocType("Sales Invoice Item")
 	sales_invoice = frappe.qb.DocType("Sales Invoice")
 	rows = (
@@ -248,11 +234,8 @@ def read_order_invoices(order_name: str | int) -> list:
 
 
 def build_paid_orders_query(order_names: list | None = None):
-	"""Sales Orders with at least one submitted, captured payment (a 'Receive' Payment Entry) — the
-	only unambiguous 'paid' signal this data model carries. Refund nuance (paid vs refunded vs
-	partly refunded) is resolved separately, per order, on the order detail screen — see
-	describe_payment. `order_names=None` scopes across every order, for the "unpaid" tab filter;
-	passing a page's worth of names scopes it to a single batched read instead."""
+	"""Sales Orders with at least one submitted 'Receive' Payment Entry - the only unambiguous 'paid' signal
+	this data model carries. `order_names=None` scopes across every order; a list of names, to one read."""
 	sales_invoice_item = frappe.qb.DocType("Sales Invoice Item")
 	sales_invoice = frappe.qb.DocType("Sales Invoice")
 	payment_entry_reference = frappe.qb.DocType("Payment Entry Reference")
@@ -491,14 +474,8 @@ def new_lifecycle():
 
 
 def read_order_lifecycles(order_names: list) -> dict:
-	"""The fulfilment paperwork behind a page of orders, in a fixed number of queries. Keyed by
-	`cstr(name)`: an autoincrement-named Sales Order is an int here and a string from the request.
-
-	Two delivery note lists, deliberately: `delivery_notes` is submitted notes only and is what the
-	fulfilment ladder is derived from, while `printable_delivery_notes` also carries the drafts —
-	a draft note is exactly what a merchant prints a packing slip from. Return notes are in neither
-	printable list: a sales return is paperwork for stock coming back, and printing it as part of a
-	bulk packing slip run would put a parcel that is being refunded back on the dispatch bench."""
+	"""Fulfilment paperwork behind a page of orders, keyed by `cstr(name)` - an autoincrement name is an int.
+	`delivery_notes` is submitted notes; `printable_delivery_notes` adds drafts but never returns."""
 	if not order_names:
 		return {}
 
@@ -729,10 +706,8 @@ def get_order(sales_order: str):
 
 
 def read_payment_totals(order_name: str) -> tuple[float, float]:
-	"""What this order has actually received and had refunded, read straight off its own Payment
-	Entries. Walks Sales Invoice Item.sales_order the same way build_paid_orders_query does — a
-	payment's Payment Entry Reference points at the invoice raised for the order, never at the
-	order itself (see that function's note)."""
+	"""What this order has received and had refunded, off its own Payment Entries. Walks Sales Invoice
+	Item.sales_order like build_paid_orders_query: a payment's reference points at the invoice, not the order."""
 	sales_invoice_item = frappe.qb.DocType("Sales Invoice Item")
 	sales_invoice = frappe.qb.DocType("Sales Invoice")
 	payment_entry_reference = frappe.qb.DocType("Payment Entry Reference")
@@ -767,9 +742,8 @@ def read_payment_totals(order_name: str) -> tuple[float, float]:
 	if not receive_entries:
 		return received, 0.0
 
-	# Refunds carry no Payment Entry Reference of their own (make_refund_payment_entry doesn't add
-	# one) — they're matched back to the receipt by reference_no/party/company, same as
-	# ls_shop.api.orders.get_refund_status does for a single order.
+	# Refunds carry no Payment Entry Reference of their own (make_refund_payment_entry adds none) - they are
+	# matched back to the receipt by reference_no/party/company, as ls_shop.api.orders.get_refund_status does.
 	refunded = 0.0
 	for row in receive_entries:
 		refunded += sum(
@@ -791,13 +765,8 @@ def read_payment_totals(order_name: str) -> tuple[float, float]:
 
 
 def describe_payment(order) -> dict:
-	"""paid | pending | refunded | partially_refunded for one order — the order detail screen's
-	richer equivalent of describe_payment_state's list-only paid/pending. See
-	ls_shop/api/admin/orders.py's build_paid_orders_query for why this can't reuse
-	ls_shop.api.orders.get_refund_status directly: that reports only a can_refund boolean and, as
-	of this writing, its own Payment Entry Reference lookup is keyed on "Sales Order" — which never
-	matches, since a captured payment's reference always points at the Sales Invoice instead (see
-	docs/commera-open-questions.md, "Refund — a pre-existing lookup bug blocks it")."""
+	"""paid | pending | refunded | partially_refunded for one order. Cannot reuse orders.get_refund_status:
+	its Payment Entry Reference lookup is keyed on "Sales Order", which never matches a captured payment."""
 	if order.custom_ecommerce_payment_mode == "COD":
 		return {"key": "pending", "label": _("Cash on delivery")}
 
@@ -881,9 +850,8 @@ def get_overview(order_status: str | None = None):
 		"Style Attribute Variant", {"is_published": 1, "creation": [">=", window_start]}
 	)
 
-	# Both panels show five rows and both tiles count the whole store, so the totals travel with the
-	# preview rather than being inferred from its length. Neither costs an extra query: get_inventory
-	# already returns the filtered total, and limit=0 counts in the pass that builds the preview.
+	# Both panels show five rows while both tiles count the whole store, so the totals travel with the
+	# preview: get_inventory already returns the filtered total, and limit=0 counts in the same pass.
 	running_low = get_inventory(availability="low", page_length=OVERVIEW_PANEL_LENGTH)
 	unpublishable = get_unpublishable_options(limit=0)
 

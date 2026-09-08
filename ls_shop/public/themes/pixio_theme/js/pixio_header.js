@@ -1,9 +1,5 @@
-/* Header chrome state: the mobile drawer, the mega-menu accordion, the search canvas and the
-   cart drawer. Pixio's own jQuery stamps these state classes; this is the Alpine replacement.
-
-   It has to be its own file rather than an addition to pixio.js: pixio.js is deferred at the
-   end of the layout, by which point alpine:init has already fired and Alpine.data() would
-   register a component nobody asks for again. */
+/* Header chrome state (drawer, mega-menu, search canvas, cart drawer). Its own file, not pixio.js:
+   pixio.js is deferred to the end of the layout, by which point alpine:init has already fired. */
 document.addEventListener('alpine:init', () => {
 	Alpine.data('pixio_header', () => ({
 		menu_open: false,
@@ -15,9 +11,8 @@ document.addEventListener('alpine:init', () => {
 		bottom_bar_active: false,
 
 		init() {
-			/* Below 768px style.css parks .extra-nav off the bottom edge and slides it up on
-			   .active, which upstream stamps from a jQuery scroll handler. A sentinel at the
-			   header's bottom edge reads the same moment without running work per scroll frame. */
+			/* Below 768px style.css parks .extra-nav off the bottom edge and slides it up on .active,
+			   which upstream stamps from a jQuery scroll handler. A sentinel reads the same moment. */
 			const observer = new IntersectionObserver((entries) => {
 				this.bottom_bar_active = !entries[0].isIntersecting;
 			});
@@ -38,9 +33,8 @@ document.addEventListener('alpine:init', () => {
 			this.search_open = false;
 			this.menu_open = false;
 			this.cart_open = true;
-			/* Stock and price are only stamped onto the persisted cart by an API read, and
-			   increment() refuses to go past stock_qty - without this the stepper is dead on
-			   any page that never loaded the cart itself. Once per page, on first open. */
+			/* Stock and price are only stamped onto the persisted cart by an API read, and increment()
+			   refuses to go past stock_qty, so the stepper is dead on a page that never loaded it. */
 			if (!this.cart_detail_loaded && Alpine.store('cart').items.length) {
 				this.cart_detail_loaded = true;
 				await Alpine.store('cart').fetch_detail_for_cart();

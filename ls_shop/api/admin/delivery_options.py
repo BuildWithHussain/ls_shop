@@ -2,10 +2,7 @@
 # For license information, please see license.txt
 
 """The Delivery Options screen: the Shipping Services a shopper picks between at checkout.
-
-bwh_shipping owns the doctype; this module is only the dashboard's way into it, so a store owner
-never has to open Desk to add a delivery option or import a carrier's catalogue.
-"""
+bwh_shipping owns the doctype; this module is only the dashboard's way into it."""
 
 import frappe
 from frappe.utils.data import cint, cstr
@@ -58,20 +55,14 @@ def build_options() -> list[dict]:
 
 
 def build_editor_field_groups() -> list[dict]:
-	"""The editor layout, straight off the doctype's own meta.
-
-	Built against a blank document because one layout serves every option — the values the screen binds
-	come from each option dict, so only the labels, fieldtypes, link options and required flags matter.
-	"""
+	"""The editor layout, straight off the doctype's own meta. Built against a blank document because one
+	layout serves every option - only the labels, fieldtypes, link options and required flags matter."""
 	return build_field_groups(SERVICE_DOCTYPE, frappe.new_doc(SERVICE_DOCTYPE))
 
 
 def build_import_providers() -> list[dict]:
 	"""The enabled carriers that can list what their account actually sells.
-
-	A provider that books but publishes no catalogue - Shiprocket picks the courier itself - reports
-	False for the capability and is left out, rather than offering an importer with nothing to import.
-	"""
+	A provider that books but publishes no catalogue - Shiprocket picks the courier itself - is left out."""
 	from bwh_shipping.base_class import ShippingProviderBase
 	from frappe.model.base_document import get_controller
 
@@ -158,11 +149,8 @@ def get_delivery_options() -> dict:
 
 @frappe.whitelist(methods=["POST"])
 def save_delivery_option(name: str | None = None, values: dict | str | None = None) -> dict:
-	"""Create a delivery option, or edit one. Returns the refreshed screen.
-
-	A blank `name` creates. On an edit the title is fixed: Sales Order.custom_delivery_option stores the
-	title string rather than a link, so renaming one orphans the label on every order already placed.
-	"""
+	"""Create a delivery option, or edit one; a blank `name` creates. Returns the refreshed screen.
+	The title is fixed on edit: Sales Order.custom_delivery_option stores the title string, not a link."""
 	frappe.only_for("System Manager")
 	ensure_available()
 	frappe.has_permission(SERVICE_DOCTYPE, ptype="write", throw=True)
@@ -233,10 +221,7 @@ def get_carrier_service_choices(provider: str) -> dict:
 @frappe.whitelist(methods=["POST"])
 def import_carrier_services(provider: str, selections: list | str, default_rate: float | str = 0) -> dict:
 	"""Turn the picked carrier services into delivery options. Returns the refreshed screen.
-
-	`default_rate` seeds each new option's Backup Charge — what it costs when no Shipping Rule band
-	covers the cart and the carrier gives no live quote.
-	"""
+	`default_rate` seeds each option's Backup Charge - used when no Shipping Rule band or live quote covers it."""
 	frappe.only_for("System Manager")
 	ensure_available()
 
@@ -252,11 +237,8 @@ def import_carrier_services(provider: str, selections: list | str, default_rate:
 
 @frappe.whitelist()
 def get_link_options(doctype: str, search_text: str | None = None):
-	"""Options for a Link control on the delivery-option form.
-
-	Scoped to what a Shipping Service actually links to - its provider profile and its shipping rule -
-	so the picker can never be turned into a reader of some unrelated doctype.
-	"""
+	"""Options for a Link control on the delivery-option form. Scoped to what a Shipping Service links to -
+	its provider profile and its shipping rule - so the picker cannot be turned on an unrelated doctype."""
 	frappe.only_for("System Manager")
 	ensure_available()
 

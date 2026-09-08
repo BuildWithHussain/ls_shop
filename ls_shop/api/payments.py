@@ -139,13 +139,8 @@ def system_user_session():
 
 	ERPNext's get_party_account checks frappe.has_permission directly, so no ignore_permissions reaches it.
 	"""
-	# frappe.set_user() mutates frappe.local.session in place instead of swapping it out - it even stamps
-	# the dict's "sid" key with the username - so calling it a second time to "restore" the shopper leaves
-	# local.session.sid holding their email instead of the real session id, and wipes local.session.data
-	# (session_ip, user_agent, ...). frappe.request.after_response then persists that corrupted dict into
-	# the session cache under the shopper's still-correct real sid, so their session loses "data.user" and
-	# every request after this one falls back to Guest. Snapshot the live session dict and put it back
-	# verbatim instead of round-tripping through set_user().
+	# frappe.set_user() mutates frappe.local.session in place, stamping "sid" with the username and wiping
+	# local.session.data, so restore the snapshot verbatim rather than calling it again for the shopper.
 	live_session_snapshot = frappe.local.session.copy()
 	try:
 		# Audited: the docstring above and the snapshot restore below are why this is safe.
@@ -159,27 +154,16 @@ def system_user_session():
 
 
 def save_cart_quotation(quotation):
-	"""Persist the shopper's own cart.
-
-	Saving a Quotation resolves the party's receivable account, and ERPNext's account_perm_check calls
-	frappe.has_permission("Account") directly - no ignore_permissions reaches it, and no storefront role
-	has Account read - so a shopper saving their own cart is refused. Only the save runs elevated: the
-	caller has already proved this cart belongs to the session user (_get_cart_quotation scopes on
-	contact_email), so nothing inside the window is reachable with a document the shopper does not own.
-	"""
+	"""Persist the shopper's own cart, elevated. Saving resolves the receivable account, and ERPNext's
+	account_perm_check calls frappe.has_permission("Account") directly - no ignore_permissions reaches it."""
 	with system_user_session():
 		quotation.flags.ignore_permissions = True
 		return quotation.save()
 
 
 def stamp_order_owner(sales_order, shopper: str) -> None:
-	"""Hand the order back to the shopper who bought it.
-
-	The accounting documents are placed as Administrator (see system_user_session), so insert()
-	stamps Administrator as owner. Every post-purchase screen gates on owner == frappe.session.user
-	- the account order list, order detail, invoice, returns and shipment tracking - so without this
-	the shopper cannot see the order they just paid for.
-	"""
+	"""Hand the order back to the shopper who bought it: insert() runs as Administrator (see
+	system_user_session), and every post-purchase screen gates on owner == frappe.session.user."""
 	if not shopper or shopper == sales_order.owner:
 		return
 	sales_order.db_set("owner", shopper, update_modified=False)

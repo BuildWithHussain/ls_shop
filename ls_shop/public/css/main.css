@@ -1,7 +1,5 @@
-/* Automatic source detection scans the whole app from the build root, which pulls Bootstrap grid
-   classes out of ls_shop/themes/ (Pixio) into this Tailwind-only stylesheet. Each theme under
-   ls_shop/themes/ builds its own output via ls_shop/themes/package.json, so this build owns only the
-   default storefront's markup. source(none) works on Tailwind v4.0+, unlike the v4.1-only `@source not`. */
+/* Automatic source detection would pull Bootstrap grid classes out of ls_shop/themes/ into this
+   Tailwind-only sheet. source(none) works on Tailwind v4.0+, unlike the v4.1-only `@source not`. */
 @import "tailwindcss" source(none);
 @import "./font.css";
 @import "./theme.css";

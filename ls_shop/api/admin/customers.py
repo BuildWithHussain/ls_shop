@@ -79,12 +79,8 @@ def get_customers(search: str | None = None, start: int = 0, page_length: int = 
 
 
 def read_customer_order_stats(customer_names: list) -> dict:
-	"""Lifetime order count and spend for a whole page of customers, in one query. Every seeded
-	order is a draft (docstatus 0) COD order — `is_webshop_order` counts a draft as real revenue the
-	same way orders.read_sales_window does, so a customer whose only order is an unconfirmed COD
-	order still shows it here rather than reading as a zero-order customer. Sums base_grand_total,
-	not grand_total, for the same reason read_sales_window does: only the company-currency figure is
-	addable across customers who could in principle transact in different currencies."""
+	"""Lifetime order count and spend for a whole page of customers, in one query. Counts drafts as real
+	revenue and sums base_grand_total rather than grand_total, both the way orders.read_sales_window does."""
 	if not customer_names:
 		return {}
 	sales_order = frappe.qb.DocType("Sales Order")
@@ -103,11 +99,8 @@ def read_customer_order_stats(customer_names: list) -> dict:
 
 
 def read_customer_cities(customer_names: list) -> dict:
-	"""One customer's city, off whichever Address is linked to it — batched across the page rather
-	than read per row. ls_shop's checkout addresses are only reliably linked back to a Customer via a
-	Dynamic Link when add_billing_address/add_shipping_address ran that write (see
-	gotcha-ls-shop-address-links); a customer with no such address simply has no city here, and that
-	is reported rather than papered over."""
+	"""One customer's city off whichever Address links to it, batched across the page. A checkout address
+	links back to the Customer only when add_billing_address/add_shipping_address wrote that Dynamic Link."""
 	if not customer_names:
 		return {}
 
@@ -166,9 +159,8 @@ def get_customer(customer: str):
 
 
 def read_customer_orders(customer: str) -> list:
-	"""This one customer's own order history, in the same shape orders.get_orders uses for its rows
-	— so a payment/fulfilment badge here means the same thing it means on the Orders screen. Counts
-	drafts: see read_customer_order_stats for why a draft COD order is not skippable here."""
+	"""This one customer's own order history, in the same shape orders.get_orders uses for its rows.
+	Counts drafts, for the reason read_customer_order_stats gives."""
 	orders = frappe.get_all(
 		"Sales Order",
 		filters=[

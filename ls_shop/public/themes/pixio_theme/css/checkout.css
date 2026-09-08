@@ -1,10 +1,8 @@
-/* Gaps the vendored Pixio sheet leaves on shop-checkout.html. Everything else on the page -
-   .shop-checkout, .order-detail, .cart-item.style-1, .dz-accordion, .form-control,
-   .label-title, .dz-bnr-inr - is already shaped by style.css. */
+/* Gaps the vendored Pixio sheet leaves on shop-checkout.html; everything else on the page
+   (.shop-checkout, .order-detail, .cart-item.style-1, .dz-accordion) is shaped by style.css. */
 
-/* .custom-control is a Bootstrap 4 leftover with no rule in style.css, so the radio and its
-   label sit on the text baseline. The reference reaches for .d-flex on the rows it cares
-   about; these rows need the same treatment plus room between them. */
+/* .custom-control is a Bootstrap 4 leftover with no rule in style.css, so the radio and its label
+   sit on the text baseline. */
 .shop-checkout .custom-control.custom-checkbox {
 	gap: 4px;
 }
@@ -96,9 +94,8 @@
 	font-size: 14px;
 }
 
-/* Bootstrap's .collapse toggles on .show, which upstream drives with bootstrap's JS; Alpine
-   drives the same two classes here, so the accordion body needs no extra rule - but the
-   button must not keep the pointer cursor off, since the whole row selects the mode. */
+/* Alpine drives Bootstrap's .collapse/.show classes here, so the accordion body needs no extra
+   rule - but the button must keep a pointer cursor, since the whole row selects the mode. */
 .order-detail .dz-accordion .accordion-header .accordion-button {
 	cursor: pointer;
 }

@@ -1,10 +1,5 @@
-/* Pixio authors its carousels for Swiper and slick; both are banned here, so the swiper-*
-   and slick-* class names are kept for style.css and driven by Embla instead.
-
-   Two consequences of that swap are handled below and nowhere else: Swiper sizes its slides
-   in JS (Embla does not, so every slide width lives in pixio.css), and style.css keys real
-   visual state off swiper-slide-active / swiper-slide-visible / slick-current, which Swiper
-   and slick used to stamp on. */
+/* Swiper and slick are banned, so their class names are kept for style.css and driven by Embla.
+   Embla sizes no slides (widths live in pixio.css) and stamps none of the -active state classes. */
 (() => {
 	const carousels_by_name = new Map();
 

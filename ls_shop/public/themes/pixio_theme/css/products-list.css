@@ -3,9 +3,8 @@
 
 /* --- Price range: the noUiSlider mount point --- */
 
-/* style.css only reserves the .price-slide box; every pixel inside #slider-tooltips2 was drawn
-   by nouislider.min.js. Two native range inputs stacked on one track replace it, so the widget
-   needs the track, the fill and the thumbs the plugin used to build. */
+/* style.css only reserves the .price-slide box; every pixel inside #slider-tooltips2 was drawn by
+   nouislider.min.js, so the track, fill and thumbs are rebuilt here for two native ranges. */
 .price-slide .pixio-range {
 	position: relative;
 	height: 20px;
@@ -91,9 +90,8 @@
 	text-transform: capitalize;
 }
 
-/* The reference's colour facet is a row of hex swatches, so .product-size's 34px circle is the
-   only chip style.css offers and a colour NAME is clipped inside it. Same chip, sized to its
-   label, since this catalogue stores attribute names rather than hex values. */
+/* .product-size's 34px circle is the only chip style.css offers and a colour NAME is clipped
+   inside it; this catalogue stores attribute names rather than the reference's hex swatches. */
 .shop-filter .product-size.color-chips .btn {
 	width: auto;
 	min-width: 34px;
@@ -104,9 +102,8 @@
 
 /* --- Toolbar sort control: the bootstrap-select gap --- */
 
-/* bootstrap-select.min.js replaces this <select> with a .dropdown-toggle button, and style.css
-   puts the toolbar's padding, colour and caret on that button. Without the script the native
-   control is all that is left, so it carries them itself. */
+/* bootstrap-select.min.js replaces this <select> with a .dropdown-toggle button that style.css
+   puts the toolbar's padding, colour and caret on; the native control has to carry them itself. */
 .filter-wrapper .filter-right-area select.default-select {
 	/* style.css sets padding:0 on select.default-select with !important, for the wrapper that
 	   is not here. */

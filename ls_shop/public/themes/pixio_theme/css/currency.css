@@ -1,8 +1,5 @@
-/* get_currency_symbol() renders `.saudi-currency-symbol`, but that class and its font live in
-   main.css, which compiles into the Tailwind-only tailwind.css that this theme never loads.
-   The font is served from a standalone woff2 rather than the base64 payload main.css inlines, and
-   the only other standalone asset — icons/saudi_riyal.svg — is an SVG font, a format Chrome and
-   Firefox dropped, so it cannot render the glyph on its own. */
+/* `.saudi-currency-symbol` and its font live in main.css, which compiles into a tailwind.css this
+   theme never loads. The standalone icons/saudi_riyal.svg is an SVG font Chrome and Firefox dropped. */
 @font-face {
   font-family: saudi_riyal;
   font-style: normal;

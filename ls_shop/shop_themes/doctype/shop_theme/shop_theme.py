@@ -295,12 +295,8 @@ def clear_render_theme_context():
 
 @contextmanager
 def render_theme_context(theme_context):
-	"""Pin the template helpers to one theme for the duration.
-
-	Previewing a theme that is not live needs this: shop_theme_asset_url() and shop_theme_config()
-	read this context, and would otherwise hand the previewed theme's templates the LIVE theme's
-	asset URLs and settings Single.
-	"""
+	"""Pin shop_theme_asset_url() and shop_theme_config() to one theme for the duration, so previewing
+	a non-live theme cannot hand its templates the LIVE theme's asset URLs and settings Single."""
 	previous = getattr(frappe.local, RENDER_THEME_CONTEXT_LOCAL_KEY, None)
 	setattr(frappe.local, RENDER_THEME_CONTEXT_LOCAL_KEY, theme_context)
 	try:

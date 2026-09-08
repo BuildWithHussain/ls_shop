@@ -36,11 +36,8 @@ class ShopWebPage(Document):
 
 
 def get_page_by_route(route):
-	"""The page a visitor may see on this route, or None.
-
-	No role holds `read`, so a shopper can never list drafts through frappe.client; this reads past
-	permissions on purpose and `published` is the whole gate. Editors (those with `write`) preview drafts.
-	"""
+	"""The page a visitor may see on this route, or None. No role holds `read`, so a shopper can never
+	list drafts through frappe.client; this reads past permissions and `published` is the whole gate."""
 	if not route:
 		return None
 

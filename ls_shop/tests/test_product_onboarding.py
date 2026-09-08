@@ -443,9 +443,8 @@ class TestCreateProduct(ProductOnboardingTestCase):
 	def setUp(self):
 		super().setUp()
 		self.colour_attribute = self.make_named_attribute("Colour", ["Crimson", "Teal"])
-		# The size axis has to be the attribute literally named "Size" — generate_variants() lowercases
-		# it into the Color Size Item fieldname, so a suffixed per-run copy is refused by create_product.
-		# Values it does not hold yet are appended on the way in, and rolled back with the test.
+		# Must be the attribute literally named "Size": generate_variants() lowercases it into the
+		# Color Size Item fieldname. Shared, so values it lacks are appended and rolled back with the test.
 		self.size_attribute = "Size"
 
 	def make_named_attribute(self, label, values):
@@ -519,9 +518,8 @@ class TestCreateProduct(ProductOnboardingTestCase):
 
 
 class TestCreateSingleItemProduct(ProductOnboardingTestCase):
-	"""A book has neither a colour nor a size. Both axes are still written underneath — see the
-	note above DEFAULT_OPTION_VALUE in api/admin/catalog.py for the three things that break when
-	they are genuinely absent."""
+	"""A book has neither a colour nor a size. Both axes are still written underneath — see the note
+	above DEFAULT_OPTION_VALUE in api/admin/catalog.py."""
 
 	def setUp(self):
 		super().setUp()

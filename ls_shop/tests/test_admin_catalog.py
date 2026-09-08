@@ -123,9 +123,8 @@ class TestDeleteProduct(DeleteProductTestCase):
 		self.assertTrue(os.path.exists(photo.get_full_path()))
 
 	def test_a_viewed_product_is_refused_in_words_rather_than_as_a_link_error(self):
-		"""Storefront Analytics Event.item_code is a plain Link to Item that hooks.py does not ignore
-		on delete, so a product a shopper merely opened is link-blocked - and the raw LinkExistsError
-		tells a shop owner nothing."""
+		"""Storefront Analytics Event.item_code is a plain Link to Item that hooks.py does not ignore on
+		delete, so a merely-viewed product is link-blocked - and raw LinkExistsError explains nothing."""
 		item_template = self.add_product()
 		chain = get_product_chain(item_template)
 		photo = self.add_photo(chain["variants"][0])
@@ -152,9 +151,8 @@ class TestDeleteProduct(DeleteProductTestCase):
 
 
 class TestProductCollection(DeleteProductTestCase):
-	"""Style Attribute Variant carries its own item_group, and that copy - not Item.item_group - is
-	what the storefront category pages and the search index read. A move that only writes the
-	product's own field is a control reporting success while half doing nothing."""
+	"""Style Attribute Variant carries its own item_group, and that copy - not Item.item_group - is what
+	the storefront category pages and the search index read."""
 
 	def setUp(self):
 		super().setUp()

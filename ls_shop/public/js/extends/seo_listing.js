@@ -1,6 +1,5 @@
-// Shopify-style "Search engine listing" editor for SEO forms: a live Google snippet
-// preview plus character counters that update as the admin types. One script drives all
-// SEO-bearing doctypes; Lifestyle Settings carries several independent preview blocks.
+// Shopify-style "Search engine listing" editor: a live Google snippet preview plus character
+// counters. One script drives every SEO-bearing doctype; Lifestyle Settings has several blocks.
 
 const TITLE_MAX = 60;
 const DESCRIPTION_MAX = 160;

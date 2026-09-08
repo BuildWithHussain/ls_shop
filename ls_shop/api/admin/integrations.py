@@ -224,10 +224,7 @@ def save_integration(integration, enabled, values):
 
 def get_integration_linked_doctypes():
 	"""Every doctype a registered provider's settings Single links to.
-
-	Imported inside the function because both registries import this module: a provider screen is a
-	registry plus two wrappers, and this engine must not know either registry at import time.
-	"""
+	The registries are imported inside the function because both of them import this module."""
 	from ls_shop.api.admin.payments import get_payment_registry
 	from ls_shop.api.admin.shipping import get_shipping_registry
 
@@ -241,12 +238,8 @@ def get_integration_linked_doctypes():
 
 @frappe.whitelist()
 def get_link_options(doctype: str, search_text: str | None = None):
-	"""Options for a Link control on a provider's dialog.
-
-	A carrier quotes live rates from its own pickup Address, so that field has to be pickable rather
-	than typed from memory — an Address named wrong reads as no origin at all, and every delivery
-	option quietly falls back to its backup charge.
-	"""
+	"""Options for a Link control on a provider's dialog. A carrier quotes live rates from its own pickup
+	Address, and an Address named wrong reads as no origin at all - every option falls back to its charge."""
 	frappe.only_for("System Manager")
 
 	if doctype not in get_integration_linked_doctypes():

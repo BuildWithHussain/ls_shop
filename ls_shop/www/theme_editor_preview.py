@@ -2,10 +2,7 @@
 # For license information, please see license.txt
 
 """Renders a theme's home page for the theme editor's iframe.
-
-Defaults to the live theme; `?theme=` frames an installed theme that is not live yet, which is
-how the editor previews a theme before anyone activates it.
-"""
+Defaults to the live theme; `?theme=` frames an installed theme that is not live yet."""
 
 import frappe
 from frappe.utils import escape_html

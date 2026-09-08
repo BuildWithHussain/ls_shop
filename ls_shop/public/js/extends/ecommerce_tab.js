@@ -2,8 +2,7 @@
 // For license information, please see license.txt
 
 // Frappe concatenates every `doctype_js` file for a doctype into one `new Function()` scope
-// (script_manager.js `setup`), so anything declared at the top level here would collide with the
-// other scripts registered on Item. This closure keeps the file's names its own.
+// (script_manager.js `setup`), so a top-level name here would collide with the other scripts.
 (() => {
 	const PANEL_STYLES = `<style>
 		.sf-panel { margin-top: 4px; }
@@ -289,10 +288,8 @@
 
 		$button.prop('disabled', true).text(__('Publishing…'));
 		try {
-			// bulk_publish_variants owns the only bulk write to `is_published`, and therefore the only
-			// search-index enqueue; publishing from here directly would leave the index stale. This goes
-			// to set_variants_published rather than the Single's bulk_toggle_publish, which would also
-			// AND in whatever filters were last left on the Bulk Publish Variants form.
+			// set_variants_published owns the only bulk write to `is_published` and its search-index
+			// enqueue; bulk_toggle_publish would AND in the Bulk Publish Variants form's last filters.
 			const response = await frappe.call({
 				method: PUBLISH_METHOD,
 				args: {

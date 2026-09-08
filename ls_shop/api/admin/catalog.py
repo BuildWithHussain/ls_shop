@@ -20,9 +20,7 @@ PAGE_LENGTH = 20
 BULK_PRODUCT_LIMIT = 100
 
 # Every doctype that makes a product historical, in the order a merchant would recognise. Storefront
-# Analytics Event is on the list because it is a plain Link to Item that hooks.py deliberately does
-# not ignore on delete, so a product a shopper merely viewed is link-blocked anyway - it earns a
-# sentence a merchant understands rather than a raw LinkExistsError.
+# Analytics Event is a plain Link to Item that hooks.py deliberately does not ignore on delete.
 HISTORY_BLOCKERS = (
 	"Sales Order Item",
 	"Delivery Note Item",
@@ -197,11 +195,8 @@ def get_default_rates(item_codes):
 
 
 def get_selling_rates(item_codes):
-	"""The rate a shopper actually pays, keyed by item_code: the sale rate where one is set,
-	the default rate otherwise. get_default_rates() above is the list price, which is what
-	stock valuation wants but not what a catalogue should quote - a discounted product would
-	advertise its struck-through price, and one priced only on the sale list would read as
-	having no price at all."""
+	"""The rate a shopper actually pays: the sale rate where one is set, the default otherwise.
+	get_default_rates() is the list price - quoting that advertises the struck-through figure."""
 	if not item_codes:
 		return {}
 
@@ -272,14 +267,8 @@ def get_size_stock(item_codes):
 
 
 def get_restock_level(item_codes):
-	"""The level this product is called low at, or None when its sizes do not share one.
-
-	The number the Stock screen actually judges each size by is inventory.get_low_stock_levels() —
-	safety_stock where the size carries one, LOW_STOCK_THRESHOLD where it does not — so this reads
-	the same map rather than a second rule. set_restock_level writes every size the same value, so
-	sizes only disagree when something else wrote safety_stock; there is then no single honest
-	product-level answer and the screen is told None rather than a number half the sizes ignore.
-	"""
+	"""The level this product is called low at, or None when its sizes do not share one. Reads
+	inventory.get_low_stock_levels(), so the Stock screen cannot judge a size by a different number."""
 	from ls_shop.api.admin.inventory import get_low_stock_levels
 
 	if not item_codes:
@@ -321,11 +310,7 @@ def get_product_chain(item_template: str | int):
 
 def get_collection(collection: str) -> str:
 	"""The one answer to "is this a valid collection?", shared by every writer of Item.item_group.
-
-	A collection is a leaf Item Group (see list_collections), so a structural parent that groups
-	other collections is refused rather than silently accepted and then rendered as a category
-	page nothing can be filed under.
-	"""
+	A collection is a leaf Item Group (see list_collections), so a structural parent is refused."""
 	item_group = frappe.db.get_value(
 		"Item Group", cstr(collection).strip(), ["name", "lft", "rgt"], as_dict=True
 	)
@@ -354,14 +339,8 @@ def get_variant_names(item_templates: list) -> list:
 
 
 def save_variant_collections(item_templates: list) -> None:
-	"""Re-file the options of these products under whatever collection the products now carry.
-
-	Style Attribute Variant keeps its own item_group, and that copy — not Item.item_group — is what
-	the storefront category pages and search/record_builder.py index. update_item_group() only fills
-	it while it is blank, so clearing it and saving re-derives it from the product through the same
-	Lifestyle Settings mapping, and fires the search.sync hooks that hang off the variant. Without
-	this the dashboard reports a move the storefront never made.
-	"""
+	"""Re-file these products' options under the collection the products now carry - the storefront indexes
+	Style Attribute Variant.item_group, and update_item_group() only fills it while blank."""
 	for variant_name in get_variant_names(item_templates):
 		# ponytail: one save per option so update_item_group and the search sync hooks run; move to
 		# a background job if a store ever files more options at once than a request can carry.
@@ -377,11 +356,8 @@ def get_pricing_rows(
 	start: int = 0,
 	page_length: int = PAGE_LENGTH,
 ):
-	"""One row per sellable option (Style Attribute Variant) - the unit Pricing.vue prices.
-
-	Reuses get_products()'s batched joins but at variant grain, carrying each variant's own
-	default_rate/sale_rate instead of a template-wide price_from/price_to range.
-	"""
+	"""One row per sellable option (Style Attribute Variant) - the unit Pricing.vue prices. Reuses
+	get_products()'s batched joins at variant grain, carrying each variant's own default_rate/sale_rate."""
 	frappe.has_permission("Item", ptype="read", throw=True)
 
 	from ls_shop.api.admin.orders import get_reporting_currency
@@ -535,9 +511,8 @@ def get_product(item_template: str):
 			{
 				"size": row.size,
 				"item_code": row.item_code,
-				# default_rate is the MRP shown struck through once a sale_rate is set (see
-				# ls_shop/product_detail.py's get_discount_percent, which treats default_rate as
-				# the higher reference and sale_rate as what the shopper actually pays).
+				# default_rate is the MRP shown struck through once a sale_rate is set - product_detail.py's
+				# get_discount_percent treats sale_rate as what the shopper actually pays.
 				"default_rate": price.get("default_rate"),
 				"sale_rate": price.get("sale_rate"),
 				"stock": stock.get("stock", 0),
@@ -612,14 +587,8 @@ TOP_PRODUCTS_LIMIT = 4
 
 @frappe.whitelist()
 def get_top_products(limit: int = TOP_PRODUCTS_LIMIT):
-	"""Home screen bestsellers, one row per product template. A Sales Order Item's item_code is a
-	single size, so this walks size -> Style Attribute Variant -> Style Attribute Configurator to
-	get back to the template every size belongs to, and sums in SQL from there - the whole join
-	and aggregation is one query regardless of how many orders or sizes exist.
-
-	Drafts count, same as orders.get_overview/is_webshop_order: this site's entire seeded order
-	book is a draft COD order, and excluding drafts would read every bestseller as zero.
-	"""
+	"""Home screen bestsellers, one row per product template. A Sales Order Item's item_code is a single
+	size, so this walks size -> variant -> configurator and sums in SQL; drafts count, as is_webshop_order does."""
 	frappe.has_permission("Item", ptype="read", throw=True)
 
 	# Delayed import: orders.py imports this module at import time, so a module-level import here
@@ -711,9 +680,8 @@ def get_top_products(limit: int = TOP_PRODUCTS_LIMIT):
 
 
 def get_item_templates_by_item_code(item_codes):
-	"""One batched hop from a sellable size (Sales Order Item.item_code / Bin.item_code) up to the
-	product template it belongs to - the same size -> variant -> configurator join get_top_products
-	does inline, exposed here so the analytics report can reuse it instead of re-deriving the join."""
+	"""One batched hop from a sellable size (Sales Order Item.item_code / Bin.item_code) up to its product
+	template - the same size -> variant -> configurator join get_top_products does inline."""
 	if not item_codes:
 		return {}
 
@@ -759,14 +727,8 @@ def get_collections(search_text: str | None = None):
 
 @frappe.whitelist()
 def list_collections(search: str | None = None, start: int = 0, page_length: int = PAGE_LENGTH):
-	"""The Collections screen: one row per collection, with a real (not derived) product count.
-
-	The owner never sees "Item Group" — Collections are the leaf Item Groups a product can actually
-	be filed under. The tree's structural parents (e.g. "All Item Groups", "Ecommerce Website") are
-	excluded by nested-set shape (lft/rgt), not by name, so a new structural node never leaks in.
-	ls_shop has no smart-collection rule engine, so no rule/condition
-	is reported: every collection is manual, and a column saying so on every row carries nothing.
-	"""
+	"""The Collections screen: one row per collection, with a real (not derived) product count. Collections
+	are the leaf Item Groups; structural parents are excluded by nested-set shape (lft/rgt), not by name."""
 	frappe.has_permission("Item Group", ptype="read", throw=True)
 
 	start = cint(start)
@@ -850,10 +812,7 @@ def create_collection(title: str):
 @frappe.whitelist(methods=["POST"])
 def add_products_to_collection(item_templates: list | str, collection: str):
 	"""File a selection of products under one collection, options included.
-
-	The options are re-filed too — see save_variant_collections for why the product's own
-	item_group is only half the move.
-	"""
+	The options are re-filed too - see save_variant_collections."""
 	frappe.has_permission("Item", ptype="write", throw=True)
 
 	item_templates = frappe.parse_json(item_templates)
@@ -895,10 +854,7 @@ def get_attribute_values(attribute: str):
 @frappe.whitelist()
 def get_attributes():
 	"""The Attributes screen: every Item Attribute with its values and a live usage count.
-
-	Two queries total, however many attributes exist — one for the value rows, one grouped
-	query for usage — never one query per attribute, which is the N+1 trap this screen invites.
-	"""
+	Two queries however many attributes exist - one for value rows, one grouped for usage; never per attribute."""
 	frappe.has_permission("Item Attribute", ptype="read", throw=True)
 
 	attribute_names = frappe.get_all("Item Attribute", pluck="name", order_by="name asc")
@@ -946,13 +902,8 @@ def get_attribute_usage_counts(attribute_names):
 
 
 def check_abbreviations_are_distinct(attribute_doc, abbreviation: str, skip_row_name: str | None = None):
-	"""Refuse a colliding abbreviation up front.
-
-	Two values sharing an abbreviation generate the same item code, and the second variant
-	insert then dies with a DuplicateEntryError naming a code nobody typed — the failure surfaces
-	at variant-generation time, far from the attribute edit that actually caused it. Comparison is
-	case-insensitive because ERPNext's own uniqueness check (Item Attribute.validate_duplication) is.
-	"""
+	"""Refuse a colliding abbreviation up front: two values sharing one generate the same item code, and the
+	variant insert dies with DuplicateEntryError. Case-insensitive, as Item Attribute.validate_duplication is."""
 	taken = {
 		cstr(row.abbr).casefold()
 		for row in attribute_doc.item_attribute_values
@@ -969,11 +920,7 @@ def check_abbreviations_are_distinct(attribute_doc, abbreviation: str, skip_row_
 @frappe.whitelist(methods=["POST"])
 def create_attribute(name: str, values: list | str | None = None):
 	"""A new attribute, with as many starting values as the owner typed, comma separated.
-
-	Abbreviations are always auto-generated here (make_unique_abbreviation), so within one
-	fresh attribute a collision cannot occur by construction — the guard matters once values
-	get added to an attribute one at a time, which add_attribute_value below covers.
-	"""
+	Abbreviations are always auto-generated here (make_unique_abbreviation), so a collision cannot occur."""
 	frappe.has_permission("Item Attribute", ptype="create", throw=True)
 
 	name = cstr(name).strip()
@@ -1001,16 +948,8 @@ def create_attribute(name: str, values: list | str | None = None):
 
 @frappe.whitelist(methods=["POST"])
 def add_attribute_value(attribute: str, value: str, abbreviation: str | None = None):
-	"""Add one value to an existing attribute.
-
-	An explicit abbreviation is validated against every abbreviation the attribute already
-	carries and refused on collision (see check_abbreviations_are_distinct); omit it and one is
-	auto-generated the same way create_attribute/create_product already do, so it cannot collide.
-
-	Renaming or deleting the "Size" attribute is a separate, more dangerous edit (generate_variants
-	lowercases the attribute name into a "Color Size Item" fieldname) — this endpoint only appends
-	a value, so that trap does not apply here; a future rename/delete endpoint must guard it.
-	"""
+	"""Add one value to an existing attribute. An explicit abbreviation is refused on collision (see
+	check_abbreviations_are_distinct); omit it and one is auto-generated, which cannot collide."""
 	frappe.has_permission("Item Attribute", doc=attribute, ptype="write", throw=True)
 
 	value = cstr(value).strip()
@@ -1037,12 +976,8 @@ def add_attribute_value(attribute: str, value: str, abbreviation: str | None = N
 	}
 
 
-# A product that sells as a single item still needs both variant axes present in the data. Color Size
-# Item.size is reqd, www/cart/checkout.py drops a cart line whose Item has no "Size" Item Variant
-# Attribute row, and a Style Attribute Variant with an empty sizes table unpublishes itself
-# (style_attribute_variant.unpublish_if_incomplete_data). So the axes are hidden from the owner, never
-# absent underneath - the same trick Shopify plays with the "Default Title" variant it creates for a
-# product that declares no options.
+# A product that sells as a single item still needs both variant axes present: Color Size Item.size is
+# reqd, checkout drops a line whose Item has no "Size" attribute row, and empty sizes unpublish a variant.
 SIZE_ATTRIBUTE = "Size"
 DEFAULT_OPTION_ATTRIBUTE = "Title"
 DEFAULT_OPTION_VALUE = "Standard"
@@ -1061,40 +996,24 @@ def create_product(
 	option_abbreviations: dict | str | None = None,
 	size_abbreviations: dict | str | None = None,
 ):
-	"""Create a sellable product. Company, warehouse, price list, UOM and naming series
-	come from Lifestyle Settings.
-
-	option_attribute/size_attribute/option_sizes are all optional. Omit the sizes and the product
-	sells as a single item per option (a book in Paperback and Hardcover); omit the options too and
-	it is one item on its own. Both axes are still written, carrying DEFAULT_OPTION_VALUE and
-	DEFAULT_SIZE_VALUE - see the note above those constants for why they cannot simply be left out.
-
-	option_abbreviations/size_abbreviations are optional {value: abbreviation} overrides for any
-	value that does not exist on the attribute yet — omit a value and one is auto-generated
-	(see add_missing_attribute_values), which by construction cannot collide. An explicit override
-	can collide, and is refused up front by check_abbreviations_are_distinct rather than left to
-	surface later as a DuplicateEntryError from the variant insert.
-	"""
+	"""Create a sellable product; company, warehouse, price list, UOM and naming series come from Lifestyle
+	Settings. Both axes are always written whatever the caller omits - see the note above SIZE_ATTRIBUTE."""
 	frappe.has_permission("Item", ptype="create", throw=True)
 
 	title = cstr(title).strip()
 	if not title:
 		frappe.throw(_("Enter a product title"))
 
-	# An Item is named after its title (autoname "field:item_code"), so the title inherits Frappe's
-	# naming rules. Both of these surface from deep inside insert() as messages a shop owner cannot
-	# act on - a reserved prefix reads as "There were some errors setting the name, please contact
-	# the administrator" (frappe/model/naming.py validate_name), and a repeat title as a raw
-	# IntegrityError - so they are caught here, where the offending field can still be named.
+	# An Item is named after its title (autoname "field:item_code"), so a reserved "New Item" prefix and a
+	# repeat title both surface from inside insert() as messages a shop owner cannot act on.
 	if title.startswith("New Item"):
 		frappe.throw(_('A product title cannot start with "New Item" - Frappe reserves that wording for documents it has not saved yet. Try another title.'))
 
 	if frappe.db.exists("Item", title):
 		frappe.throw(_("A product called {0} already exists. Give this one a different title.").format(title))
 
-	# A book has neither a colour nor a size, so both axes fall back to a single hidden value. An
-	# owner who named no options at all hangs on the fallback axis rather than having "Standard"
-	# appended to whichever attribute the form happened to have selected.
+	# A book has neither a colour nor a size, so both axes fall back to a single hidden value - an owner who
+	# named no options hangs on the fallback axis, not on whichever attribute the form had selected.
 	option_rows = frappe.parse_json(option_sizes) if isinstance(option_sizes, str) else (option_sizes or [])
 	option_attribute = (cstr(option_attribute).strip() if option_rows else "") or ensure_attribute_exists(
 		DEFAULT_OPTION_ATTRIBUTE, DEFAULT_OPTION_VALUE, "STD"
@@ -1104,9 +1023,8 @@ def create_product(
 	# needs one to live on — otherwise a book is uncreatable on a fresh site.
 	ensure_attribute_exists(SIZE_ATTRIBUTE, DEFAULT_SIZE_VALUE, "OS")
 
-	# generate_variants() lowercases the attribute name into a "Color Size Item" fieldname — any
-	# other spelling (e.g. this store's own decoy "Colour" attribute) fails deep inside variant
-	# generation with "Value missing for: Size", far from the create call that caused it.
+	# generate_variants() lowercases the attribute name into a "Color Size Item" fieldname, so any other
+	# spelling fails deep inside variant generation with "Value missing for: Size".
 	if cstr(size_attribute) != "Size":
 		frappe.throw(_('The size option must use the attribute named exactly "Size" — {0} will not work.').format(size_attribute))
 
@@ -1219,15 +1137,8 @@ def resolve_option_sizes(
 
 
 def add_missing_attribute_values(attribute: str, values: list, abbreviations: dict | None = None):
-	"""Let the owner type a new colour without visiting the Item Attribute form.
-
-	ERPNext compares attribute values case-insensitively, so "red" beside "Red" appends a duplicate.
-
-	abbreviations is an optional {value: abbreviation} override. Left unset, an abbreviation is
-	auto-generated against every abbreviation already taken (including ones added earlier in this
-	same call) and so cannot collide. An explicit override skips generation and is instead refused
-	up front by check_abbreviations_are_distinct if it collides.
-	"""
+	"""Let the owner type a new colour without visiting the Item Attribute form. ERPNext compares attribute
+	values case-insensitively, so "red" beside "Red" appends a duplicate."""
 	abbreviations = abbreviations or {}
 	attribute_doc = frappe.get_doc("Item Attribute", attribute)
 	canonical_by_key = {
@@ -1264,12 +1175,8 @@ def add_missing_attribute_values(attribute: str, values: list, abbreviations: di
 
 
 def ensure_attribute_exists(attribute_name: str, seed_value: str, abbreviation: str):
-	"""An axis a product falls back to, created on first use.
-
-	generate_variants() emits one Style Attribute Variant per value of the configurator axis and
-	skips the product entirely when that axis is empty, so a product with no axis has no storefront
-	page at all. This gives it a single-value one to hang on.
-	"""
+	"""An axis a product falls back to, created on first use. generate_variants() skips a product whose
+	configurator axis is empty, leaving it with no storefront page at all."""
 	if not frappe.db.exists("Item Attribute", attribute_name):
 		attribute_doc = frappe.new_doc("Item Attribute")
 		attribute_doc.attribute_name = attribute_name
@@ -1326,13 +1233,8 @@ def update_product(
 
 
 def check_product_has_no_history(title: str, item_codes: list) -> None:
-	"""Refuse a product any document still refers to, in one query per doctype however many sizes it
-	has, and in a merchant's words rather than a raw link error.
-
-	A cancelled order still carries its lines, so docstatus is deliberately not filtered on. Every
-	message offers Archive, because that is the honest answer for a product with a past: deleting it
-	would leave the history pointing at an item that no longer exists.
-	"""
+	"""Refuse a product any document still refers to, one query per doctype however many sizes it has.
+	A cancelled order still carries its lines, so docstatus is deliberately not filtered on."""
 	messages = {
 		"Sales Order Item": _("{0} has been ordered before, so it cannot be deleted."),
 		"Delivery Note Item": _("{0} has been shipped before, so it cannot be deleted."),
@@ -1354,16 +1256,7 @@ def check_product_has_no_history(title: str, item_codes: list) -> None:
 
 def check_product_chain_is_deletable(chain: dict, item_template: str | int) -> None:
 	"""Ask the framework whether every document in the chain may go, before any of them does.
-
-	frappe.delete_doc runs on_trash and deletes the document's attachments — the File rows AND the
-	JPEGs under them — before it checks whether the document is linked. The SQL of a refused delete
-	rolls back; the files on disk do not (File.on_rollback only restores what it uploaded in this
-	request). So the whole chain is proved deletable up front and nothing is destroyed until it is.
-
-	Two kinds of link are not blockers and are skipped, because the real delete would not stop on
-	them either: the chain's own documents, which point at each other and are all going, and the
-	rows ERPNext's Item.on_trash clears itself before the framework ever looks.
-	"""
+	frappe.delete_doc deletes attachments before it checks links, and the rollback restores SQL, not disk."""
 	from frappe.model.delete_doc import get_linked_docs, raise_link_exists_exception
 
 	documents = [
@@ -1389,10 +1282,7 @@ def check_product_chain_is_deletable(chain: dict, item_template: str | int) -> N
 @frappe.whitelist(methods=["POST"])
 def delete_product(item_template: str | int):
 	"""Remove a product nothing refers to, options and sellable sizes included.
-
-	A product with any history stays — see check_product_has_no_history for what counts and why
-	Archive (update_product with disabled=1) is offered instead.
-	"""
+	A product with any history stays - see check_product_has_no_history."""
 	frappe.has_permission("Item", doc=item_template, ptype="delete", throw=True)
 
 	title = frappe.db.get_value("Item", item_template, "item_name")
@@ -1418,12 +1308,8 @@ def delete_product(item_template: str | int):
 
 @frappe.whitelist(methods=["POST"])
 def set_restock_level(item_template: str | int, level: int | str):
-	"""The stock level this product should start reading as low at.
-
-	Written to Item.safety_stock on every size, which get_inventory() reads per row instead of its
-	store-wide default. Deliberately not ERPNext's reorder/auto_indent - nothing here raises a
-	purchase, it only changes when the dashboard calls a size low.
-	"""
+	"""The stock level this product reads as low at, written to Item.safety_stock on every size.
+	Deliberately not ERPNext's reorder/auto_indent - nothing here raises a purchase."""
 	frappe.has_permission("Item", doc=item_template, ptype="write", throw=True)
 
 	level = cint(level)
@@ -1500,15 +1386,10 @@ def set_variant_price(
 	default_rate: float | str | None = None,
 	sale_rate: float | str | None = None,
 ):
-	"""Reprice every size under one option in a single pass.
-
-	The product page's variant-row editor shows one price for what is really N size-level prices
-	(save_product_prices/save_size_prices above edits those individually); this is the bulk form,
-	built on the same set_variant_prices() the create-product flow uses.
-	"""
-	# set_variant_prices() reads a non-positive rate as "leave that price list alone" - the sentinel
-	# the create-product flow needs. An editor asking for zero means it, so it is refused here rather
-	# than dropped inside a call that would report nothing wrong.
+	"""Reprice every size under one option in a single pass - the bulk form of save_size_prices, built on
+	the same set_variant_prices() the create-product flow uses."""
+	# set_variant_prices() reads a non-positive rate as "leave that price list alone" - the sentinel the
+	# create-product flow needs, so an editor asking for zero is refused here rather than silently dropped.
 	for rate in (default_rate, sale_rate):
 		if rate is not None and flt(rate) <= 0:
 			frappe.throw(_("Enter a price above zero. A price cannot be removed once it is set."))
@@ -1603,10 +1484,7 @@ def get_ready_variant_names(variant_names):
 
 def get_unpublishable_options(limit: int = 5):
 	"""Options that cannot go live yet, with the reason, across the whole catalogue.
-
-	`limit=0` returns every one of them, so a caller that shows a preview can still count the rest
-	without a second pass over the catalogue.
-	"""
+	`limit=0` returns every one, so a caller showing a preview can still count the rest in one pass."""
 	variants = frappe.get_all(
 		"Style Attribute Variant",
 		filters={"is_published": 0},

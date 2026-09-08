@@ -2,10 +2,7 @@
 # For license information, please see license.txt
 
 """Rendering any settings Single as dashboard fields, straight off its own docfield meta.
-
-Every screen that edits a Single this way - integrations, theme settings - reads its rows from
-here rather than from a hardcoded field list, so adding a docfield is all it takes to surface it.
-"""
+Adding a docfield surfaces it on every screen that edits a Single this way - integrations, theme settings."""
 
 import frappe
 from frappe.utils.data import cstr

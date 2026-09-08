@@ -1,8 +1,5 @@
-/* Pixio's markup carries `class="wow fadeInUp" data-wow-delay="..."` on ~94 homepage
-   elements. animate.css v3 only runs the keyframes once `.animated` is also present, and
-   upstream adds it with wow.js + jQuery. This is that trigger on IntersectionObserver.
-   Elements are hidden by this script and not by CSS, so a failed load degrades to no
-   animation instead of an invisible page. */
+/* animate.css v3 only runs the keyframes once `.animated` is also present, which upstream adds
+   with wow.js. Elements are hidden by this script, not CSS, so a failed load leaves them visible. */
 (() => {
 	const observer = new IntersectionObserver(
 		(entries) => {

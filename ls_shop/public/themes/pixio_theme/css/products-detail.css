@@ -1,10 +1,5 @@
-/* Net-new CSS for the Pixio product detail page.
-
-   Everything the reference styles through style.css - .dz-product-detail, .btn-quantity,
-   .product-size, .dz-info, .dz-tabs, .cart-detail, .swiper-btn-center-lr - is used as-is.
-   What is left below is only what the vendored sheet has no rule for, because the reference
-   got it from a plugin this theme does not load (Swiper sizing, Drift zoom) or from markup
-   this storefront has no data for. */
+/* Net-new CSS for the Pixio product detail page: only what the vendored sheet has no rule for,
+   because the reference got it from a plugin this theme does not load (Swiper sizing, Drift zoom). */
 
 /* .site-header is header-transparent on every Pixio page, so it paints over the first band.
    The homepage hides that behind a full-bleed hero; a detail page starts with text. */
@@ -18,9 +13,8 @@
 	}
 }
 
-/* Swiper sized its slides in JS. Embla does not, so the thumb rail's own box - absolutely
-   positioned over the stage by style.css - has to be capped here or it measures out to the
-   full track width and drags a horizontal scrollbar onto the page. */
+/* Embla does not size slides, so the thumb rail's box - absolutely positioned over the stage by
+   style.css - has to be capped here or it measures the full track width and adds a scrollbar. */
 .dz-product-detail .product-gallery-swiper.thumb-swiper-lg {
 	width: max-content;
 	max-width: calc(100% - 30px);
@@ -97,9 +91,8 @@
 	padding-top: 0;
 }
 
-/* bootstrap-touchspin's own sheet made the counter a block so style.css's `margin: auto`
-   could centre it between the two round buttons; without the plugin the input stays
-   inline-block, sits at the left edge and is painted over by the minus button. */
+/* bootstrap-touchspin's own sheet made the counter a block so style.css's `margin: auto` could
+   centre it; without the plugin the input stays inline-block and the minus button paints over it. */
 .btn-quantity .bootstrap-touchspin input {
 	display: block;
 }

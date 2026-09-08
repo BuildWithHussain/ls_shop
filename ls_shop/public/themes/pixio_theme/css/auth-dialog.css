@@ -1,6 +1,5 @@
-/* Sign in / sign up dialog. The theme ships no Tailwind, so `hidden` and `animate-spin` — the two
-   class names templates/macros/auth_script.html toggles to drive the button spinners — have to be
-   defined here rather than inherited. */
+/* Sign in / sign up dialog. The theme ships no Tailwind, so `hidden` and `animate-spin` — toggled
+   by templates/macros/auth_script.html — have to be defined here rather than inherited. */
 
 .pixio-auth-backdrop {
   position: fixed;

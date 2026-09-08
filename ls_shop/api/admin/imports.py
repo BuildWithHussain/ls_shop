@@ -1,14 +1,8 @@
 # Copyright (c) 2026, company@bwhstudios.com and contributors
 # For license information, please see license.txt
 
-"""Bulk product import: a downloadable spreadsheet template, and the importer that reads one back.
-
-One spreadsheet row is one colour/size combination (a future SKU). Rows sharing a Product Title
-become one product, created through the same catalog.create_product engine the single-product
-dialog uses — this module never touches Item / Style Attribute Configurator directly. Price is a
-create_product-level concept (one price for the whole product, not per size), so every row for one
-product must agree on it.
-"""
+"""Bulk product import: a spreadsheet template, and the importer that reads one back. One row is one
+colour/size; rows sharing a Product Title become one product, priced once, via catalog.create_product."""
 
 import os
 import re
@@ -291,8 +285,7 @@ def get_image_groups(parsed_rows):
 
 
 def match_files_to_groups(groups, uploaded_files):
-	"""A file lands on the group whose slug its own name either equals or starts with, dash-separated,
-	so oversized-tee-black-1.jpg and oversized-tee-black.jpg both mean the same colour. The longest
+	"""A file lands on the group whose slug its own name equals or starts with, dash-separated. The longest
 	matching slug wins, so "tee-black" never steals a photo belonging to "tee-black-ribbed"."""
 	groups_by_slug_length = sorted(groups, key=lambda group: len(group["slug"]), reverse=True)
 
@@ -318,15 +311,8 @@ def match_files_to_groups(groups, uploaded_files):
 
 
 def validate_image_urls(file_urls, names_by_url: dict | None = None):
-	"""Every URL must still resolve to a File, and to a public one.
-
-	An import pins these onto a storefront page anyone can open, so a `/private/files/...` URL is
-	refused: Style Attribute Variant.add_images only checks that *some* File row carries the url,
-	which would let anyone holding Item-create publish a private attachment they do not own.
-
-	Read in chunks — a single IN (...) of every uploaded file falls apart once a merchant drags in a
-	few thousand photos.
-	"""
+	"""Every URL must still resolve to a File, and to a public one - Style Attribute Variant.add_images only
+	checks that *some* File row carries the url. Chunked: one IN (...) of every upload falls apart."""
 	unique_urls = list(dict.fromkeys(file_urls))
 	if not unique_urls:
 		return
@@ -357,9 +343,8 @@ def validate_image_urls(file_urls, names_by_url: dict | None = None):
 
 
 def read_uploaded_image_files(image_files):
-	"""The browser has already uploaded these through Frappe's own upload endpoint, so each one must
-	still resolve to a File — the same guard Style Attribute Variant.add_images enforces, checked here
-	where a merchant can still re-upload rather than at the end of an import."""
+	"""Each uploaded image must still resolve to a File - the same guard Style Attribute Variant.add_images
+	enforces, checked here where a merchant can still re-upload."""
 	entries = frappe.parse_json(image_files) or []
 	if not isinstance(entries, list):
 		frappe.throw(_("Images must be sent as a list of file names and file URLs"))
@@ -417,17 +402,8 @@ def match_import_images(
 
 
 def read_image_assignments(image_assignments):
-	"""{group key: [file_url, ...]} as match_import_images returned it, plus whatever the merchant
-	reassigned by hand — validated the moment it arrives.
-
-	It is checked here rather than where it is used because run_import only reaches attach_group_images
-	after products exist: a payload that is a list, a string or a number would raise an AttributeError
-	past the per-group savepoints, roll the whole request back, and lose the products the savepoints
-	were there to protect.
-
-	The URLs go through the same File check match_import_images already applies — run_import used to
-	hand them straight to add_images, which only asks whether some File row carries the url.
-	"""
+	"""{group key: [file_url, ...]} as match_import_images returned it, validated on arrival: a non-dict
+	payload would otherwise raise past run_import's per-group savepoints and roll the whole request back."""
 	assignments = frappe.parse_json(image_assignments) or {}
 	if not isinstance(assignments, dict):
 		frappe.throw(_("Image assignments must be sent as a group name against its list of photos"))
@@ -521,18 +497,8 @@ def validate_import(file_url: str, column_mapping: dict | str | None = None):
 def run_import(
 	file_url: str, column_mapping: dict | str | None = None, image_assignments: dict | str | None = None
 ):
-	"""Commits every product group that validated clean.
-
-	Rows are validated in full before anything is written, so a bad row's product is never
-	attempted at all. A group that still fails while being created (rare, since it already
-	validated) is rolled back to its own savepoint, so one unlucky product never leaves orphaned
-	Items behind and never blocks the rest of the file.
-
-	image_assignments is {group key: [file_url, ...]} — what match_import_images returned, plus
-	whatever the merchant reassigned by hand. Photos are attached after their product exists and
-	inside their own savepoint, so a photo that will not attach costs the merchant a message, never
-	the products.
-	"""
+	"""Commits every product group that validated clean. A group that fails while being created is rolled
+	back to its own savepoint, and photos are attached after their product exists, inside their own one."""
 	frappe.has_permission("Item", ptype="create", throw=True)
 	if isinstance(column_mapping, str):
 		column_mapping = frappe.parse_json(column_mapping)

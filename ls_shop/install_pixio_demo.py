@@ -1,7 +1,5 @@
 """One-shot seeder for a Pixio storefront demo site, in whatever currency it is handed.
-
-install_demo_data.create_price_lists is skipped: it hardcodes USD, which blocks every Sales Invoice
-on a site whose company is not USD."""
+create_price_lists is skipped: it hardcodes USD, which blocks Sales Invoices on a non-USD company."""
 
 import frappe
 from frappe.permissions import add_permission, update_permission_property
@@ -30,11 +28,8 @@ SHOPPER_ROLE = "Customer"
 
 DEFAULT_CURRENCY = "SAR"
 
-# One store, one currency: a demo site whose company, receivable account and price lists disagree
-# cannot submit a single Sales Invoice, so every money number the seeder writes comes from here.
-# FASHION_PRODUCTS carries dollar-scale numbers, so price_multiplier restates them locally and
-# price_rounding lands them on a retail-looking figure. Rates are recomputed from FASHION_PRODUCTS
-# on every run, never scaled in place — scaling in place would compound on a re-run.
+# FASHION_PRODUCTS carries dollar-scale numbers, so price_multiplier restates them in the site's own
+# currency. Rates are recomputed from it on every run - scaling in place would compound on a re-run.
 CURRENCY_PROFILES = {
 	"SAR": {
 		"country": "Saudi Arabia",

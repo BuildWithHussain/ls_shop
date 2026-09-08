@@ -1,12 +1,8 @@
 # Copyright (c) 2026, company@bwhstudios.com and contributors
 # For license information, please see license.txt
 
-"""Read/write for Analytics Settings behind the dashboard's Analytics tab (System Manager only),
-plus the three report screens (Revenue/Inventory/Storefront) further down this file. The reports
-extend, rather than duplicate, the store-wide aggregates ls_shop.api.analytics_dashboard already
-runs for the Desk analytics dashboard - same session/conversion definitions, same SQL-side
-aggregation over the 34k+ event table, same is_webshop_order (drafts count) revenue convention
-orders.py and customers.py already use."""
+"""Analytics Settings read/write (System Manager only), plus the Revenue/Inventory/Storefront reports.
+The reports reuse analytics_dashboard's session/conversion and is_webshop_order (drafts count) definitions."""
 
 import frappe
 from frappe.query_builder import Order
@@ -132,7 +128,6 @@ def save_analytics_settings(**kwargs):
 	return get_analytics_settings()
 
 
-# ---------------------------------------------------------------------------
 # Report screens: /analytics/revenue, /analytics/inventory, /analytics/storefront
 # ---------------------------------------------------------------------------
 
@@ -141,9 +136,8 @@ INVENTORY_VELOCITY_LIMIT = 6
 DEAD_STOCK_LIMIT = 6
 TOP_PAGES_LIMIT = 5
 
-# The report header's own range dropdown, mapped to a trailing month count. The charts stay
-# month-bucketed at every range - a 7/30-day window on a monthly x-axis just renders one or two
-# bars, which is honest about how little data a short window holds rather than switching axes.
+# The report header's own range dropdown, mapped to a trailing month count. Charts stay month-bucketed
+# at every range, so a 7/30-day window renders one or two bars.
 RANGE_MONTHS = {"Last 7 days": 1, "Last 30 days": 1, "Last 12 months": 12, "All time": 36}
 
 
@@ -169,11 +163,8 @@ def build_month_buckets(start, today):
 
 
 def get_refund_totals_by_order(order_names):
-	"""Sum of 'Pay' (refund) Payment Entries per order, batched for a whole reporting window in one
-	query. Mirrors orders.build_paid_orders_query's Sales Invoice hop - a Payment Entry Reference
-	always points at the invoice raised for an order, never at the order itself (see that
-	function's docstring), so this walks the same Sales Invoice Item.sales_order path rather than
-	re-deriving a second way to bridge order -> invoice -> payment."""
+	"""Sum of 'Pay' (refund) Payment Entries per order, batched for a whole reporting window in one query.
+	A Payment Entry Reference points at the invoice, never the order - same hop as build_paid_orders_query."""
 	if not order_names:
 		return {}
 
@@ -219,9 +210,8 @@ def get_refund_totals_by_order(order_names):
 
 
 def read_window_totals(from_date, to_date):
-	"""Revenue/orders/refunds for a plain date window - the "previous period" half of the Revenue
-	report's comparison, kept separate from the monthly series so the series doesn't have to carry
-	a throwaway extra bucket for it."""
+	"""Revenue/orders/refunds for a plain date window - the "previous period" half of the Revenue report's
+	comparison, kept out of the monthly series so the series carries no throwaway extra bucket."""
 	from ls_shop.api.admin.orders import is_webshop_order
 
 	sales_order = frappe.qb.DocType("Sales Order")
@@ -241,11 +231,8 @@ def read_window_totals(from_date, to_date):
 
 @frappe.whitelist()
 def get_revenue_report(months: int = REPORT_MONTHS_DEFAULT):
-	"""Monthly revenue/orders/discounts/refunds for the trailing N months, plus a vs-previous-period
-	comparison on the headline stats. Reuses orders.is_webshop_order (drafts count as real sales) so
-	a figure here means the same thing it does on the Home screen and the Orders list - every
-	seeded order in this shop is a draft COD order, so excluding drafts would read every month as
-	zero (see the module docstring)."""
+	"""Monthly revenue/orders/discounts/refunds for the trailing N months, plus a vs-previous comparison.
+	Reuses orders.is_webshop_order, so drafts count as real sales here as on the Home screen and Orders list."""
 	frappe.only_for("System Manager")
 	from ls_shop.api.admin.orders import get_reporting_currency, is_webshop_order
 
@@ -316,9 +303,8 @@ def get_revenue_report(months: int = REPORT_MONTHS_DEFAULT):
 
 
 def get_item_sales(from_date, to_date, item_codes):
-	"""units/revenue/last-sold per sellable size, one aggregate query regardless of scope.
-	from_date=None scans the size's whole history (used for "last sold, ever"); a bounded window is
-	used separately for the 30-day velocity figures. Drafts count - see is_webshop_order."""
+	"""units/revenue/last-sold per sellable size, one aggregate query regardless of scope. from_date=None
+	scans the size's whole history ("last sold, ever"); drafts count - see is_webshop_order."""
 	if not item_codes:
 		return {}
 	from ls_shop.api.admin.orders import is_webshop_order
@@ -349,9 +335,8 @@ def get_item_sales(from_date, to_date, item_codes):
 
 @frappe.whitelist()
 def get_inventory_report(months: int = REPORT_MONTHS_DEFAULT):
-	"""Stock value and sell-through for the shop's own ecommerce warehouse. "Value" prices on-hand
-	stock at today's selling price, the same convention the prototype's old mock data used - a shop
-	owner reads this as "what my shelves are worth to sell", not ERPNext's landed-cost valuation."""
+	"""Stock value and sell-through for the shop's own ecommerce warehouse. "Value" prices on-hand stock at
+	today's selling price - "what my shelves are worth to sell", not ERPNext's landed-cost valuation."""
 	frappe.only_for("System Manager")
 	from ls_shop.api.admin.inventory import get_inventory
 	from ls_shop.api.admin.orders import get_reporting_currency
@@ -422,15 +407,13 @@ def get_inventory_report(months: int = REPORT_MONTHS_DEFAULT):
 	dead_stock = dead_stock[:DEAD_STOCK_LIMIT]
 	dead_stock_value = sum(row["value"] for row in dead_stock)
 
-	# Stock value over time: the warehouse's real day-by-day on-hand qty, from
-	# analytics_dashboard.get_stock_movement's own ledger walk-back, priced at today's blended
-	# average rather than re-deriving a historical valuation this data model does not carry.
+	# Stock value over time: the warehouse's day-by-day on-hand qty from analytics_dashboard's ledger
+	# walk-back, priced at today's blended average - this data model carries no historical valuation.
 	movement = get_stock_movement(str(start), str(today))
 	value_by_month = {}
 	for label, on_hand in zip(movement["labels"], movement["on_hand"], strict=True):
-		# This shop's stock was seeded as one Stock Reconciliation near "today", so walking the
-		# ledger backward through that single seed point can drift below zero for months before
-		# it - clamp rather than show a shelf holding negative units.
+		# Walking the ledger back through this shop's single seeded Stock Reconciliation can drift below
+		# zero for the months before it - clamp rather than show a shelf holding negative units.
 		value_by_month[month_key(label)] = max(flt(on_hand), 0.0) * avg_price
 	stock_value_by_month = [
 		{"month": key, "label": formatdate(f"{key}-01", "MMM"), "value": round(value_by_month.get(key, 0), 2)}
@@ -454,10 +437,8 @@ def get_inventory_report(months: int = REPORT_MONTHS_DEFAULT):
 
 
 def get_sessions_by_month(start, today):
-	"""Distinct sessions per month, bucketed in SQL - the whole point being that a month bucket
-	over 34k+ events is one GROUP BY, never a Python loop over the raw rows. DATE_FORMAT's token
-	syntax differs between MariaDB and Postgres, so the format string is picked per backend the
-	same way frappe.utils.goal.get_monthly_results already does for the same reason."""
+	"""Distinct sessions per month, bucketed in SQL - one GROUP BY over 34k+ events, never a Python loop.
+	DATE_FORMAT token syntax differs between MariaDB and Postgres, so the format is picked per backend."""
 	analytics_event = frappe.qb.DocType("Storefront Analytics Event")
 	date_format = "%Y-%m" if frappe.db.db_type != "postgres" else "YYYY-MM"
 	month_bucket = DateFormat(analytics_event.creation, date_format)
@@ -496,9 +477,8 @@ def get_channel_split(from_date, to_date):
 
 @frappe.whitelist()
 def get_storefront_report(months: int = REPORT_MONTHS_DEFAULT):
-	"""Sessions/funnel/traffic for the trailing N months - a thin wrapper over
-	analytics_dashboard.py's existing, already SQL-aggregated storefront queries, so this report and
-	the Desk analytics dashboard never disagree on what a session or a conversion means."""
+	"""Sessions/funnel/traffic for the trailing N months - a thin wrapper over analytics_dashboard.py's
+	already SQL-aggregated storefront queries, so it cannot disagree with the Desk analytics dashboard."""
 	frappe.only_for("System Manager")
 
 	start, today, months = month_window(months)
@@ -542,8 +522,7 @@ def get_storefront_report(months: int = REPORT_MONTHS_DEFAULT):
 			{"page": row["path"], "views": row["sessions"], "conversion": row["conversion_rate"]}
 			for row in get_landing_pages(from_date, to_date, limit=TOP_PAGES_LIMIT)
 		],
-		# Storefront Analytics Event carries no search-term field at all (event/session/device/
-		# item_code/path/utm_* only, checked the doctype) - there is nothing real to report here,
-		# so this stays an honest empty list. See docs/commera-open-questions.md.
+		# Storefront Analytics Event carries no search-term field (event/session/device/item_code/path/utm_*
+		# only), so there is nothing real to report. See docs/commera-open-questions.md.
 		"search_terms": [],
 	}

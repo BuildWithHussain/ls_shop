@@ -1,19 +1,13 @@
-/* Net-new CSS for the Pixio theme.
-
-   Everything here exists because the reference markup is driven by Swiper and slick, which
-   size their slides from JavaScript config that this theme does not ship. Embla only moves
-   the track - it never writes a width - so the per-carousel widths and gutters that used to
-   live in the vendor JS options live here instead. Nothing else belongs in this file:
-   style.css and skin-1.css own the theme's looks. */
+/* Embla only moves the track and never writes a slide width, so the per-carousel widths and
+   gutters the vendor JS used to set live here. style.css and skin-1.css own the theme's looks. */
 
 [data-pixio-carousel] > .swiper-wrapper {
 	flex-direction: row;
 	height: auto;
 }
 
-/* slick wrapped its slides in a clipping .slick-list; Embla only moves the track, so the
-   hero's two viewports have to do their own clipping. .swiper carousels get this from
-   swiper-bundle.min.css already. */
+/* Embla has no clipping .slick-list, so the hero's two viewports clip themselves; .swiper
+   carousels get this from swiper-bundle.min.css already. */
 .main-slider-wrapper .slider-main,
 .main-slider-wrapper .slider-thumbs {
 	overflow: hidden;
@@ -26,9 +20,8 @@
 	height: auto;
 }
 
-/* Two banners per view: style.css marks the slide after the current one .slick-active too, and
-   only reveals its rotated data-name label there, which is slick's two-up config showing
-   through. .slider-thumbs is already 65vw wide, so the pair overhangs the right edge. */
+/* Two banners per view: style.css marks the slide after the current one .slick-active too, which
+   is slick's two-up config showing through. .slider-thumbs is 65vw, so the pair overhangs. */
 .main-slider-wrapper .slider-thumbs .slick-slide {
 	width: 50%;
 }
@@ -43,11 +36,8 @@
 	padding-inline: 15px;
 }
 
-/* The offer rail is the one carousel the reference runs three-up on a 15px spaceBetween instead of
-   the 30px gutter the others use, and the width is load-bearing rather than cosmetic:
-   .product-box.style-2 pins its copy to the right edge of a fixed 400px card, so a narrower slide
-   drags the 50px heading back across the middle of the photo. Its breakpoints step 3 - 2 - 1.5 - 1,
-   which is why it no longer shares the rules below. */
+/* Three-up on a 15px gutter, not the 30px the others use, and the width is load-bearing:
+   .product-box.style-2 pins its copy to the right edge of a fixed 400px card. */
 .swiper-product .swiper-slide {
 	width: calc(33.333% - 10px);
 	margin-inline-end: 15px;
@@ -60,6 +50,8 @@
 	padding-inline: 15px;
 }
 
+/* .swiper-product steps 3 - 2 - 1.5 - 1 across the breakpoints below, which is why it is
+   kept apart from the rails that share one ladder. */
 @media only screen and (max-width: 1199px) {
 	.swiper-four .swiper-slide {
 		width: 33.333%;
@@ -107,10 +99,8 @@
 	}
 }
 
-/* The reference grid's uniform card height comes from its photography, not from CSS: every
-   images/shop/product/*.png is 450x600 and .dz-media has no size of its own. Catalogue images
-   are merchant uploads ranging from 0.51 to 1.17 aspect, so without a box to fit them into the
-   row staircases. 3/4 is the reference's own frame. */
+/* Reference photography is uniformly 450x600 and .dz-media has no size of its own; merchant
+   uploads run 0.51 to 1.17 aspect, so without a frame the row staircases. */
 .card-container .shop-card .dz-media {
 	aspect-ratio: 3 / 4;
 	background-color: var(--bg-light);
@@ -126,10 +116,8 @@
 
 /* --- Header gaps left by the vendor JS this theme does not load --- */
 
-/* bootstrap-select replaces the category <select> with a .bootstrap-select.default-select
-   wrapper and a .dropdown-toggle button, and style.css puts the column's geometry on those.
-   Without that script the native control is the only element left, so it has to carry the
-   wrapper's 185px column, its 45px row and its hairline divider itself. */
+/* style.css puts this column's geometry on the .bootstrap-select wrapper and .dropdown-toggle
+   that script builds; without it the native control has to carry that geometry itself. */
 .dz-search-area .search-input select.default-select {
 	flex: 0 0 auto;
 	width: auto;
@@ -140,9 +128,8 @@
 	border-right: 1px solid rgba(187, 187, 187, 0.68) !important;
 }
 
-/* style.css fixes the canvas at 580px to fit the reference's product carousel. This one holds
-   the form alone - see the note in overlays/search_canvas.html - so a fixed height would be
-   400px of empty cream. */
+/* style.css fixes the canvas at 580px for the reference's product carousel; this one holds the
+   form alone, so a fixed height would be 400px of empty cream. */
 .dz-search-area.offcanvas {
 	height: auto;
 	/* .offcanvas pins bottom as well as top, so height alone would still stretch to the fold. */
@@ -151,9 +138,8 @@
 
 /* --- Footer gap left by this theme's own mobile chrome --- */
 
-/* Below 992px the header's .extra-nav icon bar is position:fixed across the bottom 50px of the
-   viewport. The reference has no such bar, so nothing in style.css reserves the space, and the
-   footer is the page's last element - its payment strip is what ends up underneath. */
+/* Below 992px this theme's .extra-nav icon bar is fixed across the bottom 50px; the reference
+   has no such bar, so nothing in style.css reserves the space under the footer. */
 @media only screen and (max-width: 991px) {
 	.site-footer.style-1 .footer-bottom {
 		padding-bottom: 50px;
@@ -162,16 +148,12 @@
 
 /* --- Marquee band: the loop dz.carousel.js used to drive --- */
 
-/* style.css leaves .dz-features-wrapper display:block and the single .dz-features ul at the
-   wrapper's own width, so @keyframes ticker's translateX(-100%) shifts one viewport rather than
-   one track length and the strip snaps back mid-word. Laying the two tracks out in a row and
-   sizing each to its content makes -100% exactly one track, so the duplicate arrives in the
-   first one's place and the wrap point disappears. */
+/* @keyframes ticker's translateX(-100%) has to equal one track: style.css leaves the wrapper
+   display:block, so it shifts one viewport instead and the strip snaps back mid-word. */
 .dz-features-wrapper {
 	display: flex;
-	/* The wrapper is a decorative strip, not reading order: pinning it LTR keeps the two tracks
-	   in the order the animation assumes, so /ar cannot reverse them and expose the gap. Arabic
-	   labels still shape RTL inside their own item. */
+	/* Pinned LTR so /ar cannot reverse the two tracks and expose the wrap gap; Arabic labels
+	   still shape RTL inside their own item. */
 	direction: ltr;
 }
 
@@ -192,9 +174,8 @@
 
 /* --- Language switcher: an icon-cluster item that opens a panel --- */
 
-/* The cluster's icon rule (.extra-nav .extra-cell ul li a/button) is a descendant selector, so
-   it also lands on the buttons inside the language panel and squashes each one into a centred
-   40px icon slot with no vertical padding. The toggle wants that treatment; the panel does not. */
+/* The cluster's icon rule (.extra-nav .extra-cell ul li a/button) is a descendant selector, so it
+   also squashes the language panel's buttons into a centred 40px icon slot. */
 .site-header .extra-nav .extra-cell ul li .dropdown-menu .dropdown-item {
 	display: block;
 	min-width: 100%;

@@ -2,8 +2,7 @@
    lives in style.css (22119-22212) - only what upstream left broken is repeated here. */
 
 /* style.css paints the ghosted wordmark from ../images/collection.png, an asset the vendored
-   package never shipped, so the request 404s and nothing renders. Drop it and draw the wordmark
-   from translatable markup instead. */
+   package never shipped, so the request 404s and nothing renders. */
 .collection-bx:after {
 	background-image: none;
 }
@@ -30,9 +29,8 @@
 	opacity: 0.05;
 }
 
-/* Merchant photos come from the shop_by_category table at whatever aspect ratio was uploaded;
-   without a fixed box the border-radius masks land on different shapes per tile. No display
-   here - style.css hides the tiles below 768px and this file loads after it. */
+/* Merchant photos arrive at whatever aspect was uploaded, so without a fixed box the border-radius
+   masks land on different shapes. No display rule here: style.css hides the tiles below 768px. */
 .collection-bx .collection-tile {
 	width: 190px;
 }

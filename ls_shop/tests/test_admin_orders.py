@@ -366,9 +366,8 @@ class TestOrderLifecycleReader(IntegrationTestCase):
 
 	def test_a_page_of_orders_costs_the_same_reads_as_a_single_one(self):
 		"""The whole point of the reader: the badge column must not scale with the page size."""
-		# Every order here must carry a delivery note. An order with no paperwork skips the
-		# note and packing-slip reads entirely, so mixing the two shapes measures which orders
-		# were sampled rather than whether the reader scales.
+		# Every order here must carry a delivery note: one with no paperwork skips the note and
+		# packing-slip reads entirely, so mixing shapes measures the sample, not whether it scales.
 		orders = sorted(
 			{
 				cstr(row.against_sales_order)

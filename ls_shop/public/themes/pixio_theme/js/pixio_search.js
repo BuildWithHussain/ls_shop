@@ -1,6 +1,5 @@
-/* Typeahead state for the search canvas. Kept out of pixio_header.js so the header component
-   stays chrome-only, and loaded synchronously from the canvas markup for the same reason that
-   file is: Alpine's core is deferred, so a deferred script here would miss alpine:init. */
+/* Typeahead state for the search canvas. Loaded synchronously from the canvas markup: Alpine's
+   core is deferred, so a deferred script here would miss alpine:init. */
 document.addEventListener('alpine:init', () => {
 	Alpine.data('pixio_search', (settings) => ({
 		search_term: '',

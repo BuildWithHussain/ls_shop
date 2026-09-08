@@ -117,13 +117,8 @@ def get_inventory(
 
 
 def get_low_stock_levels(item_codes) -> dict:
-	"""The level each size is judged low at, keyed by item_code: Item.safety_stock where the product
-	screen set one (catalog.set_restock_level), the store default where it did not.
-
-	The single answer to "what counts as low for this size" - catalog.get_restock_level reads the
-	same map, so the product screen cannot report one number while the Stock list judges by another.
-	Read in chunks: every sellable size in the store goes into this IN (...).
-	"""
+	"""The level each size is judged low at: Item.safety_stock where catalog.set_restock_level set one, the
+	store default otherwise. Chunked - every sellable size in the store goes into this IN (...)."""
 	if not item_codes:
 		return {}
 
@@ -150,11 +145,8 @@ def get_ecommerce_warehouse():
 
 @frappe.whitelist(methods=["POST"])
 def receive_stock(received_quantities: dict | str, valuation_rates: dict | str | None = None):
-	"""Take stock in across any mix of products in one receipt.
-
-	A rate is optional per line: Style Attribute Variant.receive_stock() sets `basic_rate` where
-	one is given, and falls back to the item's own valuation where it is not.
-	"""
+	"""Take stock in across any mix of products in one receipt. A rate is optional per line: Style Attribute
+	Variant.receive_stock() falls back to the item's own valuation where none is given."""
 	received_quantities = frappe.parse_json(received_quantities)
 	if not isinstance(received_quantities, dict):
 		frappe.throw(_("received_quantities must map item codes to quantities"))
@@ -196,10 +188,8 @@ def receive_stock(received_quantities: dict | str, valuation_rates: dict | str |
 	return {"stock_entries": stock_entries}
 
 
-# ls_shop keeps no adjustment-with-reason ledger of its own - a "set to X" or reason-coded
-# adjustment op does not exist here, only the additive receive_stock() above. Rather than
-# fabricate a ledger, get_stock_movements() below reads the real one ERPNext already keeps for
-# every stock-affecting document (Stock Ledger Entry), scoped to the shop's own warehouse.
+# ls_shop keeps no adjustment-with-reason ledger of its own, so get_stock_movements() below reads
+# ERPNext's Stock Ledger Entry, scoped to the shop's own warehouse.
 STOCK_ENTRY_REASON_LABELS = {
 	"Material Receipt": "Received",
 	"Material Issue": "Removed",

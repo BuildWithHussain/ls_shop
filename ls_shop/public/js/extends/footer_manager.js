@@ -2,8 +2,7 @@
 // For license information, please see license.txt
 
 // Frappe concatenates every `doctype_js` file for a doctype into one `new Function()` scope
-// (script_manager.js `setup`), so anything declared at the top level here would collide with the
-// other editors registered on Lifestyle Settings. This closure keeps the file's names its own.
+// (script_manager.js `setup`), so a top-level name here would collide with the other scripts.
 (() => {
 	frappe.ui.form.on('Lifestyle Settings', {
 		refresh(frm) {

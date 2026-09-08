@@ -73,9 +73,8 @@
 	}
 }
 
-/* Pixio ships shop-cart as a six-column table that can only scroll sideways on a phone, which
-   puts the stepper and the remove button out of reach. Dropping the unit-price column - the
-   subtotal column still carries the money - fits the row into a 360px viewport. */
+/* Pixio's six-column shop-cart table can only scroll sideways on a phone, putting the stepper and
+   remove button out of reach; dropping the unit-price column fits the row into 360px. */
 @media only screen and (max-width: 575px) {
 	.check-tbl {
 		min-width: 21rem;

@@ -37,9 +37,8 @@ def get_context(context):
 
 	context.available_sizes = detail["available_sizes"]
 	context.selected_size = detail["selected_size"]
-	# A product with a single size has nothing to pick, so the picker below is hidden — nothing would
-	# ever put ?size= in the URL, and add_to_cart refuses an item with no size chosen. The lone size
-	# counts as already chosen, which is what makes a book buyable at all.
+	# A single-size product has nothing to pick, so nothing ever puts ?size= in the URL — and
+	# add_to_cart refuses an item with no size chosen, so the lone size counts as already chosen.
 	context.size_selected = size_selected or (
 		detail["selected_size"] if len(detail["available_sizes"]) == 1 else None
 	)
