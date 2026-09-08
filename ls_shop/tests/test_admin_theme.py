@@ -99,7 +99,9 @@ class TestThemeEditorPreview(IntegrationTestCase):
 		activate_theme(PIXIO_THEME)
 
 	def render(self, lang="en", theme=None):
-		frappe.form_dict = frappe._dict(lang=lang, theme=theme)
+		# frappe.local, never frappe.form_dict: rebinding the module attribute swaps the LocalProxy out
+		# for a plain dict, and every later test in the run reads that stale one.
+		frappe.local.form_dict = frappe._dict(lang=lang, theme=theme)
 		context = frappe._dict()
 		theme_editor_preview.get_context(context)
 		return context.rendered_html

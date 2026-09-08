@@ -93,7 +93,8 @@ class ProductDetailPriceTestCase(IntegrationTestCase):
 		return route
 
 	def render(self, route):
-		frappe.form_dict = frappe._dict(route=route)
+		# frappe.local, never frappe.form_dict — see the note in test_admin_theme.render().
+		frappe.local.form_dict = frappe._dict(route=route)
 		context = frappe._dict()
 		details.get_context(context)
 		return context

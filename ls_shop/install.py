@@ -21,10 +21,8 @@ def before_tests():
 
 
 def complete_setup_wizard():
-	# Frappe's own before_tests seeds via the wizard only when a single app is installed, so our
-	# four-app CI site gets none. Call setup_complete directly (not complete_setup_wizard) to pass
-	# explicit fiscal-year dates — without them erpnext's Fiscal Year validation fails and silently
-	# aborts Company creation, and every test that books money dies on the missing company.
+	# Frappe seeds via the wizard only on a single-app site, so our four-app CI site gets none. The
+	# fiscal-year dates are explicit: without them Fiscal Year validation aborts Company creation.
 	if frappe.is_setup_complete():
 		return
 
@@ -74,9 +72,8 @@ def seed_erpnext_test_defaults():
 
 
 def seed_storefront_item_group():
-	# ls_shop makes `custom_displayname` mandatory on Item Group, so the setup wizard's own stock
-	# groups never insert and the site is left with nothing but the root. The suite files every test
-	# item under this one group, so seed it here rather than in each test's setUp.
+	# ls_shop makes `custom_displayname` mandatory on Item Group, so the wizard's own stock groups
+	# never insert and the site is left with nothing but the root.
 	if frappe.db.exists("Item Group", TEST_ITEM_GROUP):
 		return
 
