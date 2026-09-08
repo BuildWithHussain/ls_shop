@@ -3,9 +3,9 @@
    upstream adds it with wow.js + jQuery. This is that trigger on IntersectionObserver.
    Elements are hidden by this script and not by CSS, so a failed load degrades to no
    animation instead of an invisible page. */
-(function () {
+(() => {
 	const observer = new IntersectionObserver(
-		function (entries) {
+		(entries) => {
 			for (const entry of entries) {
 				if (!entry.isIntersecting) {
 					continue;
@@ -17,7 +17,7 @@
 				observer.unobserve(element);
 			}
 		},
-		{ rootMargin: '0px 0px -10% 0px' }
+		{ rootMargin: '0px 0px -10% 0px' },
 	);
 
 	function add_wow_animations() {

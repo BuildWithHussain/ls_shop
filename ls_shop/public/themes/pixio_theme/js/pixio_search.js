@@ -36,11 +36,12 @@ document.addEventListener('alpine:init', () => {
 
 		async get_products() {
 			const term = this.search_term.trim();
-			const request_id = (this.latest_request += 1);
+			this.latest_request += 1;
+			const request_id = this.latest_request;
 			try {
 				const response = await frappe_call(
 					'/api/v2/method/ls_shop.api.utils.get_search_results',
-					{ search: term }
+					{ search: term },
 				);
 				if (request_id !== this.latest_request) {
 					return;

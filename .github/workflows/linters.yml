@@ -82,8 +82,8 @@ jobs:
       - name: Run jscpd (dashboard)
         run: npx --yes jscpd@4 dashboard/src --format vue,typescript,javascript --threshold 1
 
-  dashboard-typecheck:
-    name: 'Dashboard Typecheck'
+  dashboard-build:
+    name: 'Dashboard Build'
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
 
@@ -93,11 +93,13 @@ jobs:
         with:
           node-version: 20
           check-latest: true
-          cache: yarn
-          cache-dependency-path: dashboard/yarn.lock
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
 
       - name: Install dashboard dependencies
-        run: yarn --cwd dashboard install --frozen-lockfile
+        run: npm ci --prefix dashboard
 
-      - name: Run vue-tsc
-        run: yarn --cwd dashboard typecheck
+      # The dashboard is plain JS, so there is nothing for vue-tsc to check that
+      # the build does not already reject: a bad import or template fails here.
+      - name: Build the dashboard
+        run: npm run build --prefix dashboard

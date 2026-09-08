@@ -268,7 +268,9 @@
 		if (!footer || !crop_box) return;
 
 		const footer_rect = footer.getBoundingClientRect();
-		iframe.style.height = `${Math.ceil(preview_document.documentElement.scrollHeight)}px`;
+		iframe.style.height = `${Math.ceil(
+			preview_document.documentElement.scrollHeight,
+		)}px`;
 		iframe.style.marginTop = `-${Math.floor(footer_rect.top)}px`;
 		crop_box.style.height = `${Math.ceil(footer_rect.height)}px`;
 	}
@@ -563,12 +565,12 @@
 							link_row_name: existing_row.name,
 							label: values.label,
 							url: values.url,
-						})
+					  })
 					: await get_footer_data('add_footer_link', {
 							section_name: column.name,
 							label: values.label,
 							url: values.url,
-						});
+					  });
 				add_footer_editor(frm, wrapper, data);
 			},
 		});

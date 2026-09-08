@@ -5,7 +5,7 @@
    in JS (Embla does not, so every slide width lives in pixio.css), and style.css keys real
    visual state off swiper-slide-active / swiper-slide-visible / slick-current, which Swiper
    and slick used to stamp on. */
-(function () {
+(() => {
 	const carousels_by_name = new Map();
 
 	function set_slide_state(embla) {
@@ -13,24 +13,28 @@
 		const selected = embla.selectedScrollSnap();
 		const in_view = embla.slidesInView();
 
-		slides.forEach(function (slide, index) {
+		for (const [index, slide] of slides.entries()) {
 			slide.classList.toggle('swiper-slide-active', index === selected);
 			slide.classList.toggle('swiper-slide-prev', index === selected - 1);
 			slide.classList.toggle('swiper-slide-next', index === selected + 1);
 			slide.classList.toggle('swiper-slide-visible', in_view.includes(index));
 			slide.classList.toggle('slick-current', index === selected);
 			slide.classList.toggle('slick-active', in_view.includes(index));
-		});
+		}
 	}
 
 	function add_navigation(embla, name) {
-		for (const button of document.querySelectorAll(`[data-carousel-prev="${name}"]`)) {
-			button.addEventListener('click', function () {
+		for (const button of document.querySelectorAll(
+			`[data-carousel-prev="${name}"]`,
+		)) {
+			button.addEventListener('click', () => {
 				embla.scrollPrev();
 			});
 		}
-		for (const button of document.querySelectorAll(`[data-carousel-next="${name}"]`)) {
-			button.addEventListener('click', function () {
+		for (const button of document.querySelectorAll(
+			`[data-carousel-next="${name}"]`,
+		)) {
+			button.addEventListener('click', () => {
 				embla.scrollNext();
 			});
 		}
@@ -43,13 +47,13 @@
 		}
 		/* Both directions are wired the first time the pair is complete, and each hop is
 		   guarded on the index already matching so the two do not ping-pong. */
-		embla.on('select', function () {
+		embla.on('select', () => {
 			const index = embla.selectedScrollSnap();
 			if (partner.selectedScrollSnap() !== index) {
 				partner.scrollTo(index);
 			}
 		});
-		partner.on('select', function () {
+		partner.on('select', () => {
 			const index = partner.selectedScrollSnap();
 			if (embla.selectedScrollSnap() !== index) {
 				embla.scrollTo(index);
@@ -68,18 +72,18 @@
 		const name = root.dataset.pixioCarousel;
 
 		carousels_by_name.set(name, embla);
-		embla.on('init', function () {
+		embla.on('init', () => {
 			set_slide_state(embla);
 		});
-		embla.on('select', function () {
+		embla.on('select', () => {
 			set_slide_state(embla);
 		});
 		/* .swiper-visible fades every slide it does not consider visible, and Embla only knows
 		   which those are once it has measured - after this handler is wired, not before. */
-		embla.on('slidesInView', function () {
+		embla.on('slidesInView', () => {
 			set_slide_state(embla);
 		});
-		embla.on('reInit', function () {
+		embla.on('reInit', () => {
 			set_slide_state(embla);
 		});
 		set_slide_state(embla);
@@ -91,13 +95,18 @@
 		if (typeof EmblaCarousel !== 'function') {
 			return;
 		}
-		const roots = Array.from(document.querySelectorAll('[data-pixio-carousel]'));
+		const roots = Array.from(
+			document.querySelectorAll('[data-pixio-carousel]'),
+		);
 		for (const root of roots) {
 			add_carousel(root);
 		}
 		for (const root of roots) {
 			if (root.dataset.carouselSync) {
-				add_sync(carousels_by_name.get(root.dataset.pixioCarousel), root.dataset.carouselSync);
+				add_sync(
+					carousels_by_name.get(root.dataset.pixioCarousel),
+					root.dataset.carouselSync,
+				);
 			}
 		}
 	}

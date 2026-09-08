@@ -3,8 +3,8 @@
 
 import ast
 import re
-import textwrap
 import sys
+import textwrap
 from pathlib import Path
 
 MAX_LINES = 2
@@ -33,7 +33,7 @@ def check_python(path: Path, source: str) -> list[str]:
 		return []  # a broken file is another hook's problem
 
 	for node in ast.walk(tree):
-		if not isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+		if not isinstance(node, ast.Module | ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
 			continue
 		docstring = ast.get_docstring(node, clean=False)
 		if docstring and not EXEMPT.search(docstring) and content_lines(docstring) > MAX_LINES:
@@ -75,7 +75,7 @@ def is_banner(block: list[str]) -> bool:
 def check_comment_runs(path: Path, source: str, marker: str, looks_like_code) -> list[str]:
 	"""Flag runs of single-line comments, sparing directives and commented-out code."""
 	problems, run, start = [], [], 0
-	for number, raw in enumerate(source.splitlines() + [""], start=1):
+	for number, raw in enumerate([*source.splitlines(), ""], start=1):
 		line = raw.strip()
 		if line.startswith(marker) and not line.startswith("#!"):
 			run.append(raw)

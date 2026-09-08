@@ -122,8 +122,7 @@ class EcommerceAnalytics {
 					const script = document.createElement('script');
 					script.id = 'chartjs-lib';
 					// version query busts stale cached copies of the vendored build
-					script.src =
-						'/assets/ls_shop/js/vendor/chart.umd.min.js?v=4.4.9';
+					script.src = '/assets/ls_shop/js/vendor/chart.umd.min.js?v=4.4.9';
 					document.head.appendChild(script);
 				}
 				const started_at = Date.now();

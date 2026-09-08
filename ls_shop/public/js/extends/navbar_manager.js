@@ -275,7 +275,9 @@
 	function format_node_row(state, node, depth) {
 		const is_selected = state.selected === node.name;
 		return `
-		<div class="menu-node-row" data-name="${escape_html(node.name)}" data-depth="${depth}"
+		<div class="menu-node-row" data-name="${escape_html(
+			node.name,
+		)}" data-depth="${depth}"
 			style="display:flex; align-items:center; gap:8px; padding:5px 8px; margin-bottom:4px;
 				border:1px solid ${
 					is_selected ? 'var(--text-color)' : 'var(--border-color)'
@@ -284,9 +286,7 @@
 				${node.visible ? '' : 'opacity:0.55;'} cursor:pointer;">
 			<span class="drag-handle" style="cursor:grab; color:var(--text-muted); display:flex;">${DRAG_HANDLE}</span>
 			${format_node_caret(state, node)}
-			<span style="font-size:13px; ${
-				depth === 0 ? 'font-weight:600;' : ''
-			} color:var(--text-color); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+			<span style="font-size:13px; ${depth === 0 ? 'font-weight:600;' : ''} color:var(--text-color); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
 				${escape_html(node.label)}
 			</span>
 			${format_status_chip(node)}
@@ -351,7 +351,8 @@
 				label: __('Item Groups'),
 				depends_on: 'eval:doc.link_type == "Item Group"',
 				default: node.item_groups,
-				get_data: (search_text) => frappe.db.get_link_options('Item Group', search_text),
+				get_data: (search_text) =>
+					frappe.db.get_link_options('Item Group', search_text),
 			},
 			{
 				fieldname: 'brand',
@@ -450,7 +451,9 @@
 			<div class="menu-inspector-form"></div>
 			<div style="border-top:1px solid var(--border-color); margin:12px 0 10px;"></div>
 			<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px;">
-				<span style="font-size:13px; color:var(--text-color);">${__('Menu entry')}</span>
+				<span style="font-size:13px; color:var(--text-color);">${__(
+					'Menu entry',
+				)}</span>
 				<span style="display:flex; align-items:center; gap:8px;">
 					${format_status_chip(node)}
 					<button class="btn btn-xs btn-default inspector-visibility"
@@ -1013,7 +1016,9 @@
 			cursor:${blocked ? 'not-allowed' : 'pointer'}; ${
 				blocked ? 'opacity:0.55;' : ''
 			}">
-			<input type="checkbox" class="menu-product-tick" data-name="${escape_html(row.name)}"
+			<input type="checkbox" class="menu-product-tick" data-name="${escape_html(
+				row.name,
+			)}"
 				${blocked ? 'disabled' : ''} ${checked ? 'checked' : ''}>
 			<span style="flex:1; min-width:0; font-size:12px; color:var(--text-color);
 				overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escape_html(
@@ -1059,12 +1064,14 @@
 						selected,
 						scope_selectable,
 						products.excluded_names.size,
-					])
+				  ])
 				: __('All {0} in this section are selected, including any not shown.', [
 						scope_selectable,
-					]);
+				  ]);
 			return `${escape_html(message)}
-			<a href="#" class="menu-products-clear-selection">${__('Clear selection')}</a>`;
+			<a href="#" class="menu-products-clear-selection">${__(
+				'Clear selection',
+			)}</a>`;
 		}
 
 		if (
@@ -1074,7 +1081,9 @@
 		) {
 			return '';
 		}
-		return `${escape_html(__('All {0} shown are selected.', [loaded_selectable]))}
+		return `${escape_html(
+			__('All {0} shown are selected.', [loaded_selectable]),
+		)}
 		<a href="#" class="menu-products-select-scope">${__(
 			'Select all {0} in this section',
 			[scope_selectable],
@@ -1135,11 +1144,11 @@
 					? __('showing {0} of {1} matching', [
 							products.rows.length,
 							products.matching,
-						])
+					  ])
 					: __('showing {0} of {1}', [
 							products.rows.length,
 							products.counts.total,
-						]),
+					  ]),
 			)}</span>
 		</div>
 		<div class="menu-products-banner" style="font-size:11px; color:var(--text-muted);
@@ -1153,16 +1162,16 @@
 							.join('')
 					: `<div class="text-muted" style="font-size:12px; padding:4px 2px;">${__(
 							'No products match this search.',
-						)}</div>`
+					  )}</div>`
 			}
 		</div>
 		${
 			remaining > 0
 				? `<button class="btn btn-xs btn-default menu-products-more" style="margin-top:8px;" ${
 						products.loading ? 'disabled' : ''
-					}>${__('Load {0} more', [
+				  }>${__('Load {0} more', [
 						Math.min(remaining, PRODUCT_PAGE_LENGTH),
-					])}</button>`
+				  ])}</button>`
 				: ''
 		}
 		<div style="margin-top:8px; font-size:11px; color:var(--text-muted); line-height:1.6;">

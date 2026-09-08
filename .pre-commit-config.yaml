@@ -28,6 +28,9 @@ repos:
         entry: python3 scripts/check_comment_length.py
         language: system
         types_or: [python, vue, html, javascript, ts, css]
+        # Third-party bundles we ship but do not author: their banners and licence
+        # headers are theirs to keep, and rewriting them loses the provenance.
+        exclude: '(^|/)vendor/|^ls_shop/public/themes/pixio_theme/css/style\.css$'
 
   # Whole-tree scans: too slow to justify per-commit, and they need node_modules,
   # so they run on push. Enable with: pre-commit install --hook-type pre-push

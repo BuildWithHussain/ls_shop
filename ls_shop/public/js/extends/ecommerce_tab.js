@@ -798,7 +798,7 @@
 							? __('Priced {0} size item(s), skipped {1}', [
 									changed_count,
 									counts.skipped || 0,
-								])
+							  ])
 							: __('No price changes — every size item already had a price'),
 						indicator: changed_count ? 'green' : 'blue',
 					},
@@ -1206,16 +1206,16 @@
 				variant.images.length
 					? `<span class="sf-clear-images" data-sf-action="clear-images" data-sf-variant="${escape_html(
 							variant.name,
-						)}" title="${escape_html(__('Remove all images'))}">${__(
+					  )}" title="${escape_html(__('Remove all images'))}">${__(
 							'Clear all',
-						)}</span>${
+					  )}</span>${
 							variant.images.length > 4
 								? `<span class="text-muted" style="font-size: var(--text-xs);">${__(
 										'+{0} more',
 										[variant.images.length - 4],
-									)}</span>`
+								  )}</span>`
 								: ''
-						}`
+					  }`
 					: ''
 			}</div></td>
 			<td class="sf-size-cell"><div class="sf-size-col">${size_lines}</div></td>
@@ -1262,11 +1262,13 @@
 			<div class="sf-card">
 				<table class="sf-variant-grid">
 					<thead><tr>
-						<th>${__('Variant')}</th><th>${__('Images')}</th><th>${__('Size')}</th><th>${__(
-							'Price',
-						)}</th><th>${__('Stock')}</th><th>${__('Readiness')}</th><th>${__(
-							'SEO',
-						)}</th><th style="text-align: center;">${__('Published')}</th>
+						<th>${__('Variant')}</th><th>${__('Images')}</th><th>${__(
+							'Size',
+						)}</th><th>${__('Price')}</th><th>${__('Stock')}</th><th>${__(
+							'Readiness',
+						)}</th><th>${__('SEO')}</th><th style="text-align: center;">${__(
+							'Published',
+						)}</th>
 					</tr></thead>
 					<tbody>${rows}</tbody>
 				</table>
