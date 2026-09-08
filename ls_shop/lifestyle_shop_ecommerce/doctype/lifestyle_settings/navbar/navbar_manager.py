@@ -131,7 +131,7 @@ def add_node(
 	parent: str | None = None,
 	display_name: str | None = None,
 	link_type: str | None = None,
-	link_target: str | None = None,
+	link_target: str | list | None = None,
 ):
 	frappe.has_permission("Ecommerce Category", "create", throw=True)
 
@@ -146,7 +146,7 @@ def update_node(
 	name: str,
 	display_name: str | None = None,
 	link_type: str | None = None,
-	link_target: str | None = None,
+	link_target: str | list | None = None,
 	route_slug: str | None = None,
 	icon: str | None = None,
 	image: str | None = None,
