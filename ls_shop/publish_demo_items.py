@@ -87,7 +87,7 @@ def publish_all_demo_items():
 		else:
 			frappe.db.set_value("Website Item", wi.name, "route", item_code)
 			routed += 1
-	# nosemgrep: manual commit required for demo item publishing completion
+	# nosemgrep: frappe-manual-commit  # job only, a crash keeps the items already published
 	frappe.db.commit()
 	frappe.clear_cache()
 

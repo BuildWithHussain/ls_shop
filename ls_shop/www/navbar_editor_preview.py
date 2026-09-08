@@ -36,6 +36,9 @@ def get_context(context):
 
 	# No theme active: the base header expects the same header_data the storefront builds for it.
 	header_context.header_data = get_header_data()
+	# BASE_HEADER is a path constant in this repo, never caller input.
+	header_html = frappe.render_template(BASE_HEADER, header_context)  # nosemgrep: frappe-ssti
+
 	context.rendered_html = f"""<!DOCTYPE html>
 <html lang="{escape_html(lang)}" dir="{"rtl" if header_context.is_rtl else "ltr"}">
 <head>
@@ -44,6 +47,6 @@ def get_context(context):
 {settings.generate_theme_css()}
 </head>
 <body>
-{frappe.render_template(BASE_HEADER, header_context)}
+{header_html}
 </body>
 </html>"""

@@ -95,6 +95,9 @@ def get_context(context):
 		context.rendered_html = rendered
 		return
 
+	# BASE_FOOTER is a path constant in this repo, never caller input.
+	footer_html = frappe.render_template(BASE_FOOTER, footer_context)  # nosemgrep: frappe-ssti
+
 	context.rendered_html = f"""<!DOCTYPE html>
 <html lang="{escape_html(lang)}" dir="{"rtl" if footer_context.is_rtl else "ltr"}">
 <head>
@@ -103,6 +106,6 @@ def get_context(context):
 {settings.generate_theme_css()}
 </head>
 <body>
-{frappe.render_template(BASE_FOOTER, footer_context)}
+{footer_html}
 </body>
 </html>"""

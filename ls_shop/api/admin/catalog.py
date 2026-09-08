@@ -1056,8 +1056,8 @@ def create_product(
 	option_attribute: str | None = None,
 	size_attribute: str | None = None,
 	option_sizes: list | str | None = None,
-	price=None,
-	sale_price=None,
+	price: float | str | None = None,
+	sale_price: float | str | None = None,
 	option_abbreviations: dict | str | None = None,
 	size_abbreviations: dict | str | None = None,
 ):
@@ -1295,7 +1295,13 @@ def get_default_stock_uom():
 
 
 @frappe.whitelist(methods=["POST"])
-def update_product(item_template: str, title=None, collection=None, description=None, disabled=None):
+def update_product(
+	item_template: str,
+	title: str | None = None,
+	collection: str | None = None,
+	description: str | None = None,
+	disabled: int | str | None = None,
+):
 	frappe.has_permission("Item", doc=item_template, ptype="write", throw=True)
 
 	item = frappe.get_doc("Item", item_template)
@@ -1411,7 +1417,7 @@ def delete_product(item_template: str | int):
 
 
 @frappe.whitelist(methods=["POST"])
-def set_restock_level(item_template: str | int, level):
+def set_restock_level(item_template: str | int, level: int | str):
 	"""The stock level this product should start reading as low at.
 
 	Written to Item.safety_stock on every size, which get_inventory() reads per row instead of its
@@ -1434,7 +1440,7 @@ def set_restock_level(item_template: str | int, level):
 
 
 @frappe.whitelist(methods=["POST"])
-def set_variant_published(style_attribute_variant: str, publish):
+def set_variant_published(style_attribute_variant: str, publish: int | str):
 	"""Publish or unpublish one option.
 
 	The variant controller refuses to publish without images and sizes.
@@ -1489,7 +1495,11 @@ def save_product_prices(style_attribute_variant: str, size_prices: list | str):
 
 
 @frappe.whitelist(methods=["POST"])
-def set_variant_price(style_attribute_variant: str, default_rate=None, sale_rate=None):
+def set_variant_price(
+	style_attribute_variant: str,
+	default_rate: float | str | None = None,
+	sale_rate: float | str | None = None,
+):
 	"""Reprice every size under one option in a single pass.
 
 	The product page's variant-row editor shows one price for what is really N size-level prices
@@ -1525,7 +1535,7 @@ def receive_product_stock(
 
 
 @frappe.whitelist(methods=["POST"])
-def set_product_published(item_template: str, publish):
+def set_product_published(item_template: str, publish: int | str):
 	"""Publish or unpublish every option of a product in one go.
 
 	Options that are not ready are skipped rather than failing the whole request, and come back named.

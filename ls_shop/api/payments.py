@@ -148,7 +148,8 @@ def system_user_session():
 	# verbatim instead of round-tripping through set_user().
 	live_session_snapshot = frappe.local.session.copy()
 	try:
-		frappe.set_user("Administrator")
+		# Audited: the docstring above and the snapshot restore below are why this is safe.
+		frappe.set_user("Administrator")  # nosemgrep: frappe-semgrep-rules.rules.security.frappe-setuser
 		yield
 	finally:
 		frappe.local.session.update(live_session_snapshot)
@@ -304,7 +305,7 @@ def set_cod_charges(quotation):
 	if flt(cod_charges_applicable_below) < flt(quotation.rounded_total):
 		return
 	if not account_head:
-		frappe.throw("Please select a valid account for cod charges.")
+		frappe.throw(_("Please select a valid account for cod charges."))
 
 	cod_charge = {
 		"doctype": "Sales Taxes and Charges",
@@ -471,7 +472,7 @@ def place_cod_order(quotation_name: str):
 
 
 @frappe.whitelist()
-def apply_coupon_code(applied_code):
+def apply_coupon_code(applied_code: str):
 	if not applied_code:
 		frappe.throw(_("Please enter a coupon code"))
 	coupon_name = frappe.db.get_value("Coupon Code", {"coupon_code": applied_code}, "name")

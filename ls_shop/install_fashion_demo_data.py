@@ -195,7 +195,7 @@ def install_fashion_demo_data():
 	receive_opening_stock()
 	unpublish_car_part_variants()
 
-	# nosemgrep: manual commit required, this runs outside a request
+	# nosemgrep: frappe-manual-commit  # installer script, runs outside a request
 	frappe.db.commit()
 	frappe.clear_cache()
 

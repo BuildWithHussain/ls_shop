@@ -5,7 +5,7 @@ from ls_shop.utils import validate_document_access
 
 
 @frappe.whitelist()
-def return_items(sales_order_id, items):
+def return_items(sales_order_id: str, items: list | str):
 	order = validate_document_access("Sales Order", sales_order_id)
 	# Accounts User holds read on every Sales Order but no create on Delivery Note, which this inserts.
 	if order.owner != frappe.session.user:
@@ -62,7 +62,7 @@ def return_items(sales_order_id, items):
 
 
 @frappe.whitelist()
-def get_returned_items(sales_order_id):
+def get_returned_items(sales_order_id: str):
 	sales_order = validate_document_access("Sales Order", sales_order_id)
 
 	free_items_map = {}

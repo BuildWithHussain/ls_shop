@@ -157,7 +157,7 @@ def get_delivery_options() -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-def save_delivery_option(name: str | None = None, values=None) -> dict:
+def save_delivery_option(name: str | None = None, values: dict | str | None = None) -> dict:
 	"""Create a delivery option, or edit one. Returns the refreshed screen.
 
 	A blank `name` creates. On an edit the title is fixed: Sales Order.custom_delivery_option stores the
@@ -196,7 +196,7 @@ def save_delivery_option(name: str | None = None, values=None) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-def toggle_delivery_option(name: str, enabled) -> dict:
+def toggle_delivery_option(name: str, enabled: int | str) -> dict:
 	"""Offer a delivery option at checkout, or stop offering it. Returns the refreshed screen."""
 	frappe.only_for("System Manager")
 	ensure_available()
@@ -231,7 +231,7 @@ def get_carrier_service_choices(provider: str) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-def import_carrier_services(provider: str, selections, default_rate=0) -> dict:
+def import_carrier_services(provider: str, selections: list | str, default_rate: float | str = 0) -> dict:
 	"""Turn the picked carrier services into delivery options. Returns the refreshed screen.
 
 	`default_rate` seeds each new option's Backup Charge — what it costs when no Shipping Rule band

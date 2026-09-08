@@ -84,9 +84,9 @@ def get_size_item_codes(item_template, style_attribute_variant_list=None):
 @frappe.whitelist(methods=["POST"])
 def set_variant_prices(
 	item_template: str,
-	default_rate=None,
-	sale_rate=None,
-	overwrite_existing=0,
+	default_rate: float | str | None = None,
+	sale_rate: float | str | None = None,
+	overwrite_existing: int | str = 0,
 	style_attribute_variant_list: list[str] | str | None = None,
 ) -> dict:
 	"""Price every size Item under a template in one pass. A non-positive rate leaves that price list

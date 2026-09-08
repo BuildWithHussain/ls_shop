@@ -49,12 +49,13 @@ class TestStorefrontSearch(IntegrationTestCase):
 		cls.scope_index_to_fixtures()
 		cls.ensure_non_privileged_user()
 		# Fixtures outlive one test method, so they are committed and torn down explicitly.
-		frappe.db.commit()
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit
 
 	@classmethod
 	def tearDownClass(cls):
 		cls.drop_catalogue()
-		frappe.db.commit()
+		# The committed fixtures survive the rollback, so the teardown has to be committed too.
+		frappe.db.commit()  # nosemgrep: frappe-manual-commit
 		SqliteProductSearch().drop_index()
 		SqliteProductSearch.INDEX_NAME = cls.original_index_name
 		SqliteProductSearch.INDEXABLE_DOCTYPES = cls.original_indexable

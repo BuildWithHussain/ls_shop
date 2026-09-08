@@ -70,7 +70,7 @@ def publish_variants(publish, names=None, item_groups=None):
 
 
 @frappe.whitelist(methods=["POST"])
-def set_variants_published(publish, names):
+def set_variants_published(publish: int | str, names: list | str):
 	"""Publish or unpublish exactly the variants named: `bulk_toggle_publish` ANDs this Single's stored
 	filter fields in, which would silently shrink an explicit selection."""
 	frappe.has_permission(PRODUCT_DOCTYPE, "write", throw=True)

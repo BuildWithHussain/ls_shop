@@ -16,7 +16,8 @@ def verify_otp(email: str, otp: str):
 	frappe.cache.delete_value(cache_key)
 
 
-@frappe.whitelist(allow_guest=True)
+# Pre-login by definition; writes nothing but the cached OTP, and is rate limited.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
 @rate_limit(limit=30, seconds=60 * 60)
 def send_signup_otp(email: str):
 	user_exist = frappe.db.exists("User", {"email": email})
@@ -25,7 +26,8 @@ def send_signup_otp(email: str):
 	send_otp(email)
 
 
-@frappe.whitelist(allow_guest=True)
+# Pre-login by definition; writes nothing but the cached OTP, and is rate limited.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
 @rate_limit(limit=30, seconds=60 * 60)
 def send_login_otp(email: str):
 	user_exists = frappe.db.exists("User", email)
@@ -35,7 +37,8 @@ def send_login_otp(email: str):
 	send_otp(email)
 
 
-@frappe.whitelist(allow_guest=True)
+# Pre-login by definition; the OTP proves the caller owns the address.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
 # Keyed on email, not the caller IP: an IP-bound limit leaves a 6-digit code brute-forceable.
 @rate_limit(key="email", limit=5, seconds=60 * 5)
 def verify_signup_otp(email: str, first_name: str, last_name: str, otp: str):
@@ -55,7 +58,8 @@ def verify_signup_otp(email: str, first_name: str, last_name: str, otp: str):
 	frappe.local.login_manager.login_as(email)
 
 
-@frappe.whitelist(allow_guest=True)
+# Pre-login by definition; the OTP proves the caller owns the address.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
 @rate_limit(key="email", limit=5, seconds=60 * 5)
 def verify_login_otp(email: str, otp: str):
 	verify_otp(email, otp)

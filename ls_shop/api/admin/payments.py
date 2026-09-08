@@ -79,7 +79,7 @@ def get_payment_integrations():
 
 
 @frappe.whitelist(methods=["POST"])
-def save_payment_integration(slug: str, enabled, values=None):
+def save_payment_integration(slug: str, enabled: int | str, values: dict | str | None = None):
 	"""Save one gateway's credentials and turn it on or off. Returns the refreshed card."""
 	frappe.only_for("System Manager")
 

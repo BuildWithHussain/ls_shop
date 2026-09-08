@@ -845,6 +845,7 @@ def install_analytics_demo_data(confirm_production=0):
 	# tens of thousands of append-only log rows; switch back to insert() if the doctype ever grows
 	# a controller with real behaviour
 	frappe.db.bulk_insert("Storefront Analytics Event", EVENT_COLUMNS, rows)
+	# nosemgrep: frappe-manual-commit  # seeder, runs from the console or a long background job
 	frappe.db.commit()
 
 	print(
@@ -878,6 +879,7 @@ def remove_analytics_demo_data(confirm_production=0, quiet=False):
 		"Customer", filters={"customer_name": ("like", f"{DEMO_CUSTOMER_PREFIX}%")}, pluck="name"
 	):
 		frappe.delete_doc("Customer", name, force=True, ignore_permissions=True, delete_permanently=True)
+	# nosemgrep: frappe-manual-commit  # teardown script, runs outside a request
 	frappe.db.commit()
 	if not quiet:
 		print("Removed storefront analytics demo data")

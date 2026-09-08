@@ -39,7 +39,7 @@ ORDER_DETAIL_ITEM_FIELDS = ("item_code", "item_name", "qty", "rate", "amount", "
 
 
 @frappe.whitelist()
-def get_order_detail(order_name):
+def get_order_detail(order_name: str):
 	sales_order = validate_document_access("Sales Order", order_name)
 
 	detail = {fieldname: sales_order.get(fieldname) for fieldname in ORDER_DETAIL_FIELDS}
@@ -52,18 +52,19 @@ def get_order_detail(order_name):
 
 @frappe.whitelist()
 def get_whitelist_transaction_list(
-	doctype,
-	txt=None,
-	filters=None,
-	limit_start=0,
-	limit_page_length=20,
-	order_by="modified",
-	custom=False,
+	doctype: str,
+	txt: str | None = None,
+	filters: dict | None = None,
+	limit_start: int | str = 0,
+	limit_page_length: int | str = 20,
+	order_by: str = "modified",
+	custom: bool = False,
 ):
 	return get_transaction_list(doctype, txt, filters, limit_start, limit_page_length, order_by, custom)
 
 
-@frappe.whitelist(allow_guest=True)
+# The storefront landing page is public, and so is everything Landing Page Settings holds.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
 def get_homepage_details():
 	landing_page = frappe.get_cached_doc("Landing Page Settings")
 	landing_page = landing_page.as_dict()
@@ -100,9 +101,10 @@ def get_item_details(items):
 	return recommended_items
 
 
-@frappe.whitelist(allow_guest=True)
+# Catalogue search is public and rate limited; it returns only published products.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
 @rate_limit(limit=120, seconds=60)
-def get_search_results(search):
+def get_search_results(search: str):
 	filters = {"search": cstr(search)}
 	if search_query.relevance_sort_available(filters):
 		return search_query.storefront_search(filters["search"], limit=6)["products"]
@@ -110,7 +112,7 @@ def get_search_results(search):
 
 
 @frappe.whitelist()
-def notify_user_product(item):
+def notify_user_product(item: str):
 	try:
 		user = frappe.session.user
 
@@ -136,8 +138,9 @@ def notify_user_product(item):
 		frappe.throw(_("Cannot subscribe for notification"))
 
 
-@frappe.whitelist(allow_guest=True)
-def get_translations(lang="ar"):
+# UI strings, the same data frappe's own get_boot_translations serves guests.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
+def get_translations(lang: str = "ar"):
 	return get_all_translations(lang=lang)
 
 

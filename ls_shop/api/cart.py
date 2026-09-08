@@ -65,8 +65,9 @@ def validate_stock_available(items):
 	)
 
 
-@frappe.whitelist(allow_guest=True)
-def get_detail_for_cart_items(items):
+# Guests hold carts before signing in; this reads catalogue price and stock, both already public.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
+def get_detail_for_cart_items(items: list | str):
 	items = frappe.parse_json(items)
 	lifestyle_settings = frappe.get_cached_doc("Lifestyle Settings")
 	warehouse = lifestyle_settings.ecommerce_warehouse
@@ -88,8 +89,9 @@ def get_detail_for_cart_items(items):
 	return {"stock_data": stock_data}
 
 
-@frappe.whitelist(allow_guest=True)
-def validate_cart_stock(items):
+# Guests hold carts before signing in; this reads catalogue stock, which is already public.
+@frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
+def validate_cart_stock(items: list | str):
 	errors = get_stock_shortfalls(frappe.parse_json(items))
 	if errors:
 		return {"message": errors}
@@ -98,7 +100,7 @@ def validate_cart_stock(items):
 
 
 @frappe.whitelist()
-def update_variant(product_name, size):
+def update_variant(product_name: str, size: str):
 	product_variant = frappe.get_cached_doc("Style Attribute Variant", product_name)
 	lifestyle_settings = frappe.get_cached_doc("Lifestyle Settings")
 	warehouse = lifestyle_settings.ecommerce_warehouse

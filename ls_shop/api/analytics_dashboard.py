@@ -737,7 +737,7 @@ def get_item_analytics(item_code: str, from_date: str, to_date: str):
 
 
 @frappe.whitelist()
-def get_stock_movement(from_date, to_date):
+def get_stock_movement(from_date: str, to_date: str):
 	"""How stock moved through the shop warehouse each day, and the level it left behind."""
 	frappe.only_for("System Manager")
 	warehouse = get_ecommerce_warehouse()

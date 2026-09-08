@@ -168,7 +168,7 @@ class LifestyleSettings(Document):
 		return "\n".join(RESULT_CARD_CATALOG)
 
 	@frappe.whitelist()
-	def get_content_field_options(self, search_doctype):
+	def get_content_field_options(self, search_doctype: str):
 		"""Newline-joined indexable field names of `search_doctype` for the Search Content Field Select."""
 		if search_doctype not in ALLOWED_CONTENT_DOCTYPES:
 			return ""
@@ -203,6 +203,7 @@ class LifestyleSettings(Document):
 		frappe.enqueue(
 			"ls_shop.lifestyle_shop_ecommerce.doctype.lifestyle_settings.lifestyle_settings.generate_configurators_for_all_templates",
 			queue="long",
+			enqueue_after_commit=True,
 			attribute=attribute,
 			log_name=log.name,
 		)
@@ -241,6 +242,7 @@ class LifestyleSettings(Document):
 			install_pixio_demo,
 			queue="long",
 			timeout=3000,
+			enqueue_after_commit=True,
 			currency=currency,
 		)
 
@@ -255,6 +257,7 @@ class LifestyleSettings(Document):
 			publish_all_demo_items,
 			queue="default",
 			timeout=600,
+			enqueue_after_commit=True,
 		)
 
 		return "Publishing all items to website. This may take a moment. Refresh the page after completion."
@@ -346,6 +349,7 @@ def generate_configurators_for_all_templates(attribute: str, log_name: str):
 			}
 		).insert(ignore_permissions=True)
 		variants_generated = configurator.get_total_variants()
+		# nosemgrep: frappe-manual-commit  # job checkpoint, a crash keeps the configurators already made
 		frappe.db.commit()
 		configurator_log.append(
 			"configurators",

@@ -68,7 +68,7 @@ def install_demo_data():
 		print("  - Brake System")
 		print("  - Interior Accessories")
 		print("\n")
-		# nosemgrep: manual commit required for demo data installation completion
+		# nosemgrep: frappe-manual-commit  # installer script, runs outside a request
 		frappe.db.commit()
 
 	except Exception as e:
@@ -128,7 +128,7 @@ def ensure_attribute_values(attribute_name, values, numeric=False):
 			}
 		)
 		attr.insert(ignore_permissions=True)
-		# nosemgrep: manual commit required for attribute creation in demo data
+		# nosemgrep: frappe-manual-commit  # installer script, runs outside a request
 		frappe.db.commit()
 		print(f"    ✓ {attribute_name} attribute created")
 	else:

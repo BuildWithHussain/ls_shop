@@ -12,7 +12,8 @@ def render_themed_template(template, context=None, theme_name=None):
 	"""
 	theme_context = get_theme_context(theme_name or resolve_active_theme())
 	if not theme_context["dirs"]:
-		return frappe.render_template(template, context)
+		# Callers pass a repo path or an admin-authored template; render_template sandboxes either.
+		return frappe.render_template(template, context)  # nosemgrep: frappe-ssti
 
 	theme_env = get_theme_environment(get_jenv(), theme_context["dirs"])
 

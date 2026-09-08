@@ -58,7 +58,7 @@ def get_shipping_integrations():
 
 
 @frappe.whitelist(methods=["POST"])
-def save_shipping_integration(slug: str, enabled, values=None):
+def save_shipping_integration(slug: str, enabled: int | str, values: dict | str | None = None):
 	"""Save one carrier's credentials and turn it on or off. Returns the refreshed card."""
 	frappe.only_for("System Manager")
 

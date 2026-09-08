@@ -117,7 +117,7 @@ def install_pixio_theme_data():
 	settings.save(ignore_permissions=True)
 	save_social_urls()
 
-	# nosemgrep: manual commit required, this runs outside a request
+	# nosemgrep: frappe-manual-commit  # installer script, runs outside a request
 	frappe.db.commit()
 	frappe.clear_cache()
 

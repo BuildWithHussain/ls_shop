@@ -144,7 +144,7 @@ def install_pixio_demo(currency=DEFAULT_CURRENCY):
 	# lists carried at insert time, so the store is only consistent once it is swept again.
 	align_store_currency(currency)
 
-	# nosemgrep: manual commit required, this runs outside a request
+	# nosemgrep: frappe-manual-commit  # seeder, runs from the console or a long background job
 	frappe.db.commit()
 	frappe.clear_cache()
 	print(f"✅ Pixio demo seeded in {currency}")
