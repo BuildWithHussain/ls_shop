@@ -8,6 +8,7 @@ import frappe
 from frappe.tests import IntegrationTestCase, UnitTestCase
 
 from ls_shop import seo, website_context
+from ls_shop.tests import get_test_configurator, get_test_item
 from ls_shop.www import sitemap, sitemap_segment
 
 SEO_SETTING_FIELDS = (
@@ -334,8 +335,8 @@ class SitemapFixtureMixin:
 	def setUpClass(cls):
 		super().setUpClass()
 		cls.suffix = frappe.generate_hash(length=8)
-		cls.configurator = frappe.get_all("Style Attribute Configurator", limit=1, pluck="name")[0]
-		cls.item = frappe.get_all("Item", limit=1, pluck="name")[0]
+		cls.configurator = get_test_configurator()
+		cls.item = get_test_item()
 
 		cls.published_route = f"seo-test-pub-{cls.suffix}"
 		cls.noindex_route = f"seo-test-noindex-{cls.suffix}"

@@ -342,7 +342,7 @@ ignore_links_on_delete = [
 # Testing
 # -------
 
-# before_tests = "ls_shop.install.before_tests"
+before_tests = "ls_shop.install.before_tests"
 
 # Overriding Methods
 # ------------------------------

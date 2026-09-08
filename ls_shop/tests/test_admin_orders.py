@@ -27,7 +27,7 @@ from ls_shop.utils import COD_CHARGE_DESCRIPTION
 
 COMPANY = "Lifestyle Demo"
 ITEM_GROUP = "Interior Accessories"
-CURRENCY = "SAR"
+CURRENCY = "INR"
 ITEM_RATE = 150.0
 
 

@@ -6,6 +6,7 @@
 from urllib.parse import quote
 
 import frappe
+from frappe.database.schema import add_column
 from frappe.tests import IntegrationTestCase
 from frappe.utils.nestedset import get_root_of
 
@@ -42,7 +43,7 @@ def add_legacy_column():
 	Left in place afterwards: dropping it would be DDL on a shared test database.
 	"""
 	if "item_group" not in frappe.db.get_table_columns("Ecommerce Category"):
-		frappe.db.add_column("Ecommerce Category", "item_group", "Link")
+		add_column("Ecommerce Category", "item_group", "Link")
 
 
 def purge_stale_fixtures():

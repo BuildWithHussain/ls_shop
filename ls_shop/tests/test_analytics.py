@@ -13,6 +13,7 @@ from ls_shop.api.analytics_dashboard import get_traffic_sources
 from ls_shop.lifestyle_shop_ecommerce.doctype.storefront_analytics_event.storefront_analytics_event import (
 	StorefrontAnalyticsEvent,
 )
+from ls_shop.tests import get_test_item
 
 IPAD_USER_AGENT = (
 	"Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 "
@@ -176,7 +177,7 @@ class TestCaptureClamps(AnalyticsCaptureTestBase):
 		self.assertIsNone(self.only_captured_row(["item_code"])["item_code"])
 
 	def test_existing_item_code_is_kept(self):
-		item_code = frappe.get_all("Item", limit=1, pluck="name")[0]
+		item_code = get_test_item()
 		self.post(event="view_item", item_code=item_code)
 		self.assertEqual(self.only_captured_row(["item_code"])["item_code"], item_code)
 

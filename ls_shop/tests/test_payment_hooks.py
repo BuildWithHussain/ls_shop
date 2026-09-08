@@ -21,7 +21,7 @@ from ls_shop.jobs import sync_pending_gateway_payments
 COMPANY = "Lifestyle Demo"
 ITEM_GROUP = "Interior Accessories"
 DEFAULT_CASH_ACCOUNT = "Cash - LSD"
-CURRENCY = "SAR"
+CURRENCY = "INR"
 # A price list in the company currency keeps the fixture off the Currency Exchange table.
 PRICE_LIST = "ZZ Payhook SAR Selling"
 ITEM_RATE = 150.0

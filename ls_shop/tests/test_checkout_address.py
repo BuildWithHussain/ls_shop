@@ -7,7 +7,7 @@ from ls_shop.api.payments import add_billing_address, add_shipping_address
 
 COMPANY = "Lifestyle Demo"
 ITEM_GROUP = "Interior Accessories"
-CURRENCY = "SAR"
+CURRENCY = "INR"
 PRICE_LIST = "ZZ Checkout Address SAR Selling"
 ITEM_RATE = 120.0
 COUNTRY = "Saudi Arabia"
