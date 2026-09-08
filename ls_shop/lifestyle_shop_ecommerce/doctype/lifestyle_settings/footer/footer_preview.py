@@ -3,6 +3,7 @@
 
 import frappe
 
+from ls_shop.api.admin.pages import PAGE_DOCTYPE, get_page_url
 from ls_shop.lifestyle_shop_ecommerce.doctype.lifestyle_settings.editor_input import (
 	parse_list,
 	require_safe_url,
@@ -64,9 +65,15 @@ def get_footer_editor_data():
 			}
 		)
 
-	pages = frappe.get_all(
-		"Web Page", filters={"published": 1}, fields=["name", "route"], order_by="name asc"
-	)
+	# Shop Web Page, not Web Page: a core Web Page renders outside the storefront theme, so offering
+	# one in the footer would drop the shopper out of the shop.
+	pages = [
+		{"name": page.name, "route": get_page_url(page.route)}
+		for page in frappe.get_all(
+			PAGE_DOCTYPE, filters={"published": 1}, fields=["name", "route"], order_by="name asc"
+		)
+		if page.route
+	]
 	pages += [{"name": label, "route": route} for label, route in STATIC_STOREFRONT_ROUTES]
 
 	return {

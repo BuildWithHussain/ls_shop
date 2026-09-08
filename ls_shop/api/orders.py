@@ -39,8 +39,18 @@ def resolve_refund_amount(refundable_amount: float, amount: float | None) -> flo
 def make_refund_payment_entry(order_id: str, amount: float | None = None) -> str:
 	"""Submit the Payment Entry that reverses a paid order. Callers must authorize access first."""
 	# Without this lock two concurrent refunds both see the pre-refund balance and both pay out.
-	frappe.get_doc("Sales Order", order_id).lock()
+	sales_order = frappe.get_doc("Sales Order", order_id)
+	sales_order.lock()
+	try:
+		return build_refund_payment_entry(order_id, amount)
+	finally:
+		# The lock is a file, so a rollback does not clear it: without this a refused refund locks
+		# the order for good.
+		sales_order.unlock()
 
+
+def build_refund_payment_entry(order_id: str, amount: float | None = None) -> str:
+	"""The refund itself. Call make_refund_payment_entry, which holds the lock around this."""
 	refund_status = get_refund_status(order_id)
 	if not refund_status.get("can_refund"):
 		frappe.throw(_("This order cannot be refunded."))

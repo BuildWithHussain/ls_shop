@@ -6,6 +6,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from ls_shop.product_detail import get_product_detail
+from ls_shop.tests import get_test_configurator
 from ls_shop.utils import get_discount_percent
 from ls_shop.www.products import details
 
@@ -27,7 +28,7 @@ class ProductDetailPriceTestCase(IntegrationTestCase):
 		frappe.clear_document_cache("Lifestyle Settings", "Lifestyle Settings")
 
 		self.item_group = self.make_item_group()
-		self.configurator = frappe.get_all("Style Attribute Configurator", limit=1, pluck="name")[0]
+		self.configurator = get_test_configurator()
 		frappe.local.lang = "en"
 
 	def make_price_list(self, label):

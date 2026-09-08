@@ -174,11 +174,6 @@ class TestFulfilmentLadder(UnitTestCase):
 		self.assertEqual(state["key"], "confirmation_pending")
 		self.assertEqual(state["label"], STAGE_LABELS["confirmation_pending"])
 
-	def test_an_unsubmitted_order_stands_on_the_confirmation_node(self):
-		states = self.states(make_order(docstatus=0, status="Draft"))
-		self.assertEqual(states["confirmation_pending"], "current")
-		self.assertEqual(states["to_fulfil"], "upcoming")
-
 	def test_a_cancelled_order_outranks_every_other_rung(self):
 		lifecycle = frappe._dict(has_return=True, stage_from_shipment="delivered")
 		state = describe_state(make_order(docstatus=2, per_delivered=100), lifecycle)
@@ -227,10 +222,15 @@ class TestFulfilmentSteps(UnitTestCase):
 		return {step["key"]: step["state"] for step in describe_progress(order, lifecycle)}
 
 	def test_a_new_order_stands_on_the_first_node_with_the_rest_ahead_of_it(self):
-		steps = describe_progress(make_order())
+		steps = describe_progress(make_order(docstatus=0, status="Draft"))
 		self.assertEqual([step["key"] for step in steps], list(STEP_SEQUENCE))
 		self.assertEqual(steps[0]["state"], "current")
 		self.assertTrue(all(step["state"] == "upcoming" for step in steps[1:]))
+
+	def test_an_unsubmitted_order_stands_on_the_confirmation_node(self):
+		states = self.states(make_order(docstatus=0, status="Draft"))
+		self.assertEqual(states["confirmation_pending"], "current")
+		self.assertEqual(states["to_fulfil"], "upcoming")
 
 	def test_the_node_the_owner_is_on_is_the_ladder_s_own_answer(self):
 		lifecycle = frappe._dict(has_draft_delivery_note=True, has_packing_slip=True)

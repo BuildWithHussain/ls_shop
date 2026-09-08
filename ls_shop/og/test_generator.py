@@ -16,6 +16,7 @@ from frappe.utils import flt, get_files_path
 
 from ls_shop import seo
 from ls_shop.og import generator
+from ls_shop.tests import get_test_configurator, get_test_item
 from ls_shop.www import og_image_render
 
 
@@ -175,8 +176,8 @@ class TestServeOgImage(IntegrationTestCase):
 		# A draft route must 404 rather than leak an unreleased product card to a crawler.
 		route = f"og-test-draft-{frappe.generate_hash(length=10)}"
 		variant = frappe.new_doc("Style Attribute Variant")
-		variant.configurator = frappe.get_all("Style Attribute Configurator", limit=1, pluck="name")[0]
-		variant.item_style = frappe.get_all("Item", limit=1, pluck="name")[0]
+		variant.configurator = get_test_configurator()
+		variant.item_style = get_test_item()
 		variant.attribute_value = f"Val {frappe.generate_hash(length=6)}"
 		variant.display_name = f"Draft {route}"
 		variant.route = route
