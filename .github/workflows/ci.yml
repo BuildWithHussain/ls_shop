@@ -9,7 +9,7 @@ on:
   pull_request:
 
 concurrency:
-  group: develop-ls_shop-${{ github.event.number }}
+  group: develop-ls_shop-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -111,3 +111,10 @@ jobs:
           bench --site test_site run-tests --app ls_shop
         env:
           TYPE: server
+
+      - name: Show bench output
+        if: always()
+        working-directory: /home/runner/frappe-bench
+        run: |
+          cat bench_start.log || true
+          cat logs/*.log || true
