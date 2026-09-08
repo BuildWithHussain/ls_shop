@@ -64,6 +64,13 @@ DEFAULT_ROUTES = [
 		"template_path": "pages/account/address.html",
 		"requires_auth": 1,
 	},
+	# requires_auth 0 on purpose: a published content page is public, and the controller is what lets
+	# an editor preview an unpublished one.
+	{
+		"url_pattern": rf"^{LANG}/page/(?P<route>.+)$",
+		"template_path": "pages/shop_web_page.html",
+		"requires_auth": 0,
+	},
 ]
 
 COMPILED_ROUTES_CACHE_KEY = "shop_theme_compiled_routes"
