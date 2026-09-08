@@ -44,6 +44,9 @@ def add_legacy_column():
 	"""
 	if "item_group" not in frappe.db.get_table_columns("Ecommerce Category"):
 		add_column("Ecommerce Category", "item_group", "Link")
+		# add_column leaves the cached column list stale, so the migration under test would read the
+		# table as it was before the ALTER. Frappe's own db tests clear the key the same way.
+		frappe.client_cache.delete_value("table_columns::tabEcommerce Category")
 
 
 def purge_stale_fixtures():

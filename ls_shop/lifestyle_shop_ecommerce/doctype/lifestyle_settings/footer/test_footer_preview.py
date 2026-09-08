@@ -4,6 +4,7 @@
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from ls_shop.api.admin.pages import PAGE_DOCTYPE, get_page_url
 from ls_shop.lifestyle_shop_ecommerce.doctype.lifestyle_settings.footer.footer_preview import (
 	STATIC_STOREFRONT_ROUTES,
 	add_footer_link,
@@ -41,8 +42,8 @@ class TestFooterEditor(IntegrationTestCase):
 			if frappe.db.exists("Footer Section Config", title):
 				frappe.delete_doc("Footer Section Config", title, force=True, ignore_permissions=True)
 		for route in self.WEB_PAGE_ROUTES:
-			for name in frappe.get_all("Web Page", filters={"route": route}, pluck="name"):
-				frappe.delete_doc("Web Page", name, force=True, ignore_permissions=True)
+			for name in frappe.get_all(PAGE_DOCTYPE, filters={"route": route}, pluck="name"):
+				frappe.delete_doc(PAGE_DOCTYPE, name, force=True, ignore_permissions=True)
 
 	def link_row_name(self, section_name, index=0):
 		section = frappe.get_doc("Footer Section Config", section_name)
@@ -174,32 +175,25 @@ class TestFooterEditor(IntegrationTestCase):
 		self.assertEqual([row.link_label for row in remaining.footer_links], ["B"])
 		self.assertEqual([row.link_order for row in remaining.footer_links], [1])
 
-	def test_page_list_unions_published_web_pages_with_storefront_routes(self):
-		page = frappe.get_doc(
+	def make_shop_page(self, title, route, published):
+		return frappe.get_doc(
 			{
-				"doctype": "Web Page",
-				"title": "Footer Editor Test Page",
-				"route": "footer-editor-test-page",
-				"published": 1,
-				"content_type": "HTML",
-				"main_section_html": "<p>hello</p>",
+				"doctype": PAGE_DOCTYPE,
+				"name": title,
+				"content": "<p>hello</p>",
+				"route": route,
+				"published": published,
 			}
 		).insert()
-		frappe.get_doc(
-			{
-				"doctype": "Web Page",
-				"title": "Footer Editor Draft Page",
-				"route": "footer-editor-draft-page",
-				"published": 0,
-				"content_type": "HTML",
-				"main_section_html": "<p>draft</p>",
-			}
-		).insert()
+
+	def test_page_list_unions_published_shop_pages_with_storefront_routes(self):
+		page = self.make_shop_page("Footer Editor Test Page", "footer-editor-test-page", 1)
+		self.make_shop_page("Footer Editor Draft Page", "footer-editor-draft-page", 0)
 
 		routes = [row["route"] for row in get_footer_editor_data()["pages"]]
 
-		self.assertIn(page.route, routes)
-		self.assertNotIn("footer-editor-draft-page", routes)
+		self.assertIn(get_page_url(page.route), routes)
+		self.assertNotIn(get_page_url("footer-editor-draft-page"), routes)
 		for _label, static_route in STATIC_STOREFRONT_ROUTES:
 			self.assertIn(static_route, routes)
 
