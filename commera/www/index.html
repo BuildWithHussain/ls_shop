@@ -1,0 +1,13 @@
+{% extends "templates/layout.html" %}
+{% import "templates/macros/carousel.html" as carousel %}
+{% import "templates/macros/item_carousel.html" as item_carousel %}
+{% from "templates/macros/item_card.html" import item_card %}
+
+{% block head %}
+{% include "templates/partials/index/head.html" %}
+{% endblock %}
+
+
+{% block uncontained_body %}
+{% include "templates/partials/index/uncontained_body.html" %}
+{% endblock %}

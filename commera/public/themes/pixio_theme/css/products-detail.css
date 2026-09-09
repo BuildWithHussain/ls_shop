@@ -1,0 +1,98 @@
+/* Net-new CSS for the Pixio product detail page: only what the vendored sheet has no rule for,
+   because the reference got it from a plugin this theme does not load (Swiper sizing, Drift zoom). */
+
+/* .site-header is header-transparent on every Pixio page, so it paints over the first band.
+   The homepage hides that behind a full-bleed hero; a detail page starts with text. */
+.product-detail-page {
+	padding-top: 100px;
+}
+
+@media only screen and (max-width: 991px) {
+	.product-detail-page {
+		padding-top: 80px;
+	}
+}
+
+/* Embla does not size slides, so the thumb rail's box - absolutely positioned over the stage by
+   style.css - has to be capped here or it measures the full track width and adds a scrollbar. */
+.dz-product-detail .product-gallery-swiper.thumb-swiper-lg {
+	width: max-content;
+	max-width: calc(100% - 30px);
+}
+
+.dz-product-detail .product-gallery-swiper .swiper-slide {
+	margin-right: 15px;
+	cursor: pointer;
+}
+
+/* --- Hover zoom: the reference ran Drift, which is not loaded here --- */
+
+.product-gallery-stage {
+	overflow: hidden;
+}
+
+.product-gallery-stage .dz-media img {
+	width: 100%;
+	transition: transform 0.3s ease-in-out;
+}
+
+/* Pointer position drives transform-origin from Alpine; a touch device has no pointer to
+   drive it with, so the scale is switched off rather than left stuck at the last origin. */
+@media (hover: hover) {
+	.product-gallery-stage .dz-media img.is-zoomed {
+		transform: scale(1.8);
+	}
+}
+
+/* --- Colour variants: the reference's .color-filter swatches have no rule in style.css --- */
+
+.product-colour-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.product-colour-list a {
+	display: block;
+	width: 62px;
+	text-align: center;
+}
+
+.product-colour-list img {
+	width: 62px;
+	height: 62px;
+	object-fit: cover;
+	border-radius: 10px;
+	border: 2px solid transparent;
+}
+
+.product-colour-list a.is-active img,
+.product-colour-list a:hover img {
+	border-color: var(--secondary);
+}
+
+.product-colour-list span {
+	display: block;
+	margin-top: 4px;
+	font-size: 12px;
+	color: var(--secondary);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* .dz-info lays its <ul>s out as one flowing column of label/value pairs; the spec tab wants
+   the same pairs without the divider rule that separates them from the buy box. */
+.product-specification {
+	border-top: 0;
+	padding-top: 0;
+}
+
+/* bootstrap-touchspin's own sheet made the counter a block so style.css's `margin: auto` could
+   centre it; without the plugin the input stays inline-block and the minus button paints over it. */
+.btn-quantity .bootstrap-touchspin input {
+	display: block;
+}

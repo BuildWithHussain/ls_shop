@@ -1,0 +1,10 @@
+
+{% macro brand_logo(css_class="h-10 w-auto object-contain") %}
+  {% if app_logo %}
+    <img src="{{ app_logo | e }}" alt="{{ app_name | e }}" class="{{ css_class }}" />
+  {% else %}
+    <span class="text-lg font-semibold">{{ app_name | e }}</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro brand_name() %}{{ app_name | e }}{% endmacro %}

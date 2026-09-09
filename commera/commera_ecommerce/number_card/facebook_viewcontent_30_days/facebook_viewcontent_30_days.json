@@ -1,0 +1,18 @@
+{
+	"creation": "2026-07-15 12:00:00.000000",
+	"docstatus": 0,
+	"doctype": "Number Card",
+	"filters_json": "[]",
+	"idx": 0,
+	"is_public": 1,
+	"is_standard": 1,
+	"label": "FB ViewContent (30d)",
+	"method": "commera.api.analytics.viewcontent_count",
+	"modified": "2026-07-15 12:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "Commera Ecommerce",
+	"name": "FB ViewContent (30d)",
+	"owner": "Administrator",
+	"show_percentage_stats": 0,
+	"type": "Custom"
+}

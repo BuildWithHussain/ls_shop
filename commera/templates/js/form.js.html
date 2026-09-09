@@ -1,0 +1,24 @@
+<script>
+   function form_to_object(form) {
+        if (!(form instanceof HTMLFormElement)) {
+            throw new Error('Input must be an HTMLFormElement');
+        }
+
+        const formData = new FormData(form);
+        const formObject = {};
+
+        for (const [key, value] of formData.entries()) {
+            if (key in formObject) {
+                if (!Array.isArray(formObject[key])) {
+                    formObject[key] = [formObject[key]];
+                }
+                formObject[key].push(value);
+            } else {
+                formObject[key] = value;
+            }
+        }
+
+        return formObject;
+    }
+
+</script>

@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.14'
           cache: pip
 
       - name: Download Semgrep rules
@@ -57,6 +57,69 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.14'
           cache: pip
       - uses: pre-commit/action@v3.0.1
+
+  npm-audit:
+    name: 'Vulnerable Dependency Check'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          check-latest: true
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      # Critical only for now: the tree carries one high (vite <=6.4.2 via esbuild)
+      # that needs a major bump to vite 8, so gating at high would land this red.
+      # Raise to --audit-level=high once that upgrade lands.
+      - name: Audit dashboard dependencies
+        run: npm audit --omit=dev --audit-level=critical --prefix dashboard
+
+  duplication:
+    name: 'Code Duplication'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          check-latest: true
+
+      # Mirrors the `dupes:py` / `dupes:vue` scripts in package.json. Run separately
+      # because jscpd applies --threshold per format, so a combined run reports a
+      # different number. Lower the threshold as cleanup lands; never raise it.
+      - name: Run jscpd (python)
+        run: npx --yes jscpd@4 commera --format python --threshold 1
+
+      - name: Run jscpd (dashboard)
+        run: npx --yes jscpd@4 dashboard/src --format vue,typescript,javascript --threshold 1
+
+  dashboard-build:
+    name: 'Dashboard Build'
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          check-latest: true
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dashboard dependencies
+        run: npm ci --prefix dashboard
+
+      # The dashboard is plain JS, so there is nothing for vue-tsc to check that
+      # the build does not already reject: a bad import or template fails here.
+      - name: Build the dashboard
+        run: npm run build --prefix dashboard

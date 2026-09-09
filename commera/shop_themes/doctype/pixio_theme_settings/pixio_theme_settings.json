@@ -1,0 +1,208 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "creation": "2026-08-19 15:16:03.509396",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "hero_section",
+  "hero_slides",
+  "hero_caption_label",
+  "hero_caption",
+  "categories_section",
+  "categories_title",
+  "categories_description",
+  "shop_by_category",
+  "products_section",
+  "products_title",
+  "best_picks",
+  "collection_section",
+  "collection_banners",
+  "deals_section",
+  "deals_title",
+  "deals_link_label",
+  "deals_url",
+  "deal_picks",
+  "column_break_offers",
+  "offers_title",
+  "offer_banners",
+  "featured_section",
+  "featured_title",
+  "featured_picks"
+ ],
+ "fields": [
+  {
+   "fieldname": "hero_section",
+   "fieldtype": "Section Break",
+   "label": "Hero Slider"
+  },
+  {
+   "fieldname": "hero_slides",
+   "fieldtype": "Table",
+   "label": "Hero Slides",
+   "options": "Pixio Hero Slide"
+  },
+  {
+   "default": "Summer Collection",
+   "fieldname": "hero_caption_label",
+   "fieldtype": "Data",
+   "label": "Hero Caption Label"
+  },
+  {
+   "default": "Trendy and Classic for the New Season",
+   "fieldname": "hero_caption",
+   "fieldtype": "Data",
+   "label": "Hero Caption"
+  },
+  {
+   "fieldname": "categories_section",
+   "fieldtype": "Section Break",
+   "label": "Category Strip"
+  },
+  {
+   "default": "Featured Categories",
+   "fieldname": "categories_title",
+   "fieldtype": "Data",
+   "label": "Categories Title"
+  },
+  {
+   "fieldname": "categories_description",
+   "fieldtype": "Small Text",
+   "label": "Categories Description"
+  },
+  {
+   "fieldname": "shop_by_category",
+   "fieldtype": "Table",
+   "label": "Shop By Category",
+   "options": "Website Slideshow Item"
+  },
+  {
+   "fieldname": "products_section",
+   "fieldtype": "Section Break",
+   "label": "Products Grid"
+  },
+  {
+   "default": "Most popular products",
+   "fieldname": "products_title",
+   "fieldtype": "Data",
+   "label": "Products Title"
+  },
+  {
+   "fieldname": "best_picks",
+   "fieldtype": "Table",
+   "label": "Best Picks",
+   "options": "Recommended Variant"
+  },
+  {
+   "fieldname": "collection_section",
+   "fieldtype": "Section Break",
+   "label": "Collection Banners"
+  },
+  {
+   "fieldname": "collection_banners",
+   "fieldtype": "Table",
+   "label": "Collection Banners",
+   "options": "Pixio Promo Banner"
+  },
+  {
+   "fieldname": "deals_section",
+   "fieldtype": "Section Break",
+   "label": "Deals and Offers"
+  },
+  {
+   "default": "Blockbuster deals",
+   "fieldname": "deals_title",
+   "fieldtype": "Data",
+   "label": "Deals Title"
+  },
+  {
+   "default": "See all deals",
+   "fieldname": "deals_link_label",
+   "fieldtype": "Data",
+   "label": "Deals Link Label"
+  },
+  {
+   "fieldname": "deals_url",
+   "fieldtype": "Data",
+   "label": "Deals URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "deal_picks",
+   "fieldtype": "Table",
+   "label": "Deal Picks",
+   "options": "Recommended Variant"
+  },
+  {
+   "fieldname": "column_break_offers",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Featured offer for you",
+   "fieldname": "offers_title",
+   "fieldtype": "Data",
+   "label": "Offers Title"
+  },
+  {
+   "fieldname": "offer_banners",
+   "fieldtype": "Table",
+   "label": "Offer Banners",
+   "options": "Pixio Promo Banner"
+  },
+  {
+   "fieldname": "featured_section",
+   "fieldtype": "Section Break",
+   "label": "Featured Block"
+  },
+  {
+   "default": "Featured now",
+   "fieldname": "featured_title",
+   "fieldtype": "Data",
+   "label": "Featured Title"
+  },
+  {
+   "fieldname": "featured_picks",
+   "fieldtype": "Table",
+   "label": "Featured Picks",
+   "options": "Recommended Variant"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-08-19 15:16:03.509396",
+ "modified_by": "Administrator",
+ "module": "Shop Themes",
+ "name": "Pixio Theme Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Website Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

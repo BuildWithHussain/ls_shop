@@ -1,0 +1,95 @@
+{
+	"actions": [],
+	"allow_rename": 1,
+	"creation": "2025-10-04 19:16:34.572019",
+	"doctype": "DocType",
+	"editable_grid": 1,
+	"engine": "InnoDB",
+	"field_order": ["link_label", "link_url", "link_order", "enabled"],
+	"fields": [
+		{
+			"fieldname": "link_label",
+			"fieldtype": "Data",
+			"in_list_view": 1,
+			"label": "Link Label",
+			"reqd": 1
+		},
+		{
+			"fieldname": "link_url",
+			"fieldtype": "Data",
+			"in_list_view": 1,
+			"label": "Link URL",
+			"reqd": 1
+		},
+		{
+			"default": "0",
+			"fieldname": "link_order",
+			"fieldtype": "Int",
+			"in_list_view": 1,
+			"label": "Display Order"
+		},
+		{
+			"default": "1",
+			"fieldname": "enabled",
+			"fieldtype": "Check",
+			"in_list_view": 1,
+			"label": "Enabled"
+		}
+	],
+	"grid_page_length": 50,
+	"index_web_pages_for_search": 1,
+	"istable": 1,
+	"links": [],
+	"modified": "2025-10-04 19:16:50.538264",
+	"modified_by": "Administrator",
+	"module": "Commera Ecommerce",
+	"name": "Footer Link",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		},
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "Website Manager",
+			"share": 1,
+			"write": 1
+		},
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"export": 1,
+			"print": 1,
+			"read": 1,
+			"report": 1,
+			"role": "Administrator",
+			"share": 1,
+			"write": 1
+		},
+		{
+			"read": 1,
+			"role": "All"
+		}
+	],
+	"row_format": "Dynamic",
+	"rows_threshold_for_grid_search": 20,
+	"sort_field": "link_order",
+	"sort_order": "ASC",
+	"states": []
+}

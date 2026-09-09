@@ -1,0 +1,50 @@
+{% set direction = "left" %}
+{% set position = "inset-0" %}
+{% set width = "w-full" %}
+{% set height = "h-screen" %}
+{% extends "templates/components/core/offcanvas.html" %}
+{% from 'templates/macros/search_bar_modal.html' import search_bar %}
+{% from 'templates/macros/signup_modal.html' import signup_modal %}
+{% from 'templates/macros/navigation_menu.html' import mobile_nav_menu %}
+
+{% block offcanvas_header %}
+    <div class="flex items-center justify-between  ">
+        <div class="flex space-x-4 rtl:space-x-reverse ">
+            {% include "templates/components/wishlist_icon.html" %}
+            {% include "templates/components/user_dropdown.html" %}
+            {% include "templates/components/cart_dropdown.html" %}
+        </div>
+        <button @click="is_offcanvas_open = false" class="text-white bg-primary rounded-full p-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+{% endblock %}
+
+{% block offcanvas_content %}
+    <div class="">
+        <div class=" mt-10 ">
+            {{search_bar()}}
+        </div>
+        <div class="p-4 border-b border-gray-200 mt-10 ">
+            <h3 class="mb-2 text-gray-700 capitalize">{{_('language')}}</h3>
+            {% include "templates/components/core/language_selector.html" %}
+        </div>
+        <div class="mt-10 ">
+            {% block storefront_nav_mobile %}{{ mobile_nav_menu(header_data.navigation_menu) }}{% endblock %}
+        </div>
+
+        {% if frappe.session.user != 'Guest' %}
+            <button @click="logout" class="flex w-full items-center justify-between p-4 text-secondary-accent font-medium mt-25 capitalize">
+                {{_('log out')}}
+            </button>
+        {% else %}
+            {% call signup_modal() %}
+                <div class="flex w-full items-center justify-between p-4 text-secondary-accent font-medium mt-25 capitalize">
+                    {{_('login')}}  
+                </div>
+            {% endcall %}
+        {% endif %}
+    </div>
+{% endblock %}

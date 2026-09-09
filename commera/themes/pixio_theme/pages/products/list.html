@@ -1,0 +1,180 @@
+{% extends "components/theme_layout.html" %}
+{% from "components/macros/product_card.html" import variant_card %}
+
+
+{% block head %}
+	{{ super() }}
+	<link rel="stylesheet" href="{{ shop_theme_asset_url('css/products-list.css') }}">
+{% endblock %}
+
+{% block uncontained_body %}
+<div class="dz-bnr-inr bg-secondary">
+	<div class="container">
+		<div class="dz-bnr-inr-entry">
+			<h1>{{ category or _("Products") }}</h1>
+			<nav aria-label="{{ _('breadcrumb') }}" class="breadcrumb-row">
+				<ul class="breadcrumb">
+					<li class="breadcrumb-item"><a href="/{{ frappe.lang or 'en' }}/">{{ _("Home") }}</a></li>
+					{% for crumb in breadcrumbs %}
+					<li class="breadcrumb-item">{{ _(crumb.label) }}</li>
+					{% endfor %}
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+
+<section class="content-inner-3 pt-3 z-index-unset" x-data='shop_listing'>
+	<div class="container">
+		<div class="row">
+			<div class="col-xl-3 col-lg-12">
+				<div class="sticky-xl-top">
+					<a href="javascript:void(0);" class="panel-close-btn" :class="{ 'active': panel_open }"
+						@click="panel_open = false" aria-label="{{ _('Close filters') }}">
+						<svg width="35" height="35" viewBox="0 0 51 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M37.748 12.5L12.748 37.5" stroke="white" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M12.748 12.5L37.748 37.5" stroke="white" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</a>
+					{% include "components/sections/shop_filter_sidebar.html" %}
+				</div>
+			</div>
+			<div class="col-xl-9 col-lg-12">
+				{% include "components/sections/shop_toolbar.html" %}
+
+				{% if products %}
+				<ul class="row gx-xl-4 g-3 mb-xl-0 mb-md-0 mb-3">
+					{% for product in products %}
+					{# .card-container is what pixio.css sizes the card media off, so the row cannot staircase on mixed aspect ratios. #}
+					<li class="card-container col-6 col-sm-6 col-md-4"
+						:class="view === 'grid' ? 'col-xl-4 col-lg-4' : 'col-xl-6 col-lg-6'">
+						{{ variant_card(product, wow_delay="%.1fs" | format(0.1 * (loop.index0 % 6))) }}
+					</li>
+					{% endfor %}
+				</ul>
+
+				<div class="row page mt-0">
+					<div class="col-md-6">
+						<p class="page-text">{{ _("Showing {0} of {1} Results").format(products | length, total_count) }}</p>
+					</div>
+					<div class="col-md-6">
+						<nav aria-label="{{ _('Product pagination') }}">
+							<ul class="pagination style-1">
+								<template x-for="page_number in pages_to_show" :key="page_number">
+									<li class="page-item">
+										<a class="page-link" href="javascript:void(0);"
+											:class="{ 'active': page_number === current_page }"
+											:aria-current="page_number === current_page ? 'page' : null"
+											x-text="page_number"
+											@click="go_to_page(page_number)"></a>
+									</li>
+								</template>
+								<li class="page-item" x-show="current_page < total_pages">
+									<a class="page-link next" href="javascript:void(0);"
+										@click="go_to_page(current_page + 1)">{{ _("Next") }}</a>
+								</li>
+							</ul>
+						</nav>
+					</div>
+				</div>
+				{% else %}
+				<div class="dz-empty-listing">
+					<h4 class="title">{{ _("No products found") }}</h4>
+					<p>{{ _("Try removing a filter or searching for something else.") }}</p>
+					<a href="javascript:void(0);" class="btn btn-secondary btn-sharp" @click="reset_filters()">{{ _("RESET FILTERS") }}</a>
+				</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</section>
+{% endblock %}
+
+{% block script %}
+	{{ super() }}
+	<script>
+		document.addEventListener('alpine:init', () => {
+			Alpine.data('shop_listing', () => ({
+				query_state: window.query_state,
+				panel_open: false,
+				view: 'grid',
+				search_term: {{ (selected_filters.search or "") | tojson }},
+				page_length: {{ page_length | tojson }},
+				current_page: {{ current_page | tojson }},
+				total_count: {{ total_count | tojson }},
+
+				get total_pages() {
+					return Math.max(1, Math.ceil(this.total_count / this.page_length));
+				},
+
+				get pages_to_show() {
+					const start = Math.max(1, Math.min(this.current_page - 2, this.total_pages - 4));
+					const length = Math.min(5, this.total_pages);
+					return Array.from({ length }, (_, index) => start + index);
+				},
+
+				get_selected(key) {
+					return this.query_state[key] ? this.query_state[key].split(',') : [];
+				},
+
+// `value` is either one option or the list of item groups a facet filters on, so it ticks only when every one is selected.
+				is_selected(key, value) {
+					const values = [].concat(value).map(String);
+					const selected = this.get_selected(key);
+					return values.length > 0 && values.every((entry) => selected.includes(entry));
+				},
+
+				toggle_filter(key, value) {
+					const values = [].concat(value).map(String);
+					const selected = this.get_selected(key);
+					const next = this.is_selected(key, value)
+						? selected.filter((entry) => !values.includes(entry))
+						: selected.concat(values.filter((entry) => !selected.includes(entry)));
+					this.set_filter(key, next.join(','));
+				},
+
+				set_filter(key, value) {
+					this.query_state[key] = value;
+// A narrower result set has fewer pages, so page 7 of the old one is a blank grid.
+					this.query_state.page = 1;
+					window.location.reload();
+				},
+
+				reset_filters() {
+					for (const key of Object.keys(this.query_state)) {
+						delete this.query_state[key];
+					}
+					window.location.reload();
+				},
+
+				go_to_page(page) {
+					if (page === this.current_page) {
+						return;
+					}
+					this.query_state.page = page;
+					window.location.reload();
+				},
+			}));
+
+			Alpine.data('price_range_filter', () => ({
+				floor: Math.floor({{ (price_range.min_price or 0) | tojson }}),
+				ceiling: Math.ceil({{ (price_range.max_price or 0) | tojson }}),
+				minimum: 0,
+				maximum: 0,
+
+				init() {
+					this.minimum = this.query_state.min ? Number(this.query_state.min) : this.floor;
+					this.maximum = this.query_state.max ? Number(this.query_state.max) : this.ceiling;
+				},
+
+				get fill_style() {
+					const span = this.ceiling - this.floor || 1;
+					const start = ((this.minimum - this.floor) / span) * 100;
+					const end = ((this.maximum - this.floor) / span) * 100;
+					return `inset-inline-start:${start}%;width:${end - start}%`;
+				},
+
+			}));
+		});
+	</script>
+{% endblock %}

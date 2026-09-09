@@ -1,0 +1,32 @@
+
+{% macro account_shell(page_title, parent_crumbs=None) %}
+{% set language = frappe.lang or "en" %}
+{# The order confirmation is the one account route a logged-out shopper can reach - it is the gateway return URL. #}
+{% set is_signed_in = frappe.session.user != "Guest" %}
+
+<div class="dz-bnr-inr account-banner">
+	<div class="container">
+		<div class="dz-bnr-inr-entry">
+			<h1>{{ page_title }}</h1>
+			<nav aria-label="{{ _('breadcrumb') }}" class="breadcrumb-row">
+				<ul class="breadcrumb">
+					<li class="breadcrumb-item"><a href="/{{ language }}">{{ _("Home") }}</a></li>
+					{% for crumb in parent_crumbs or [] %}
+					<li class="breadcrumb-item"><a href="{{ crumb.href }}">{{ crumb.label }}</a></li>
+					{% endfor %}
+					<li class="breadcrumb-item">{{ page_title }}</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+
+<div class="content-inner-1 account-page">
+	<div class="container">
+		<div class="row">
+			{% if is_signed_in %}{% include "components/core/account_sidebar.html" %}{% endif %}
+			<section class="{{ 'col-xl-9' if is_signed_in else 'col-xl-12' }} account-wrapper">{{ caller() }}</section>
+		</div>
+	</div>
+</div>
+{% endmacro %}

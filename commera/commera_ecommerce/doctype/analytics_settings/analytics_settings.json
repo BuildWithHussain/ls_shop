@@ -1,0 +1,116 @@
+{
+	"actions": [],
+	"creation": "2026-07-15 12:00:00",
+	"doctype": "DocType",
+	"engine": "InnoDB",
+	"field_order": [
+		"enable_first_party",
+		"enable_facebook",
+		"fb_pixel_id",
+		"fb_access_token",
+		"column_break_mcud",
+		"enable_ga4",
+		"ga4_measurement_id",
+		"ga4_property_id",
+		"ga4_service_account_json",
+		"custom_tracking_scripts_section",
+		"custom_tracking_scripts"
+	],
+	"fields": [
+		{
+			"default": "1",
+			"description": "Log storefront funnel events (page_view, view_item, add_to_cart, begin_checkout, purchase) into this site's own database. Powers the Storefront Analytics dashboard without any external service.",
+			"fieldname": "enable_first_party",
+			"fieldtype": "Check",
+			"label": "Enable First-Party Event Log"
+		},
+		{
+			"default": "0",
+			"description": "Send storefront funnel events (PageView, ViewContent, AddToCart, InitiateCheckout, Purchase) to Meta and read totals back on the Storefront Analytics dashboard. <a href=\"https://developers.facebook.com/docs/meta-pixel/get-started\" target=\"_blank\">Meta Pixel setup guide</a>",
+			"fieldname": "enable_facebook",
+			"fieldtype": "Check",
+			"label": "Enable Facebook"
+		},
+		{
+			"depends_on": "enable_facebook",
+			"description": "Numeric Dataset (Pixel) ID from <a href=\"https://www.facebook.com/events_manager2\" target=\"_blank\">Meta Events Manager</a> \u2192 Data sources, shown under the dataset name.",
+			"fieldname": "fb_pixel_id",
+			"fieldtype": "Data",
+			"label": "Facebook Pixel ID"
+		},
+		{
+			"depends_on": "enable_facebook",
+			"description": "Access token of a <a href=\"https://business.facebook.com/settings/system-users\" target=\"_blank\">Business System User</a> with ads_read, ads_management and business_management permissions, plus Full-access assignment to the dataset above. Never expires.",
+			"fieldname": "fb_access_token",
+			"fieldtype": "Password",
+			"label": "Facebook Access Token"
+		},
+		{
+			"default": "0",
+			"description": "Send storefront funnel events (page_view, view_item, add_to_cart, begin_checkout, purchase) to GA4 and read Sessions/Active Users back on the Storefront Analytics dashboard. <a href=\"https://support.google.com/analytics/answer/9304153\" target=\"_blank\">Google Analytics 4 setup guide</a>",
+			"fieldname": "enable_ga4",
+			"fieldtype": "Check",
+			"label": "Enable Google Analytics 4"
+		},
+		{
+			"depends_on": "enable_ga4",
+			"description": "Web stream Measurement ID, <code>G-XXXXXXXXXX</code> (Admin \u2192 Data Streams \u2192 your web stream).",
+			"fieldname": "ga4_measurement_id",
+			"fieldtype": "Data",
+			"label": "GA4 Measurement ID"
+		},
+		{
+			"depends_on": "enable_ga4",
+			"description": "Numeric Property ID (Admin \u2192 Property Settings).",
+			"fieldname": "ga4_property_id",
+			"fieldtype": "Data",
+			"label": "GA4 Property ID"
+		},
+		{
+			"depends_on": "enable_ga4",
+			"description": "Service-account JSON key. Enable the Google Analytics Data API, then grant the service-account email Viewer on the property (Admin \u2192 Property Access Management), else runReport returns 403.",
+			"fieldname": "ga4_service_account_json",
+			"fieldtype": "Password",
+			"label": "GA4 Service Account JSON"
+		},
+		{
+			"description": "Arbitrary tracking/tag snippets (Google Tag Manager, PostHog, Hotjar, etc.) injected as-is on every storefront page.",
+			"fieldname": "custom_tracking_scripts_section",
+			"fieldtype": "Section Break",
+			"label": "Custom Tracking Scripts"
+		},
+		{
+			"fieldname": "custom_tracking_scripts",
+			"fieldtype": "Table",
+			"label": "Custom Tracking Scripts",
+			"options": "Custom Tracking Script"
+		},
+		{
+			"fieldname": "column_break_mcud",
+			"fieldtype": "Column Break"
+		}
+	],
+	"index_web_pages_for_search": 1,
+	"issingle": 1,
+	"links": [],
+	"modified": "2026-07-27 12:18:55.648335",
+	"modified_by": "Administrator",
+	"module": "Commera Ecommerce",
+	"name": "Analytics Settings",
+	"owner": "Administrator",
+	"permissions": [
+		{
+			"create": 1,
+			"delete": 1,
+			"email": 1,
+			"print": 1,
+			"read": 1,
+			"role": "System Manager",
+			"share": 1,
+			"write": 1
+		}
+	],
+	"sort_field": "modified",
+	"sort_order": "DESC",
+	"states": []
+}

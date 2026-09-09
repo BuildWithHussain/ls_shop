@@ -1,0 +1,87 @@
+{# Bootstrap's tab JS is banned, so Alpine toggles the .active/.show classes bootstrap's own CSS keys the panes off. #}
+<section class="content-inner-3 pb-0">
+	<div class="container">
+		<div class="dz-tabs" x-data="{ active_tab: 'description' }">
+			<ul class="nav nav-tabs center" role="tablist">
+				<li class="nav-item" role="presentation">
+					<button class="nav-link" type="button" role="tab" id="description-tab"
+						aria-controls="description-tab-pane"
+						:class="active_tab === 'description' ? 'active' : ''"
+						:aria-selected="active_tab === 'description'"
+						@click="active_tab = 'description'">{{ _("Description") }}</button>
+				</li>
+				<li class="nav-item" role="presentation">
+					<button class="nav-link" type="button" role="tab" id="specification-tab"
+						aria-controls="specification-tab-pane"
+						:class="active_tab === 'specification' ? 'active' : ''"
+						:aria-selected="active_tab === 'specification'"
+						@click="active_tab = 'specification'">{{ _("Specification") }}</button>
+				</li>
+			</ul>
+			<div class="tab-content">
+				<div class="tab-pane fade" id="description-tab-pane" role="tabpanel" aria-labelledby="description-tab"
+					:class="active_tab === 'description' ? 'show active' : ''">
+					<div class="detail-bx text-center">
+						<h5 class="title">{{ product_variant.display_name }}</h5>
+						{% if selected_item.description and selected_item.description != selected_item.item_code %}
+						<p class="para-text">
+							{% if frappe.lang == "ar" %}{{ selected_item.description_ar or selected_item.description }}{% else %}{{ selected_item.description }}{% endif %}
+						</p>
+						{% endif %}
+						<ul class="feature-detail">
+							{% if show_option_axis %}
+							<li>
+								<i class="icon feather icon-check"></i>
+								<h5>{{ product_variant.attribute_name }}: {{ product_variant.attribute_value }}</h5>
+							</li>
+							{% endif %}
+							{% if show_sizes %}
+							<li>
+								<i class="icon feather icon-check"></i>
+								<h5>{{ _("Available in {0} sizes").format(available_sizes | length) }}</h5>
+							</li>
+							{% endif %}
+							{% if selected_item.material %}
+							<li>
+								<i class="icon feather icon-check"></i>
+								<h5>{{ selected_item.material }}</h5>
+							</li>
+							{% endif %}
+						</ul>
+					</div>
+				</div>
+				<div class="tab-pane fade" id="specification-tab-pane" role="tabpanel" aria-labelledby="specification-tab"
+					:class="active_tab === 'specification' ? 'show active' : ''">
+					<div class="dz-info product-specification">
+						<ul>
+							<li><strong>{{ _("Brand") }}:</strong></li>
+							<li>{{ product.brand }}</li>
+						</ul>
+						<ul>
+							<li><strong>{{ _("Category") }}:</strong></li>
+							<li>{{ product_variant.item_group }}</li>
+						</ul>
+						{% if show_option_axis %}
+						<ul>
+							<li><strong>{{ product_variant.attribute_name }}:</strong></li>
+							<li>{{ product_variant.attribute_value }}</li>
+						</ul>
+						{% endif %}
+						{% if selected_item.style_code %}
+						<ul>
+							<li><strong>{{ _("Style Code") }}:</strong></li>
+							<li>{{ selected_item.style_code }}</li>
+						</ul>
+						{% endif %}
+						{% if show_sizes %}
+						<ul>
+							<li><strong>{{ _("Sizes") }}:</strong></li>
+							<li>{{ available_sizes | map(attribute="size") | join(", ") }}</li>
+						</ul>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>

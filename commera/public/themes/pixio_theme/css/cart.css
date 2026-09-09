@@ -1,0 +1,129 @@
+/* Gaps the vendored Pixio sheet leaves on shop-cart.html. Everything else on the page -
+   .check-tbl, .btn-quantity, .cart-detail, .dz-bnr-inr - is already shaped by style.css. */
+
+/* .btn-quantity carries a 45px right margin for the product detail page, where it sits
+   beside an add-to-cart button. In a table cell that is dead width. */
+.check-tbl .product-item-quantity .btn-quantity {
+	margin-right: 0;
+}
+
+/* The six columns cannot compress below this without the stepper wrapping, so the
+   .table-responsive wrapper scrolls instead of the page. */
+.check-tbl {
+	min-width: 46rem;
+}
+
+/* Upstream's demo prices are unprefixed two-digit numbers; a currency symbol plus a struck
+   original is enough to break the cell over two lines. */
+.check-tbl .product-item-price,
+.check-tbl .product-item-totle {
+	white-space: nowrap;
+}
+
+/* style.css strikes through every span inside .product-item-price so the demo's struck
+   original renders; get_currency_symbol() emits a span inside the live price too. */
+.check-tbl .product-item-price strong span {
+	text-decoration: none;
+}
+
+/* style.css only shapes the reference's single tr.total row; the subtotal and delivery
+   rows above it are net-new. */
+.cart-detail table tr:not(.total) td {
+	padding: 6px 0;
+	font-size: 15px;
+	font-weight: 400;
+	color: #5E626F;
+}
+
+.cart-detail table tr:not(.total) td.price {
+	text-align: end;
+	font-weight: 500;
+	color: var(--title);
+}
+
+.cart-detail table tr.total {
+	border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Pixio ships no empty-cart state on any page, so this block has no upstream equivalent. */
+.cart-empty {
+	padding: 40px 0 60px;
+}
+
+.cart-empty i {
+	display: block;
+	font-size: 64px;
+	line-height: 1;
+	margin-bottom: 25px;
+	color: var(--secondary);
+}
+
+.cart-empty p {
+	margin-bottom: 25px;
+}
+
+@media only screen and (max-width: 575px) {
+	.cart-empty {
+		padding: 20px 0 40px;
+	}
+
+	.cart-empty i {
+		font-size: 48px;
+		margin-bottom: 20px;
+	}
+}
+
+/* Pixio's six-column shop-cart table can only scroll sideways on a phone, putting the stepper and
+   remove button out of reach; dropping the unit-price column fits the row into 360px. */
+@media only screen and (max-width: 575px) {
+	.check-tbl {
+		min-width: 21rem;
+	}
+
+	.check-tbl thead th:nth-child(3),
+	.check-tbl .product-item-price {
+		display: none;
+	}
+
+	.check-tbl tbody tr td {
+		padding: 12px 4px;
+	}
+
+	.check-tbl tbody tr td.product-item-totle {
+		font-size: 14px;
+	}
+
+	.check-tbl tbody tr td.product-item-name {
+		font-size: 14px;
+		padding-left: 8px;
+	}
+
+	.check-tbl tbody tr td img {
+		width: 52px;
+		min-width: 52px;
+		height: 52px;
+		border-radius: 18px;
+	}
+
+	.check-tbl .product-item-quantity .btn-quantity .bootstrap-touchspin {
+		width: 90px;
+		min-width: 90px;
+		height: 30px;
+	}
+
+	.check-tbl .product-item-quantity .btn-quantity input {
+		width: 30px !important;
+		height: 30px !important;
+	}
+
+	.check-tbl .product-item-quantity .btn-quantity .btn {
+		min-width: 30px;
+		font-size: 14px;
+	}
+
+	.check-tbl .product-item-close a {
+		width: 32px;
+		height: 32px;
+		line-height: 28px;
+	}
+}

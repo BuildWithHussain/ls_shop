@@ -1,0 +1,39 @@
+
+{% macro brand_logo(header_data, extra_classes="") %}
+<div class="logo-header logo-dark {{ extra_classes }}">
+	<a href="/{{ frappe.lang or 'en' }}"><img src="{{ header_data.brand_logo }}" alt="{{ header_data.store_name }}"></a>
+</div>
+{% endmacro %}
+
+
+{% macro menu_branch(node) %}
+<li{% if node.children %} class="menu-item-has-children"{% endif %}>
+	<a href="{{ node.href or 'javascript:void(0);' }}"{% if node.children %} class="menu-title"{% endif %}>{{ node.label }}</a>
+	{% if node.children %}
+	<ul>
+		{% for child in node.children %}{{ menu_branch(child) }}{% endfor %}
+	</ul>
+	{% endif %}
+</li>
+{% endmacro %}
+
+
+{% macro menu_tab(node, branch_key) %}
+{% if node.children %}
+<li class="has-mega-menu sub-menu-down auto-width" :class="is_branch_open({{ branch_key }}) ? 'open' : ''">
+	<a href="{{ node.href or 'javascript:void(0);' }}">
+		<span>{{ node.label }}</span>
+		<i class="fas fa-chevron-down tabindex" @click.prevent.stop="toggle_branch({{ branch_key }})"></i>
+	</a>
+	<div class="mega-menu">
+		<ul>
+			{% for child in node.children %}{{ menu_branch(child) }}{% endfor %}
+		</ul>
+	</div>
+</li>
+{% else %}
+<li>
+	<a href="{{ node.href or 'javascript:void(0);' }}"><span>{{ node.label }}</span></a>
+</li>
+{% endif %}
+{% endmacro %}

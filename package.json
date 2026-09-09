@@ -1,24 +1,28 @@
 {
-	"name": "ls_shop",
+	"name": "commera",
 	"version": "1.0.0",
 	"description": "ShoeArena Frontend",
 	"main": "index.js",
 	"scripts": {
 		"postinstall": "yarn tailwind:build",
 		"build": "yarn tailwind:build",
-		"tailwind:watch": "npx @tailwindcss/cli -i ./ls_shop/public/css/main.css -o ./ls_shop/public/css/tailwind.css --watch",
-		"tailwind:build": "npx @tailwindcss/cli -i ./ls_shop/public/css/main.css -o ./ls_shop/public/css/tailwind.css"
+		"tailwind:watch": "npx @tailwindcss/cli -i ./commera/public/css/main.css -o ./commera/public/css/tailwind.css --watch",
+		"tailwind:build": "npx @tailwindcss/cli -i ./commera/public/css/main.css -o ./commera/public/css/tailwind.css",
+		"dupes": "npm run dupes:py && npm run dupes:vue",
+		"dupes:py": "jscpd commera --format python --threshold 1",
+		"dupes:vue": "jscpd dashboard/src --format vue,typescript,javascript --threshold 1",
+		"dupes:report": "jscpd commera dashboard/src --format python,vue,typescript,javascript --reporters html,console --output .jscpd-report"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/BuildWithHussain/ls_shop.git"
+		"url": "git+https://github.com/BuildWithHussain/commera.git"
 	},
 	"author": "BWH Studios",
 	"license": "ISC",
 	"bugs": {
-		"url": "https://github.com/BuildWithHussain/ls_shop/issues"
+		"url": "https://github.com/BuildWithHussain/commera/issues"
 	},
-	"homepage": "https://github.com/BuildWithHussain/ls_shop#readme",
+	"homepage": "https://github.com/BuildWithHussain/commera#readme",
 	"dependencies": {
 		"@resvg/resvg-js": "^2.6.2",
 		"@tailwindcss/cli": "^4.0.14",
@@ -28,6 +32,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
-		"@tailwindcss/typography": "^0.5.16"
+		"@tailwindcss/typography": "^0.5.16",
+		"jscpd": "^4"
 	}
 }
