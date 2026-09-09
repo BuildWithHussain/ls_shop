@@ -14,7 +14,7 @@ const range = ref('Last 12 months')
 const compare = ref(true)
 
 // Same convention orders.get_overview and the Home screen use: a draft Cash-on-Delivery order is
-// still real revenue (see ls_shop.api.admin.orders.is_webshop_order), so this never disagrees with
+// still real revenue (see commera.api.admin.orders.is_webshop_order), so this never disagrees with
 // what the Orders list or the Home KPI strip report for the same window.
 const reportRequest = useAdminRead('analytics.get_revenue_report', {
   params: () => ({ months: monthsForRange(range.value) }),

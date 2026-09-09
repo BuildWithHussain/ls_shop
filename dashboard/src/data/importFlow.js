@@ -1,5 +1,5 @@
 // The product import flow: shared state for one run of it. Every step reads and writes the real
-// ls_shop.api.admin.imports endpoints — the spreadsheet is the only source that exists, and photos
+// commera.api.admin.imports endpoints — the spreadsheet is the only source that exists, and photos
 // are matched to a product colour by file name (imports.match_import_images).
 import { reactive } from 'vue'
 import { useAdminAction } from './api'
@@ -13,7 +13,7 @@ export const STEPS = [
   { key: 'run', label: 'Import', icon: 'lucide-rocket', hint: 'Create everything' },
 ]
 
-// TARGET_FIELDS/REQUIRED mirror ls_shop.api.admin.imports.FIELD_SYNONYMS/REQUIRED_FIELDS field
+// TARGET_FIELDS/REQUIRED mirror commera.api.admin.imports.FIELD_SYNONYMS/REQUIRED_FIELDS field
 // for field — a mismatch here means a column that maps cleanly on the server shows the wrong
 // label here, not a functional bug, but it would be a confusing one.
 export const TARGET_FIELDS = [

@@ -162,7 +162,7 @@ async function togglePublish() {
           </div>
           <div class="mt-4 flex items-center justify-between rounded-4 border border-outline-gray-1 px-4 py-3">
             <span class="text-base text-ink-gray-7">On hand: {{ size.stock }} · Committed: {{ size.committed }}</span>
-            <!-- ls_shop only exposes receiving stock in (Style Attribute
+            <!-- commera only exposes receiving stock in (Style Attribute
                  Variant.receive_stock, additive) — there is no "set to X"
                  adjustment, so this is a quantity to add on Save, not the new total. -->
             <TextInput

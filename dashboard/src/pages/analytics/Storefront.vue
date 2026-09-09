@@ -13,7 +13,7 @@ import { ia } from '../../ia/store'
 const range = ref('Last 12 months')
 const compare = ref(true)
 
-// Thin client over ls_shop.api.admin.analytics.get_storefront_report, itself a wrapper around the
+// Thin client over commera.api.admin.analytics.get_storefront_report, itself a wrapper around the
 // Desk analytics dashboard's own (already SQL-aggregated) storefront queries — this report and
 // that dashboard never disagree on what a session or a conversion means.
 const reportRequest = useAdminRead('analytics.get_storefront_report', {
@@ -139,7 +139,7 @@ const stats = computed(() => {
       <section class="mt-6 rounded-5 border border-outline-gray-1">
         <div class="px-4 py-3">
           <h2 class="text-lg-semibold text-ink-gray-8">Search terms</h2>
-          <!-- ls_shop's storefront tracking (Storefront Analytics Event) doesn't capture site search
+          <!-- commera's storefront tracking (Storefront Analytics Event) doesn't capture site search
                at all — no search-term field exists on the doctype. Kept as an honest empty state
                rather than a fabricated table; see docs/commera-open-questions.md. -->
           <p class="mt-1 text-sm text-ink-gray-5">

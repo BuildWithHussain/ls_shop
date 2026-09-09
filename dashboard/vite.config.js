@@ -14,10 +14,10 @@ export default defineConfig({
       },
       jinjaBootData: true,
       buildConfig: {
-        indexHtmlPath: '../ls_shop/www/commera.html',
+        indexHtmlPath: '../commera/www/commera.html',
         emptyOutDir: true,
         sourcemap: true,
-        outDir: '../ls_shop/public/commera',
+        outDir: '../commera/public/commera',
         target: 'es2015',
       },
     }),

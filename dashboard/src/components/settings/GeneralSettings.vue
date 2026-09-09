@@ -120,7 +120,7 @@ const companyLink = computed(() =>
       <LoadingText v-if="!company.isFinished" class="mt-4" />
 
       <p v-else-if="!company.data" class="mt-4 text-base text-ink-gray-5">
-        No company is set for this store yet, so there is nothing to show. Set one on Lifestyle
+        No company is set for this store yet, so there is nothing to show. Set one on Commera
         Settings in Desk and orders will book against it.
       </p>
 

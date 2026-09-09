@@ -9,7 +9,7 @@ on:
   pull_request:
 
 concurrency:
-  group: develop-ls_shop-${{ github.event.number || github.ref }}
+  group: develop-commera-${{ github.event.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -90,7 +90,7 @@ jobs:
       - name: Install
         working-directory: /home/runner/frappe-bench
         run: |
-          bench get-app ls_shop $GITHUB_WORKSPACE
+          bench get-app commera $GITHUB_WORKSPACE
           bench setup requirements --dev
           bench get-app erpnext
           bench get-app bwh_payments https://github.com/bwhtech/bwh_payments
@@ -99,7 +99,7 @@ jobs:
           bench --site test_site install-app erpnext
           bench --site test_site install-app bwh_payments
           bench --site test_site install-app bwh_shipping
-          bench --site test_site install-app ls_shop
+          bench --site test_site install-app commera
           # Shop Theme records live in the module tree and only sync on migrate, never on install-app:
           # without this the theme engine has no themes and every themed page fails to resolve.
           bench --site test_site migrate
@@ -111,7 +111,7 @@ jobs:
         working-directory: /home/runner/frappe-bench
         run: |
           bench --site test_site set-config allow_tests true
-          bench --site test_site run-tests --app ls_shop
+          bench --site test_site run-tests --app commera
         env:
           TYPE: server
 

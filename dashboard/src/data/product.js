@@ -2,7 +2,7 @@ import { computed, unref } from 'vue'
 
 // What a shopper is actually charged for a priced row (a size, or a pricing-screen row): the
 // storefront reads the sale price list and only falls back to the default one when there is no
-// row there at all — ls_shop/product_detail.py's get_product_detail and ls_shop/api/cart.py's
+// row there at all — commera/product_detail.py's get_product_detail and commera/api/cart.py's
 // get_cart_price both resolve it that way. So the test is "a sale rate exists", never
 // "sale_rate < default_rate": the two are equal for the whole life of a discount that has been
 // levelled off, and reading that as "no sale" hands back the struck-through price and edits a

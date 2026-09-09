@@ -21,7 +21,7 @@ function endSelecting() {
   selection.value = []
 }
 
-// ls_shop has no product-type schema at all (confirmed against the doctypes — the same
+// commera has no product-type schema at all (confirmed against the doctypes — the same
 // gap flagged as open question #1 in docs/commera-open-questions.md, where section 1 substituted
 // Collection for Type on its own judgement). That substitution needs the owner's yes/no before it
 // is repeated, so this stays a single always-selected option rather than silently becoming

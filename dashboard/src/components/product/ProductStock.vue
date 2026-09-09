@@ -10,7 +10,7 @@ const emit = defineEmits(['received'])
 
 const receiveOpen = ref(false)
 
-// One row per size, not per variant — a size (Color Size Item) is ls_shop's
+// One row per size, not per variant — a size (Color Size Item) is commera's
 // real stocked unit, each with its own item_code and Bin quantity.
 const rows = computed(() =>
   props.product.variants.flatMap((variant) =>
@@ -33,7 +33,7 @@ const rows = computed(() =>
         <p class="mt-1 text-p-sm text-ink-gray-5">On hand per variant.</p>
       </div>
       <div class="flex items-center gap-2">
-        <!-- Receiving is the only stock write ls_shop has, so it is the one offered
+        <!-- Receiving is the only stock write commera has, so it is the one offered
              here; the on-hand column stays read-only. -->
         <Button
           label="Receive stock"
@@ -63,7 +63,7 @@ const rows = computed(() =>
           <ListCell><span class="truncate text-base text-ink-gray-5">{{ item.sku }}</span></ListCell>
           <ListCell><span class="text-base text-ink-gray-5 tabular-nums">{{ item.committed }}</span></ListCell>
           <ListCell>
-            <!-- Read-only (:model-value only, no write): ls_shop only exposes receiving stock
+            <!-- Read-only (:model-value only, no write): commera only exposes receiving stock
                  (Style Attribute Variant.receive_stock, additive), not setting on-hand to an
                  arbitrary number — the Receive stock dialog above is the write. -->
             <TextInput :model-value="String(item.onHand)" size="sm" class="w-16" disabled />

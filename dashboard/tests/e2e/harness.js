@@ -171,11 +171,11 @@ function unwrap(response, label) {
 // Server state is asserted over the same admin API the dashboard itself calls,
 // reusing the browser's logged-in cookies, so a spec never shells out to bench.
 export async function adminGet(page, method, params = {}) {
-  return apiGet(page, 'ls_shop.api.admin.' + method, params)
+  return apiGet(page, 'commera.api.admin.' + method, params)
 }
 
 export async function adminPost(page, method, body = {}) {
-  return apiPost(page, 'ls_shop.api.admin.' + method, body)
+  return apiPost(page, 'commera.api.admin.' + method, body)
 }
 
 export async function apiGet(page, method, params = {}) {

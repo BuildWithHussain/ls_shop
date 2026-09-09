@@ -13,7 +13,7 @@ const props = defineProps({
   label: { type: String, required: true },
   format: { type: String, default: 'number' },
   description: { type: String, default: undefined },
-  // No popover, no pencil — for a value ls_shop has nothing to write to yet
+  // No popover, no pencil — for a value commera has nothing to write to yet
   // (see callers for why), shown as the same tabular-nums text either way.
   readonly: { type: Boolean, default: false },
 })

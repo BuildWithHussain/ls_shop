@@ -12,7 +12,7 @@ const route = useRoute()
 
 const activeTarget = computed(() => activeNavTarget(route.path))
 
-// The store's own name, read once for the shell. Reading Lifestyle Settings
+// The store's own name, read once for the shell. Reading Commera Settings
 // takes a permission not every member of staff holds, and this is a subtitle:
 // a refusal leaves it blank, the way an unconfigured site does, rather than
 // toasting an error over every page a picker or a cashier opens.

@@ -1,6 +1,6 @@
-# LS Shop - Complete Setup Guide
+# Commera - Complete Setup Guide
 
-This guide will walk you through setting up LS Shop from installation to publishing your first product on the website.
+This guide will walk you through setting up Commera from installation to publishing your first product on the website.
 
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
@@ -16,12 +16,12 @@ This guide will walk you through setting up LS Shop from installation to publish
 
 ## Prerequisites
 
-Before installing LS Shop, ensure you have the following:
+Before installing Commera, ensure you have the following:
 
 ### Required Apps
 - **Frappe Framework** (v13 or higher)
 - **ERPNext** (must be installed first)
-- **Webshop** (dependency for LS Shop)
+- **Webshop** (dependency for Commera)
 - **Payments** (for payment gateway integration)
 
 ### System Requirements
@@ -30,7 +30,7 @@ Before installing LS Shop, ensure you have the following:
 - Database: MariaDB/PostgreSQL
 
 ### ERPNext Setup Requirements
-Before installing LS Shop, ensure these are configured in ERPNext:
+Before installing Commera, ensure these are configured in ERPNext:
 - ✅ Company created and configured
 - ✅ Default Warehouse created
 - ✅ Price Lists created (e.g., "Standard Selling")
@@ -43,11 +43,11 @@ Before installing LS Shop, ensure these are configured in ERPNext:
 
 ### Quick Start with Demo Data
 
-If you want to quickly test LS Shop with demo products, you have two options:
+If you want to quickly test Commera with demo products, you have two options:
 
-#### Option 1: Using Lifestyle Settings (Recommended)
+#### Option 1: Using Commera Settings (Recommended)
 
-1. Navigate to: **Desk → Lifestyle Shop Ecommerce → Lifestyle Settings**
+1. Navigate to: **Desk → Commera Ecommerce → Commera Settings**
 2. Scroll to **Demo Data & Testing** section
 3. Click **"Install Demo Data"** button
 4. Wait for completion notification
@@ -57,12 +57,12 @@ If you want to quickly test LS Shop with demo products, you have two options:
 #### Option 2: Using Command Line
 
 ```bash
-# After installing ls_shop
-bench --site your-site-name execute ls_shop.install_pixio_demo.install_pixio_demo
+# After installing commera
+bench --site your-site-name execute commera.install_pixio_demo.install_pixio_demo
 ```
 
 This seeds the Pixio storefront in **SAR**. Pass `--kwargs '{"currency": "INR"}'` for a rupee store;
-the supported currencies are the keys of `CURRENCY_PROFILES` in `ls_shop/install_pixio_demo.py`.
+the supported currencies are the keys of `CURRENCY_PROFILES` in `commera/install_pixio_demo.py`.
 The seeder is idempotent — run it as often as you like.
 
 Currency is a parameter, not a constant: one run puts the system default, the company, every account
@@ -79,17 +79,17 @@ Five commands take you from an empty bench to a storefront that can complete a p
 SITE=ls-shop-sar.localhost
 
 bench new-site $SITE --admin-password admin
-bench --site $SITE install-app erpnext ls_shop
+bench --site $SITE install-app erpnext commera
 bench --site $SITE execute frappe.desk.page.setup_wizard.setup_wizard.setup_complete --kwargs '{"args": {"language": "en", "country": "Saudi Arabia", "timezone": "Asia/Riyadh", "currency": "SAR", "company_name": "Lifestyle Demo", "company_abbr": "LSD", "chart_of_accounts": "Standard", "fy_start_date": "2026-01-01", "fy_end_date": "2026-12-31", "full_name": "Administrator", "email": "admin@example.com", "password": "admin"}}'
 bench --site $SITE migrate
-bench --site $SITE execute ls_shop.install_pixio_demo.install_pixio_demo --kwargs '{"currency": "SAR"}'
+bench --site $SITE execute commera.install_pixio_demo.install_pixio_demo --kwargs '{"currency": "SAR"}'
 ```
 
 Two things about that order are load-bearing:
 
 - **`bench migrate` before the seeder.** `Shop Theme` records sync on migrate and not on install-app,
   so activating the Pixio theme straight after install throws "Could not find Active Theme".
-- **The setup wizard will log `MandatoryError: [Item Group, ...]: custom_displayname`.** ls_shop makes
+- **The setup wizard will log `MandatoryError: [Item Group, ...]: custom_displayname`.** commera makes
   that field mandatory, so ERPNext cannot insert its own stock groups. The wizard still completes and
   the storefront does not use those groups; the errors are noise.
 
@@ -100,8 +100,8 @@ Two things about that order are load-bearing:
 - ✅ Shipping Rule (Free shipping over $50)
 - ✅ 3 Demo Products with variants (~40 SKUs)
 - ✅ Style Attribute Configurators & Variants
-- ✅ Configured Lifestyle Settings
-- ✅ Published to website with LS Shop routes
+- ✅ Configured Commera Settings
+- ✅ Published to website with Commera routes
 
 After installation, immediately visit:
 - `https://your-site.com/en/products` to see the demo store
@@ -127,17 +127,17 @@ bench get-app payments
 bench --site your-site-name install-app payments
 ```
 
-### Step 2: Install LS Shop
+### Step 2: Install Commera
 
 ```bash
-# Get the LS Shop app
-bench get-app https://github.com/BuildWithHussain/ls_shop
+# Get the Commera app
+bench get-app https://github.com/BuildWithHussain/commera
 
 # Install on your site
-bench --site your-site-name install-app ls_shop
+bench --site your-site-name install-app commera
 
 # Build assets
-bench build --app ls_shop
+bench build --app commera
 ```
 
 ### Step 3: Restart Services
@@ -148,7 +148,7 @@ bench restart
 
 ### Step 4: Verify Installation
 
-After installation, LS Shop will automatically create:
+After installation, Commera will automatically create:
 - ✅ Ecommerce Item Groups (All Item Groups → Ecommerce Website → Men, Women, Kids)
 - ✅ Email Templates (Order Confirmation, Order Cancellation, Item In Stock)
 - ✅ Payment Mode: Telr
@@ -160,9 +160,9 @@ Check that these were created successfully by navigating to:
 
 ## Initial Configuration
 
-### Step 1: Configure Lifestyle Settings
+### Step 1: Configure Commera Settings
 
-Navigate to: **Desk → Lifestyle Shop Ecommerce → Lifestyle Settings**
+Navigate to: **Desk → Commera Ecommerce → Commera Settings**
 
 #### A. Price List Configuration
 1. **Default Price List**: Select your main selling price list (e.g., "Standard Selling")
@@ -178,7 +178,7 @@ Navigate to: **Desk → Lifestyle Shop Ecommerce → Lifestyle Settings**
    - Navigate to **Desk → Selling → Shipping Rule**
    - Create a new Shipping Rule based on "Net Total"
    - Example: Free shipping above $100, else $10 flat rate
-   - Select this rule in Lifestyle Settings
+   - Select this rule in Commera Settings
 
 2. **Return Period**: Enter number of days customers can return items (e.g., 14, 30)
 
@@ -239,7 +239,7 @@ Fill in the following fields:
 - **Item Group**: Select from e-commerce groups (Men, Women, Kids)
 - **Default Unit of Measure**: pcs, nos, etc.
 
-**Custom Fields (LS Shop specific):**
+**Custom Fields (Commera specific):**
 - **DisplayName**: Short display name (e.g., "Cotton Tee")
 - **Ecommerce Display Name**: Full e-commerce name (e.g., "Classic Cotton T-Shirt")
 
@@ -315,7 +315,7 @@ Save the item template.
 
 #### Step 2: Create Style Attribute Configurator (SAC)
 
-Navigate to: **Desk → Lifestyle Shop Ecommerce → Style Attribute Configurator → New**
+Navigate to: **Desk → Commera Ecommerce → Style Attribute Configurator → New**
 
 1. **Item Template**: Select your template (e.g., "TSHIRT-CLASSIC-TEMPLATE")
 2. **Item Attribute**: Select primary attribute (usually "Color")
@@ -324,7 +324,7 @@ Navigate to: **Desk → Lifestyle Shop Ecommerce → Style Attribute Configurato
 
 #### Step 3: Create Style Attribute Variants (SAV)
 
-Navigate to: **Desk → Lifestyle Shop Ecommerce → Style Attribute Variant → New**
+Navigate to: **Desk → Commera Ecommerce → Style Attribute Variant → New**
 
 For each color variant:
 
@@ -347,7 +347,7 @@ Repeat for each color variant.
 #### Step 4: Publish Variants
 
 After saving all SAV records:
-1. Go back to **Lifestyle Settings**
+1. Go back to **Commera Settings**
 2. Click "Publish Variants for All Templates"
 3. This creates all variant combinations and publishes them to the website
 
@@ -390,7 +390,7 @@ For each e-commerce group (Men, Women, Kids):
 
 ### Default Routes
 
-The LS Shop frontend uses URL-based language routing:
+The Commera frontend uses URL-based language routing:
 
 **English Routes:**
 - Homepage: `https://your-site.com/en`
@@ -426,31 +426,31 @@ The LS Shop frontend uses URL-based language routing:
 
 #### Bulk Image Upload
 For uploading multiple product images at once:
-1. Navigate to: **Desk → Lifestyle Shop Ecommerce → Bulk Image Upload**
+1. Navigate to: **Desk → Commera Ecommerce → Bulk Image Upload**
 2. Follow the tool to upload images in bulk
 
 #### Bulk Variant Publishing
 To publish multiple variants at once:
-1. Navigate to: **Lifestyle Settings → Bulk Actions / Import Tab**
+1. Navigate to: **Commera Settings → Bulk Actions / Import Tab**
 2. Use "Publish Variants for All Templates" button
 
 ### Landing Page Configuration
 
 Configure hero banners and featured sections:
-1. Navigate to: **Desk → Lifestyle Shop Ecommerce → Landing Page Settings**
+1. Navigate to: **Desk → Commera Ecommerce → Landing Page Settings**
 2. Add hero banners, featured categories, and promotional sections
 
 ### Size Charts
 
 Add size charts for products:
-1. Navigate to: **Desk → Lifestyle Shop Ecommerce → Size Chart**
+1. Navigate to: **Desk → Commera Ecommerce → Size Chart**
 2. Create size charts for different item groups
 3. Link to items or item groups
 
 ### Payment Gateway Configuration
 
 #### Telr Payment Gateway
-1. Navigate to: **Desk → Lifestyle Shop Ecommerce → Telr Settings**
+1. Navigate to: **Desk → Commera Ecommerce → Telr Settings**
 2. Enter:
    - Store ID
    - Auth Key
@@ -466,7 +466,7 @@ bench --site your-site-name install-app tabby_frappe
 
 ### Multi-Store Support
 
-LS Shop supports multiple physical store locations for pickup orders.
+Commera supports multiple physical store locations for pickup orders.
 
 ---
 
@@ -527,7 +527,7 @@ bench --site your-site-name clear-website-cache
 
 2. **Rebuild assets:**
 ```bash
-bench build --app ls_shop
+bench build --app commera
 ```
 
 3. **Restart services:**
@@ -551,7 +551,7 @@ bench restart
    - Test mode vs Live mode settings
    - API credentials are correct
 
-2. **Check Lifestyle Settings:**
+2. **Check Commera Settings:**
    - Payment modes are enabled
    - COD settings are configured if using COD
 
@@ -599,7 +599,7 @@ bench --site your-site-name mariadb
 
 - **Documentation**: [ERPNext E-Commerce Docs](https://docs.erpnext.com/docs/user/manual/en/e_commerce)
 - **Community Forum**: [Frappe Forum](https://discuss.frappe.io/)
-- **GitHub Issues**: [LS Shop Issues](https://github.com/BuildWithHussain/ls_shop/issues)
+- **GitHub Issues**: [Commera Issues](https://github.com/BuildWithHussain/commera/issues)
 
 ### Common Support Channels
 
@@ -609,7 +609,7 @@ bench --site your-site-name mariadb
    - Steps to reproduce
    - Screenshots if applicable
 
-2. Post on Frappe Forum with tag `ls_shop`
+2. Post on Frappe Forum with tag `commera`
 
 ---
 
@@ -629,11 +629,11 @@ After completing this setup:
 
 ## Credits
 
-LS Shop is developed and maintained by **BWH Studios** - Specializing in Frappe customizations and consulting.
+Commera is developed and maintained by **BWH Studios** - Specializing in Frappe customizations and consulting.
 
 ---
 
 **Last Updated**: 2025-10-03
 **Version**: 1.0
 
-For the latest updates and detailed documentation, visit the [LS Shop GitHub Repository](https://github.com/BuildWithHussain/ls_shop).
+For the latest updates and detailed documentation, visit the [Commera GitHub Repository](https://github.com/BuildWithHussain/commera).

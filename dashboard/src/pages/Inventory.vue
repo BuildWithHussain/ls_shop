@@ -22,7 +22,7 @@ function endSelecting() {
   selection.value = []
 }
 
-// ls_shop is single-warehouse (Bin, resolved server-side from Lifestyle Settings) — the mock's
+// commera is single-warehouse (Bin, resolved server-side from Commera Settings) — the mock's
 // per-row `locationId` never varied, and there is no pagination control in this frozen layout
 // either, so one generous page stands in for it (same call as Attributes.vue/Collections.vue).
 const inventoryRequest = useAdminRead('inventory.get_inventory', {
@@ -42,7 +42,7 @@ function availableStock(item) {
 
 const receiveAction = useAdminAction('inventory.receive_stock')
 
-// ls_shop only exposes receiving stock in (Style Attribute Variant.receive_stock, additive) —
+// commera only exposes receiving stock in (Style Attribute Variant.receive_stock, additive) —
 // there is no "set on-hand to X" or reason-coded adjustment endpoint, so "Adjust quantity" here
 // can only mean a receipt: a dialog asks for one quantity, applied to every selected line, the
 // same one-value-to-many-rows pattern VariantEditor.vue's bulk price editor already uses.
@@ -150,7 +150,7 @@ function adjust() {
             </span>
           </ListCell>
           <ListCell>
-            <!-- Read-only: this is the real on-hand number, and ls_shop has no "set to X" write
+            <!-- Read-only: this is the real on-hand number, and commera has no "set to X" write
                  for it — the only write here is the additive receive above (same convention as
                  ProductStock.vue's on-hand column). -->
             <TextInput :model-value="String(item.stock)" size="sm" class="w-16" disabled />

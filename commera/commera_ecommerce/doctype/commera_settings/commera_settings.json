@@ -1,0 +1,871 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-03-29 16:14:22.177674",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "branding_section",
+  "store_name",
+  "company",
+  "column_break_brand",
+  "brand_logo",
+  "footer_logo",
+  "column_break_favicon",
+  "favicon",
+  "cod_section",
+  "cod_charge_applicable_below",
+  "charge_account_head",
+  "column_break_nnvn",
+  "cod_charge",
+  "ecommerce_warehouse",
+  "price_list_section",
+  "default_price_list",
+  "column_break_sgnu",
+  "sale_price_list",
+  "delivery_section",
+  "shipping_rule",
+  "reason_for_return",
+  "column_break_pkyw",
+  "return_period",
+  "print_format",
+  "payment_mode_section",
+  "column_break_iirq",
+  "column_break_oopm",
+  "cod_enabled",
+  "bulk_import_tab",
+  "create_variants_automatically_on_configurator_creation",
+  "section_break_ekez",
+  "based_on_attribute",
+  "attribute_name_field",
+  "publish_variants_for_all_templates",
+  "view_logs",
+  "search_tab",
+  "search_content_section",
+  "search_content_fields",
+  "search_result_section",
+  "search_result_fields",
+  "rebuild_search_index",
+  "demo_data_section",
+  "install_demo_data",
+  "column_break_demo",
+  "publish_all_items",
+  "item_group_section",
+  "ecommerce_item_group_mapping",
+  "sync_item_group_mapping_to_ecommerce_items",
+  "contact_information_tab",
+  "contact_phone",
+  "column_break_contact",
+  "contact_email",
+  "working_hours",
+  "social_media_tab",
+  "facebook_url",
+  "twitter_url",
+  "column_break_social",
+  "instagram_url",
+  "snapchat_url",
+  "column_break_social2",
+  "tiktok_url",
+  "seo_tab",
+  "seo_global_defaults_section",
+  "seo_title_template",
+  "default_meta_description",
+  "default_share_image",
+  "seo_homepage_section",
+  "homepage_meta_title",
+  "homepage_meta_description",
+  "homepage_og_image",
+  "seo_product_list_section",
+  "product_list_meta_title",
+  "product_list_meta_description",
+  "product_list_og_image",
+  "seo_social_section",
+  "twitter_handle",
+  "seo_crawlers_section",
+  "sitemap_urls_per_page",
+  "llms_txt",
+  "footer_customization_tab",
+  "newsletter_title",
+  "column_break_newsletter",
+  "newsletter_description",
+  "section_break_footer_assets",
+  "payment_methods_image",
+  "column_break_footer_assets",
+  "vat_certificate_image",
+  "section_break_copyright",
+  "copyright_text",
+  "section_break_footer_sections",
+  "footer_sections",
+  "footer_editor",
+  "color_scheme_tab",
+  "primary_color",
+  "primary_hover_color",
+  "column_break_colors1",
+  "link_color",
+  "link_hover_color",
+  "column_break_colors2",
+  "accent_color",
+  "border_accent_color",
+  "section_break_ui_colors",
+  "button_bg_color",
+  "badge_bg_color",
+  "strikethrough_color",
+  "column_break_ui_colors1",
+  "heading_accent_color",
+  "brand_text_color",
+  "column_break_ui_colors2",
+  "secondary_accent_color",
+  "form_accent_color",
+  "focus_ring_color",
+  "section_break_footer_colors",
+  "footer_bg_color",
+  "column_break_footer_colors",
+  "footer_text_color",
+  "navbar_tab",
+  "navbar_editor",
+  "communication_tab",
+  "order_section",
+  "order_confirmation_email_template",
+  "item_in_stock_email_template",
+  "column_break_tald",
+  "order_cancellation_email_template",
+  "logo_url",
+  "email_section",
+  "cc_email"
+ ],
+ "fields": [
+  {
+   "fieldname": "branding_section",
+   "fieldtype": "Section Break",
+   "label": "Branding"
+  },
+  {
+   "description": "Name displayed in browser tab and site title",
+   "fieldname": "store_name",
+   "fieldtype": "Data",
+   "label": "Store Name"
+  },
+  {
+   "fieldname": "column_break_brand",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Logo displayed in header navigation",
+   "fieldname": "brand_logo",
+   "fieldtype": "Attach Image",
+   "label": "Brand Logo"
+  },
+  {
+   "description": "Logo displayed in footer",
+   "fieldname": "footer_logo",
+   "fieldtype": "Attach Image",
+   "label": "Footer Logo"
+  },
+  {
+   "fieldname": "column_break_favicon",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Icon displayed in browser tab (16x16 or 32x32 px)",
+   "fieldname": "favicon",
+   "fieldtype": "Attach",
+   "label": "Favicon"
+  },
+  {
+   "fieldname": "delivery_section",
+   "fieldtype": "Section Break",
+   "label": "Shipping & Returns"
+  },
+  {
+   "fieldname": "shipping_rule",
+   "fieldtype": "Link",
+   "label": "Shipping Rule",
+   "link_filters": "[[\"Shipping Rule\",\"calculate_based_on\",\"=\",\"Net Total\"],[\"Shipping Rule\",\"disabled\",\"=\",0]]",
+   "options": "Shipping Rule"
+  },
+  {
+   "fieldname": "cod_section",
+   "fieldtype": "Section Break",
+   "label": "Cash on Delivery"
+  },
+  {
+   "fieldname": "column_break_nnvn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cod_charge",
+   "fieldtype": "Currency",
+   "label": "COD Charge"
+  },
+  {
+   "fieldname": "cod_charge_applicable_below",
+   "fieldtype": "Currency",
+   "label": "COD Charge Applicable Below"
+  },
+  {
+   "fieldname": "charge_account_head",
+   "fieldtype": "Link",
+   "label": "Charge Account Head",
+   "options": "Account"
+  },
+  {
+   "fieldname": "ecommerce_warehouse",
+   "fieldtype": "Link",
+   "label": "Ecommerce Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "column_break_pkyw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "return_period",
+   "fieldtype": "Int",
+   "hide_seconds": 1,
+   "label": "Return Period (Days) After Invoice Generated",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "price_list_section",
+   "fieldtype": "Section Break",
+   "label": "Price List"
+  },
+  {
+   "fieldname": "default_price_list",
+   "fieldtype": "Link",
+   "label": "Default Price List",
+   "options": "Price List"
+  },
+  {
+   "fieldname": "column_break_sgnu",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sale_price_list",
+   "fieldtype": "Link",
+   "label": "Sale Price List",
+   "options": "Price List"
+  },
+  {
+   "fieldname": "reason_for_return",
+   "fieldtype": "Table",
+   "label": "Reason for Return",
+   "options": "Return Reason"
+  },
+  {
+   "fieldname": "print_format",
+   "fieldtype": "Link",
+   "label": "Print Format",
+   "link_filters": "[[\"Print Format\",\"doc_type\",\"=\",\"Sales Invoice\"]]",
+   "options": "Print Format"
+  },
+  {
+   "fieldname": "bulk_import_tab",
+   "fieldtype": "Tab Break",
+   "label": "Bulk Actions / Import"
+  },
+  {
+   "default": "0",
+   "fieldname": "create_variants_automatically_on_configurator_creation",
+   "fieldtype": "Check",
+   "label": "Create variants automatically on Configurator Creation"
+  },
+  {
+   "fieldname": "publish_variants_for_all_templates",
+   "fieldtype": "Button",
+   "label": "Publish Variants for All Templates"
+  },
+  {
+   "fieldname": "section_break_ekez",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "based_on_attribute",
+   "fieldtype": "Link",
+   "label": "Based on Attribute",
+   "options": "Item Attribute"
+  },
+  {
+   "fieldname": "communication_tab",
+   "fieldtype": "Tab Break",
+   "label": "Communication"
+  },
+  {
+   "fieldname": "order_section",
+   "fieldtype": "Section Break",
+   "label": "Order"
+  },
+  {
+   "fieldname": "order_confirmation_email_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Order Confirmation Email Template",
+   "options": "Email Template",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_tald",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "order_cancellation_email_template",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Order Cancellation Email Template",
+   "options": "Email Template",
+   "reqd": 1
+  },
+  {
+   "fieldname": "logo_url",
+   "fieldtype": "Data",
+   "label": "Logo URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "item_in_stock_email_template",
+   "fieldtype": "Link",
+   "label": "Item In Stock Email Template",
+   "options": "Email Template",
+   "reqd": 1
+  },
+  {
+   "fieldname": "item_group_section",
+   "fieldtype": "Section Break",
+   "label": "Item Group"
+  },
+  {
+   "fieldname": "contact_information_tab",
+   "fieldtype": "Tab Break",
+   "label": "Contact Information"
+  },
+  {
+   "fieldname": "contact_phone",
+   "fieldtype": "Data",
+   "label": "Contact Phone"
+  },
+  {
+   "fieldname": "column_break_contact",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "contact_email",
+   "fieldtype": "Data",
+   "label": "Contact Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "working_hours",
+   "fieldtype": "Data",
+   "label": "Working Hours"
+  },
+  {
+   "fieldname": "social_media_tab",
+   "fieldtype": "Tab Break",
+   "label": "Social Media"
+  },
+  {
+   "fieldname": "facebook_url",
+   "fieldtype": "Data",
+   "label": "Facebook URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "twitter_url",
+   "fieldtype": "Data",
+   "label": "Twitter/X URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "column_break_social",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "instagram_url",
+   "fieldtype": "Data",
+   "label": "Instagram URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "snapchat_url",
+   "fieldtype": "Data",
+   "label": "Snapchat URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "column_break_social2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tiktok_url",
+   "fieldtype": "Data",
+   "label": "TikTok URL",
+   "options": "URL"
+  },
+  {
+   "fieldname": "footer_customization_tab",
+   "fieldtype": "Tab Break",
+   "label": "Footer Customization"
+  },
+  {
+   "fieldname": "newsletter_title",
+   "fieldtype": "Data",
+   "label": "Newsletter Title"
+  },
+  {
+   "fieldname": "column_break_newsletter",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "newsletter_description",
+   "fieldtype": "Text",
+   "label": "Newsletter Description"
+  },
+  {
+   "fieldname": "section_break_footer_assets",
+   "fieldtype": "Section Break",
+   "label": "Footer Assets"
+  },
+  {
+   "fieldname": "payment_methods_image",
+   "fieldtype": "Attach Image",
+   "label": "Payment Methods Image"
+  },
+  {
+   "fieldname": "column_break_footer_assets",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "vat_certificate_image",
+   "fieldtype": "Attach Image",
+   "label": "VAT Certificate Image"
+  },
+  {
+   "fieldname": "section_break_copyright",
+   "fieldtype": "Section Break",
+   "label": "Copyright & Legal"
+  },
+  {
+   "fieldname": "copyright_text",
+   "fieldtype": "Data",
+   "label": "Copyright Text"
+  },
+  {
+   "fieldname": "section_break_footer_sections",
+   "fieldtype": "Section Break",
+   "label": "Footer Sections"
+  },
+  {
+   "fieldname": "footer_sections",
+   "fieldtype": "Table",
+   "label": "Footer Sections",
+   "options": "Footer Section Mapping"
+  },
+  {
+   "fieldname": "color_scheme_tab",
+   "fieldtype": "Tab Break",
+   "label": "Color Scheme"
+  },
+  {
+   "default": "#b91c1c",
+   "fieldname": "primary_color",
+   "fieldtype": "Color",
+   "label": "Primary Color"
+  },
+  {
+   "default": "#991b1b",
+   "fieldname": "primary_hover_color",
+   "fieldtype": "Color",
+   "label": "Primary Hover Color"
+  },
+  {
+   "fieldname": "column_break_colors1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#7f1d1d",
+   "fieldname": "link_color",
+   "fieldtype": "Color",
+   "label": "Link Color"
+  },
+  {
+   "default": "#991b1b",
+   "fieldname": "link_hover_color",
+   "fieldtype": "Color",
+   "label": "Link Hover Color"
+  },
+  {
+   "fieldname": "column_break_colors2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#b91c1c",
+   "fieldname": "accent_color",
+   "fieldtype": "Color",
+   "label": "Accent Color"
+  },
+  {
+   "default": "#b91c1c",
+   "fieldname": "border_accent_color",
+   "fieldtype": "Color",
+   "label": "Border Accent Color"
+  },
+  {
+   "fieldname": "section_break_ui_colors",
+   "fieldtype": "Section Break",
+   "label": "UI Element Colors"
+  },
+  {
+   "default": "#b91c1c",
+   "fieldname": "button_bg_color",
+   "fieldtype": "Color",
+   "label": "Button Background Color"
+  },
+  {
+   "fieldname": "column_break_ui_colors1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#b91c1c",
+   "fieldname": "strikethrough_color",
+   "fieldtype": "Color",
+   "label": "Strikethrough Text Color"
+  },
+  {
+   "default": "#b91c1c",
+   "fieldname": "badge_bg_color",
+   "fieldtype": "Color",
+   "label": "Badge Background Color"
+  },
+  {
+   "fieldname": "column_break_ui_colors2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#991b1b",
+   "fieldname": "heading_accent_color",
+   "fieldtype": "Color",
+   "label": "Heading Accent Color"
+  },
+  {
+   "default": "#b91c1c",
+   "fieldname": "brand_text_color",
+   "fieldtype": "Color",
+   "label": "Brand Text Color"
+  },
+  {
+   "default": "#991b1b",
+   "fieldname": "secondary_accent_color",
+   "fieldtype": "Color",
+   "label": "Secondary Accent Color"
+  },
+  {
+   "default": "#b91c1c",
+   "fieldname": "form_accent_color",
+   "fieldtype": "Color",
+   "label": "Form Accent Color"
+  },
+  {
+   "default": "#b91c1c",
+   "fieldname": "focus_ring_color",
+   "fieldtype": "Color",
+   "label": "Focus Ring Color"
+  },
+  {
+   "fieldname": "section_break_footer_colors",
+   "fieldtype": "Section Break",
+   "label": "Footer Colors"
+  },
+  {
+   "default": "#111827",
+   "fieldname": "footer_bg_color",
+   "fieldtype": "Color",
+   "label": "Footer Background Color"
+  },
+  {
+   "fieldname": "column_break_footer_colors",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "#ffffff",
+   "fieldname": "footer_text_color",
+   "fieldtype": "Color",
+   "label": "Footer Text Color"
+  },
+  {
+   "fieldname": "ecommerce_item_group_mapping",
+   "fieldtype": "Table",
+   "label": "eCommerce Item Group Mapping",
+   "options": "Item Group Map"
+  },
+  {
+   "fieldname": "sync_item_group_mapping_to_ecommerce_items",
+   "fieldtype": "Button",
+   "label": "Sync Item Group Mapping to Existing Items"
+  },
+  {
+   "fieldname": "payment_mode_section",
+   "fieldtype": "Section Break",
+   "label": "Payment Mode"
+  },
+  {
+   "fieldname": "column_break_iirq",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_oopm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "fieldname": "cod_enabled",
+   "fieldtype": "Check",
+   "label": "COD"
+  },
+  {
+   "fieldname": "email_section",
+   "fieldtype": "Section Break",
+   "label": "Email"
+  },
+  {
+   "fieldname": "cc_email",
+   "fieldtype": "Data",
+   "label": "CC Email",
+   "options": "Email"
+  },
+  {
+   "fieldname": "attribute_name_field",
+   "fieldtype": "Data",
+   "label": "Attribute Name Field"
+  },
+  {
+   "fieldname": "view_logs",
+   "fieldtype": "Button",
+   "label": "View Logs"
+  },
+  {
+   "fieldname": "search_tab",
+   "fieldtype": "Tab Break",
+   "label": "Search"
+  },
+  {
+   "fieldname": "search_content_section",
+   "fieldtype": "Section Break",
+   "label": "Indexed Content Fields"
+  },
+  {
+   "description": "Fields joined into the product search index's searchable text. Leave empty to use the defaults.",
+   "fieldname": "search_content_fields",
+   "fieldtype": "Table",
+   "label": "Search Content Fields",
+   "options": "Search Content Field"
+  },
+  {
+   "fieldname": "search_result_section",
+   "fieldtype": "Section Break",
+   "label": "Search Result Card"
+  },
+  {
+   "description": "Attributes shown on each search result card. Leave empty to use the default layout.",
+   "fieldname": "search_result_fields",
+   "fieldtype": "Table",
+   "label": "Search Result Fields",
+   "options": "Search Result Field"
+  },
+  {
+   "fieldname": "rebuild_search_index",
+   "fieldtype": "Button",
+   "label": "Rebuild Search Index"
+  },
+  {
+   "fieldname": "demo_data_section",
+   "fieldtype": "Section Break",
+   "label": "Demo Data & Testing"
+  },
+  {
+   "fieldname": "install_demo_data",
+   "fieldtype": "Button",
+   "label": "Install Demo Data"
+  },
+  {
+   "fieldname": "column_break_demo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "publish_all_items",
+   "fieldtype": "Button",
+   "label": "Publish All Items to Website"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "seo_tab",
+   "fieldtype": "Tab Break",
+   "label": "SEO"
+  },
+  {
+   "fieldname": "seo_global_defaults_section",
+   "fieldtype": "Section Break",
+   "label": "Global Defaults"
+  },
+  {
+   "default": "{title} | {store}",
+   "description": "Template for browser/meta titles. Placeholders: {title} (page title) and {store} (store name).",
+   "fieldname": "seo_title_template",
+   "fieldtype": "Data",
+   "label": "SEO Title Template"
+  },
+  {
+   "description": "Fallback meta description used when a page sets none.",
+   "fieldname": "default_meta_description",
+   "fieldtype": "Small Text",
+   "label": "Default Meta Description"
+  },
+  {
+   "description": "Fallback Open Graph / Twitter share image (1200x630 recommended).",
+   "fieldname": "default_share_image",
+   "fieldtype": "Attach Image",
+   "label": "Default Share Image"
+  },
+  {
+   "fieldname": "seo_homepage_section",
+   "fieldtype": "Section Break",
+   "label": "Homepage"
+  },
+  {
+   "fieldname": "homepage_meta_title",
+   "fieldtype": "Data",
+   "label": "Homepage Meta Title"
+  },
+  {
+   "fieldname": "homepage_meta_description",
+   "fieldtype": "Small Text",
+   "label": "Homepage Meta Description"
+  },
+  {
+   "description": "Open Graph image for the homepage (1200x630 recommended).",
+   "fieldname": "homepage_og_image",
+   "fieldtype": "Attach Image",
+   "label": "Homepage OG Image"
+  },
+  {
+   "fieldname": "seo_product_list_section",
+   "fieldtype": "Section Break",
+   "label": "Product Listing"
+  },
+  {
+   "fieldname": "product_list_meta_title",
+   "fieldtype": "Data",
+   "label": "Product List Meta Title"
+  },
+  {
+   "fieldname": "product_list_meta_description",
+   "fieldtype": "Small Text",
+   "label": "Product List Meta Description"
+  },
+  {
+   "description": "Open Graph image for the all-products listing page (1200x630 recommended).",
+   "fieldname": "product_list_og_image",
+   "fieldtype": "Attach Image",
+   "label": "Product List OG Image"
+  },
+  {
+   "fieldname": "seo_social_section",
+   "fieldtype": "Section Break",
+   "label": "Social"
+  },
+  {
+   "description": "Twitter/X @handle for twitter:site and twitter:creator (include the leading @).",
+   "fieldname": "twitter_handle",
+   "fieldtype": "Data",
+   "label": "Twitter Handle"
+  },
+  {
+   "fieldname": "seo_crawlers_section",
+   "fieldtype": "Section Break",
+   "label": "Crawlers & AI"
+  },
+  {
+   "default": "50000",
+   "description": "Maximum URLs per generated sitemap file. sitemaps.org caps a single sitemap at 50,000 URLs; leave at the default unless you have a reason to lower it.",
+   "fieldname": "sitemap_urls_per_page",
+   "fieldtype": "Int",
+   "label": "Sitemap URLs Per Page"
+  },
+  {
+   "description": "Content served at /llms.txt for AI crawlers. Leave blank to use the built-in default.",
+   "fieldname": "llms_txt",
+   "fieldtype": "Code",
+   "label": "llms.txt Content"
+  },
+  {
+   "fieldname": "navbar_tab",
+   "fieldtype": "Tab Break",
+   "label": "Navbar"
+  },
+  {
+   "fieldname": "navbar_editor",
+   "fieldtype": "HTML",
+   "label": "Navbar Editor",
+   "description": "Manage the storefront's top navigation tabs, columns, links and brands here instead of jumping between Ecommerce Category, Item Group and Brand."
+  },
+  {
+   "fieldname": "footer_editor",
+   "fieldtype": "HTML",
+   "label": "Footer Editor",
+   "description": "Manage footer columns and links here instead of jumping between Footer Section Config and Footer Link."
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-04-29 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Commera Ecommerce",
+ "name": "Commera Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Website Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Administrator",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "All"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

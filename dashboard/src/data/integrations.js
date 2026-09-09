@@ -5,7 +5,7 @@ import { getIntegrationLogo, letterPlate } from '../components/integrations/logo
 // The vendor's own colour, and the one place in the app where non-semantic colour is
 // correct: it is the thing being recognised. Presentation only — everything else about
 // an integration (its fields, whether it is live, what it still needs) comes from the
-// server, so adding a provider to a registry in `ls_shop/api/admin/` is enough to make
+// server, so adding a provider to a registry in `commera/api/admin/` is enough to make
 // it appear here. A provider with no entry still renders, just without its colours.
 const BRAND_MARKS = {
   razorpay: { mark: 'R', brand: '#0C2451' },

@@ -1,7 +1,7 @@
 # Commera dashboard — house law
 
 The admin SPA: Vite + Vue 3 (`<script setup>`, Composition API) + frappe-ui, served at
-`/commera`. It talks to `ls_shop.api.admin.*` and to nothing else.
+`/commera`. It talks to `commera.api.admin.*` and to nothing else.
 
 **This file overrides the repo-root and global CLAUDE.md for everything under `dashboard/`.**
 The global file's frontend doctrine ("Jinja + Tailwind + Alpine, no SPA frameworks") is written
@@ -16,7 +16,7 @@ Every read and write goes through `data/api.js`:
 
 | helper | use |
 | --- | --- |
-| `useAdminRead(path, options)` | GET an `ls_shop.api.admin.*` method |
+| `useAdminRead(path, options)` | GET an `commera.api.admin.*` method |
 | `useAdminAction(path, options)` | POST one; `immediate: false`, fires on `.submit()` |
 | `useMethodRead` / `useMethodAction` | full dotted path, for an endpoint shared with Desk |
 | `createAdminCaller(modulePath)` | a module whose screen calls many of its methods |
@@ -127,7 +127,7 @@ findings against defaults this codebase does not follow. Do not treat it as a ga
 
 ```
 npm run dev                # browse the site at <site>:8080, NOT the vite port
-npm run build             # → ../ls_shop/public/commera + ../ls_shop/www/commera.html
+npm run build             # → ../commera/public/commera + ../commera/www/commera.html
 npm run test:e2e          # needs a build first; check-build.js enforces it
 ```
 

@@ -94,7 +94,7 @@ async function save() {
         <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormControl v-model.number="price" type="number" label="Price" />
           <FormControl v-model.number="compareAt" type="number" label="Compare at" />
-          <!-- Read-only: ls_shop only exposes receiving stock (additive), not setting
+          <!-- Read-only: commera only exposes receiving stock (additive), not setting
                on-hand to an arbitrary number. -->
           <FormControl :model-value="String(onHand)" type="number" label="On hand" disabled />
           <FormControl :model-value="String(committed)" type="number" label="Committed" disabled />

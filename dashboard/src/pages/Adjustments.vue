@@ -8,7 +8,7 @@ import { useAdminRead } from '../data/api'
 import { shortDate } from '../data/format'
 import { ia } from '../ia/store'
 
-// ls_shop keeps no adjustment-with-reason ledger of its own — the only stock write anywhere in
+// commera keeps no adjustment-with-reason ledger of its own — the only stock write anywhere in
 // the app is Style Attribute Variant.receive_stock (additive-only, see Inventory.vue). Rather
 // than fake a ledger, this reads the real one ERPNext already keeps for every stock-affecting
 // document (Stock Ledger Entry) against the shop's own warehouse. In this dataset every row so

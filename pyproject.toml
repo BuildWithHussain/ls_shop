@@ -1,10 +1,10 @@
 [project]
-name = "ls_shop"
+name = "commera"
 authors = [
     { name = "hussain@buildwithhussain.com", email = "rahul@buildwithhussain.com"}
 ]
 description = "Ecommerce extension for ERPNext"
-requires-python = ">=3.14,<3.15"
+requires-python = ">=3.11"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
@@ -24,7 +24,7 @@ build-backend = "flit_core.buildapi"
 
 [tool.ruff]
 line-length = 110
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
