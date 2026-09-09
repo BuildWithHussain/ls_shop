@@ -6,6 +6,7 @@ from frappe import _
 from frappe.utils.jinja_globals import is_rtl
 
 from commera.api.admin.orders import get_reporting_currency, get_reporting_currency_symbol
+from commera.api.permission import has_app_permission
 
 no_cache = 1
 
@@ -15,7 +16,7 @@ def get_context(context):
 		frappe.local.flags.redirect_location = "/login?redirect-to=/commera"
 		raise frappe.Redirect
 
-	if not frappe.has_permission("Item", ptype="write"):
+	if not has_app_permission():
 		frappe.throw(_("You do not have access to the store dashboard."), frappe.PermissionError)
 
 	currency = get_reporting_currency()

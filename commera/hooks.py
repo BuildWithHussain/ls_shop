@@ -189,16 +189,16 @@ ignore_links_on_delete = [
 # ------------------
 
 
-# Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "commera",
-# 		"logo": "/assets/commera/logo.png",
-# 		"title": "Commera Ecommerce",
-# 		"route": "/commera",
-# 		"has_permission": "commera.api.permission.has_app_permission"
-# 	}
-# ]
+# `name` must stay the app name: frappe.apps.get_route matches on it to resolve /apps tiles.
+add_to_apps_screen = [
+	{
+		"name": "commera",
+		"logo": "/assets/commera/images/commera.svg",
+		"title": "Commera",
+		"route": "/commera",
+		"has_permission": "commera.api.permission.has_app_permission",
+	}
+]
 
 # Includes in <head>
 # ------------------
