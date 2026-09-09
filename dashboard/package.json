@@ -23,7 +23,7 @@
     "lucide-static": "^0.469.0",
     "postcss": "^8.4.49",
     "puppeteer": "^24.43.1",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^4.3.3",
     "unplugin-auto-import": "^0.19.0",
     "unplugin-icons": "^0.22.0",
     "unplugin-vue-components": "^0.28.0",
