@@ -123,7 +123,7 @@ function printDeliveryNotes() {
 
 <template>
   <!-- No header actions: a shopper places their own order (the ownership rule in
-       ls_shop/utils.py), and there is no export endpoint. -->
+       commera/utils.py), and there is no export endpoint. -->
   <AppPageHeader title="Orders" />
 
   <PageBody>

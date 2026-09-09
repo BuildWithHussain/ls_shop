@@ -6,7 +6,7 @@ import { money } from '../data/format'
 
 const props = defineProps({
   orderId: { type: String, required: true },
-  // The dict from ls_shop.api.orders.get_sales_order_refund_status. Only
+  // The dict from commera.api.orders.get_sales_order_refund_status. Only
   // `can_refund` is guaranteed; every other key is read defensively.
   status: { type: Object, default: () => ({}) },
 })
@@ -14,7 +14,7 @@ const props = defineProps({
 const open = defineModel('open', { type: Boolean, required: true })
 const emit = defineEmits(['refunded'])
 
-const refundAction = useMethodAction('ls_shop.api.orders.create_refund_payment_entry')
+const refundAction = useMethodAction('commera.api.orders.create_refund_payment_entry')
 
 // Money leaves the shop on this click, so the button is held down by our own flag
 // rather than by the request's loading state alone: a second press must never

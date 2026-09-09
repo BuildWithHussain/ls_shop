@@ -23,7 +23,7 @@ const order = computed(() => orderRequest.data)
 
 // The Sales Order form owns the refund math, so the dashboard reads the same
 // endpoint rather than a wrapper of its own.
-const refundStatusRequest = useMethodRead('ls_shop.api.orders.get_sales_order_refund_status', {
+const refundStatusRequest = useMethodRead('commera.api.orders.get_sales_order_refund_status', {
   params: () => ({ order_id: route.params.id }),
   refetch: true,
 })

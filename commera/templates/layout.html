@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+{% from "templates/macros/seo.html" import seo_meta, json_ld_block %}
+{% set settings = frappe.get_cached_doc("Lifestyle Settings", "Lifestyle Settings") %}
+{% set store_name = settings.store_name or "Lifestyle" %}
+{% set favicon = get_brand_assets().favicon %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {% block seo %}{{ seo_meta(seo if seo is defined and seo else seo_page_meta()) }}{% endblock %}
+    {% block json_ld %}{{ json_ld_block(json_ld if json_ld is defined and json_ld else seo_org_jsonld()) }}{% endblock %}
+
+    {% block analytics_head %}
+    {% include "templates/includes/ga4.html" %}
+    {% include "templates/includes/meta-pixel.html" %}
+    {% include "templates/includes/custom-tracking-scripts.html" %}
+    {% endblock %}
+
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ favicon }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ favicon }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ favicon }}">
+
+
+    <link rel="stylesheet" href="/assets/commera/css/tailwind.css">
+    
+    {{ format_theme_css()|safe }}
+
+    
+    <script src="/assets/commera/js/vendor/alpinejs/plugins/persist.js"></script>
+    <script src="/assets/commera/js/vendor/alpinejs/plugins/collapse.js"></script>
+    
+    {% block alpine_plugins %}{% endblock %}
+    
+    <script defer src="/assets/commera/js/vendor/alpinejs/core.js"></script>
+    {% block head %} {% endblock %}
+</head>
+
+{% include "templates/includes/cart-state.html" %}
+{% include "templates/includes/i18-state.html" %}
+{% include "templates/includes/wishlist-state.html" %}
+{% include "templates/includes/toast-state.html" %}
+
+{% include "templates/includes/frappe-call-script.html" %}
+
+<script src="/assets/commera/js/utils/synced-query-params.js"></script>
+<script >
+    const querySync = new QuerySync({
+        defaultValues: { page: 1 }
+    });
+
+    const { state } = querySync;
+
+    window.query_state = state;
+
+</script>
+<style>
+    /* Alpine specific style */
+    [x-cloak] {
+        display: none !important;
+    }
+</style>
+
+{% set header_data = header_data if header_data is defined and header_data else get_header_data() %}
+
+<body x-data dir="auto">
+    {% block header %}{% include "templates/includes/header.html" %}{% endblock %}
+
+    <main class="relative" x-data="toaster">
+        <div class="max-w-7xl mx-auto px-6 md:px-10 ">
+            {% if show_breadcrumb is not defined or show_breadcrumb %}
+                {% include "templates/components/breadcrumb.html" %}
+            {% endif %}
+            {% block body %} {% endblock %}
+        </div>
+        <div>
+            {% block uncontained_body %}{% endblock %}
+
+        </div>
+        {% include "templates/includes/toast-teleport.html" %}
+    </main>
+
+    {% block footer %}{% include "templates/includes/footer.html" %}{% endblock %}
+    {% block analytics_events %}{% include "templates/includes/analytics-events.html" %}{% endblock %}
+</body>
+{% block script %} {% endblock %}
+</html>

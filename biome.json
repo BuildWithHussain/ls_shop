@@ -11,8 +11,8 @@
 			"**/vendor/**/*",
 			"public/js/vendor/**/*",
 			"dashboard/**/*",
-			"ls_shop/public/commera/**/*",
-			"ls_shop/**/*.json"
+			"commera/public/commera/**/*",
+			"commera/**/*.json"
 		]
 	},
 	"formatter": {

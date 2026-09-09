@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { longDate } from '../data/format'
 
-// Fed straight from the order's own `progress` array (ls_shop.api.admin.orders.describe_progress) —
+// Fed straight from the order's own `progress` array (commera.api.admin.orders.describe_progress) —
 // each entry already carries the state ('done' | 'current' | 'upcoming') and label the ladder needs;
 // this component only adds the icon and the caption text, which are presentational.
 const props = defineProps({ progress: { type: Array, required: true } })

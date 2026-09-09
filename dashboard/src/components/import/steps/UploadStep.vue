@@ -55,7 +55,7 @@ function clear() {
         CSV or Excel, built from
         <a
           class="text-ink-blue-4 underline"
-          href="/api/method/ls_shop.api.admin.imports.download_product_template"
+          href="/api/method/commera.api.admin.imports.download_product_template"
         >
           our template
         </a>

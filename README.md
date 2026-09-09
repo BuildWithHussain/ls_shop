@@ -1,4 +1,4 @@
-# LS Shop
+# Commera
 
 A modern, multilingual e-commerce solution built on Frappe Framework that extends ERPNext's capabilities with custom frontend and advanced product management.
 
@@ -77,7 +77,7 @@ The application includes the following key pages and functionalities:
 
 This app is compatible with the following versions of Frappe and ERPNext:
 
-| LS Shop branch | Stability   | Frappe branch | ERPNext branch |
+| Commera branch | Stability   | Frappe branch | ERPNext branch |
 | :------------- | :---------- | :------------ | :------------- |
 | main           | stable      | v16.x & above | v16.x & above  |
 | develop        | maintenance | v15.x         | v15.x          |
@@ -92,19 +92,19 @@ This app is compatible with the following versions of Frappe and ERPNext:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/ls_shop.git
-cd ls_shop
+git clone https://github.com/yourusername/commera.git
+cd commera
 ```
 
 2. Install the app:
 ```bash
-bench get-app https://github.com/BuildWithHussain/ls_shop
-bench install-app ls_shop --site your-site-name
+bench get-app https://github.com/BuildWithHussain/commera
+bench install-app commera --site your-site-name
 ```
 
 3. Build assets:
 ```bash
-bench build --app ls_shop
+bench build --app commera
 ```
 
 ### Key Components
@@ -117,20 +117,20 @@ bench build --app ls_shop
 
 ### Project Structure
 ```
-ls_shop/
-├── ls_shop/
+commera/
+├── commera/
 │   ├── hooks.py              # App configuration and hooks
 │   ├── www/                  # Public web pages
 │   ├── templates/            # Jinja2 templates
 │   ├── public/               # Static assets
-│   └── ls_shop/              # App modules
+│   └── commera/              # App modules
 ├── requirements.txt          # Python dependencies
 └── package.json             # Node.js dependencies
 ```
 
 ## 📊 Bulk Operations
 
-LS Shop provides powerful bulk operation capabilities:
+Commera provides powerful bulk operation capabilities:
 
 - **Bulk SAC/SAV Creation**: Create multiple product configurations at once
 - **Bulk Image Upload**: Upload and associate product images in batches
@@ -154,8 +154,8 @@ The app supports various payment gateways. For Tabby BNPL integration, check out
 
 ## 🏢 About BWH Studios
 
-LS Shop is developed and maintained by BWH Studios, a tech company based in Jagdalpur, Chhattisgarh, specializing in Frappe customizations and consulting.
+Commera is developed and maintained by BWH Studios, a tech company based in Jagdalpur, Chhattisgarh, specializing in Frappe customizations and consulting.
 
 ---
 
-⭐ If you find LS Shop helpful, please consider starring the repository!
+⭐ If you find Commera helpful, please consider starring the repository!

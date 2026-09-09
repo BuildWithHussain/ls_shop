@@ -26,7 +26,7 @@ function openVariant(variant) {
 }
 
 // Every real option (Style Attribute Variant) already carries its own single
-// attribute value — Color, say — set at product creation. ls_shop has no
+// attribute value — Color, say — set at product creation. commera has no
 // endpoint to add a further axis to an existing product (create_product only
 // takes option_attribute/size_attribute once, at insert), so unlike the
 // prototype's options[] this list is read-only: it names the one axis this
@@ -87,7 +87,7 @@ async function togglePublish(variant) {
   emit('saved')
 }
 
-// Same additive receipt as the Stock screen and the product menu — ls_shop has no way to set
+// Same additive receipt as the Stock screen and the product menu — commera has no way to set
 // on-hand to an exact number, so one quantity goes onto every size of this option.
 function receiveStock(variant) {
   const itemCodes = variant.sizes.map((size) => size.item_code).filter(Boolean)
@@ -213,7 +213,7 @@ const columns = ['minmax(7rem,1.3fr)', 'minmax(5rem,1fr)', '6.5rem', '5rem', '4.
                 />
               </ListCell>
               <ListCell>
-                <!-- Read-only: ls_shop only exposes receiving stock (additive), not
+                <!-- Read-only: commera only exposes receiving stock (additive), not
                      setting on-hand to an arbitrary number — see VariantDetail. -->
                 <EditableValue
                   :model-value="item.sizes.reduce((sum, s) => sum + (s.stock ?? 0), 0)"

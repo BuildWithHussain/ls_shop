@@ -7,10 +7,10 @@ import { fileURLToPath } from 'node:url'
 
 const DASHBOARD = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..')
 const SOURCE = path.join(DASHBOARD, 'src')
-// vite writes the entry document to ls_shop/www (Frappe serves it as a www page) and
-// the hashed assets to ls_shop/public/commera — see buildConfig in vite.config.js.
-const BUILT_ENTRY = path.resolve(DASHBOARD, '..', 'ls_shop', 'www', 'commera.html')
-const BUILT_ASSETS = path.resolve(DASHBOARD, '..', 'ls_shop', 'public', 'commera', 'assets')
+// vite writes the entry document to commera/www (Frappe serves it as a www page) and
+// the hashed assets to commera/public/commera — see buildConfig in vite.config.js.
+const BUILT_ENTRY = path.resolve(DASHBOARD, '..', 'commera', 'www', 'commera.html')
+const BUILT_ASSETS = path.resolve(DASHBOARD, '..', 'commera', 'public', 'commera', 'assets')
 
 function newestMtime(directory) {
   let newest = 0

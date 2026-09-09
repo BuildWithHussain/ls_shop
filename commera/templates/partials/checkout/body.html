@@ -1,0 +1,452 @@
+
+<script>
+    const COD_PAYMENT_MODE = "COD";
+
+    function get_available_payment_modes(){
+        const payment_gateways = {{ payment_gateways | tojson }};
+        const payment_modes = payment_gateways.map(gateway_name => ({ key: gateway_name, enabled: 1 }));
+        payment_modes.push({ key: COD_PAYMENT_MODE, enabled: parseInt('{{ show_cod }}') });
+        return payment_modes;
+    }
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('checkout_state', () => ({
+            billing_address_filled: false,
+            payment_mode: Alpine.$persist(null).as("payment_mode"),
+            payment_mode_confirmed: false,
+            address_loading: false,
+            payment_gateway_loading:false,
+            delivery_option: 'home_delivery',
+            checkout_total: parseFloat('{{cart_quotation.net_total or 0}}') + parseFloat('{{delivery_charge or 0}}') + parseFloat('{{cart_quotation.rounding_adjustment or 0}}'),
+            delivery_charge_applicable_below: parseFloat('{{delivery_charge_applicable_below or 0}}'),
+            delivery_charge: parseFloat('{{delivery_charge or 0}}'),
+
+
+            init() {
+                this.calculate_checkout_total();
+                this.$watch('payment_mode', (value, oldValue) => {
+                    if (oldValue && value) {
+                        this.payment_mode_confirmed = false;
+                    }
+                    this.calculate_checkout_total()
+
+
+                })
+                this.$watch('delivery_option', (value) => {
+                    this.calculate_checkout_total();
+
+                })
+                this.apply_shipping_rule()
+                this.validate_payment_mode()
+            },
+            calculate_checkout_total() {
+
+                this.checkout_total = parseFloat('{{cart_quotation.net_total or 0}}') + parseFloat('{{cart_quotation.rounding_adjustment or 0}}')
+                if(this.delivery_option === 'home_delivery') {
+                    if (this.delivery_charge_applicable_below > parseFloat('{{cart_quotation.net_total or 0}}')) {
+                        this.checkout_total += this.delivery_charge 
+                    }
+
+                }
+                if (this.billing_address_filled && this.payment_mode === COD_PAYMENT_MODE && parseFloat('{{cod_charge_applicable_below or 0}}') > parseFloat('{{cart_quotation.rounded_total or 0}}')) {
+                    this.checkout_total += parseFloat('{{cod_charge or 0}}')
+                }
+
+            },
+            async apply_shipping_rule() {
+                const data = await frappe_call(
+                    "/api/v2/method/commera.api.checkout.apply_shipping_rule"
+                )
+                this.delivery_charge = parseFloat(data.data[0])
+                this.delivery_charge_applicable_below = parseFloat(data.data[1])
+            },
+            validate_payment_mode() {
+                const payment_modes = get_available_payment_modes()
+
+                const selected_mode = payment_modes.find(payment_mode => payment_mode.key === this.payment_mode);
+                if (!selected_mode || !selected_mode.enabled) {
+                    const fallback_mode = payment_modes.find(payment_mode => payment_mode.enabled);
+                    this.payment_mode = fallback_mode ? fallback_mode.key : null;
+                }
+            }
+        }))
+
+                    
+    })
+    function billing_state() {
+        return {
+            billing_use_address: 'saved_address',
+            same_as_billing: true,
+            shipping_use_address: 'saved_address',
+            show_billing_state: true,
+            show_pickup_state: true,
+            errors: {},
+            store_pickup_location: '',
+        }
+    }
+</script>
+
+<script defer>
+    async function fetch_payment_details(payment_mode_confirmed, state) {
+        const payment_modes = get_available_payment_modes()
+        const selected_mode = payment_modes.find(payment_mode => payment_mode.key === state.payment_mode);
+
+        if (!selected_mode || !selected_mode.enabled) {
+             toast(`Payment method '${state.payment_mode}' is not available or disabled`, { type: "danger" })
+             return
+        }
+        if (!payment_mode_confirmed) {
+            return
+        }
+
+        const btn = document.getElementById("render_payment_gateway_btn");
+
+        const spinner = btn.querySelector(".animate-spin");
+        btn.disabled = true;
+        spinner.classList.remove("hidden");
+        try {
+            const response = await frappe_call(
+                "/api/v2/method/commera.api.payments.initiate_checkout_with_mode",
+                { payment_mode: state.payment_mode }
+            )
+            window.location.href = response.data.order_url
+        }
+        catch (err) {
+            btn.disabled = false;
+            spinner.classList.add("hidden");
+        }
+        finally {
+            btn.disabled = false;
+            spinner.classList.add("hidden");
+        }
+
+    }
+    async function add_pickup_address(state, refs) {
+        const store_pickup_warehouse = document.getElementById("store_pickup_addresses_combo").value
+        if (!store_pickup_warehouse) {
+            state.errors.push('Please select a store pickup location.');
+            state.address_loading = false;
+            return;
+        }
+        let payload = {
+            is_store_pickup: true,
+            store_pickup_warehouse: store_pickup_warehouse
+        };
+        try {
+            const data = await frappe_call(
+                "/api/v2/method/commera.api.payments.update_quotation_address", { address: payload }
+            )
+            toast(data.data.message, { type: "success" })
+            state.show_pickup_state = false;
+            state.billing_address_filled = true;
+        }
+        catch (err) {
+        }
+        finally {
+            state.address_loading = false;
+            state.calculate_checkout_total()
+        }
+    }
+    async function add_billing_address(state, refs) {
+
+        const data = form_to_object(refs.checkout_form);
+        if (data.billing_tab === 'saved_address') {
+            if (!data.billing_combo) {
+                state.errors.push('Please select an address from saved billing addresses.');
+            }
+        }
+
+        if (data.billing_tab === 'new_address') {
+            if (!data.billing_country) {
+                state.errors.push('Please select a valid country in billing address.');
+            }
+
+            if (!data.billing_phone_number || !/^(\+?\d{1,3}[-.\s]?)?(\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{3,4}$/.test(data.billing_phone_number)) {
+                state.errors.push('Please enter a valid billing phone number.');
+            }
+        }
+        if (!data.shipping_address_same_as_billing_address) {
+            if (data.shipping_tab === 'saved_address') {
+                if (!data.shipping_combo) {
+                    state.errors.push('Please select an address from saved shipping addresses.');
+                }
+            }
+
+            if (data.shipping_tab === 'new_address') {
+                if (!data.shipping_country) {
+                    state.errors.push('Please select a valid country in shipping address.');
+                }
+
+                if (!data.shipping_phone_number || !/^(\+?\d{1,3}[-.\s]?)?(\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{3,4}$/.test(data.shipping_phone_number)) {
+                    state.errors.push('Please enter a valid shipping phone number.');
+                }
+            }
+        }
+        if (state.errors.length > 0) {
+            state.address_loading = false;
+            return
+        }
+        let payload = {
+            is_store_pickup: false,
+            billing_address: {
+                is_saved: data.billing_tab === 'saved_address',
+                address_id: data.billing_combo || null,
+                first_name: data.billing_tab === 'new_address' ? data.billing_first_name : null,
+                last_name: data.billing_tab === 'new_address' ? data.billing_last_name : null,
+                email: data.billing_tab === 'new_address' ? data.billing_email : null,
+                phone_number: data.billing_tab === 'new_address' ? data.billing_phone_number : null,
+                full_address: data.billing_tab === 'new_address' ? data.billing_full_address : null,
+                landmark: data.billing_tab === 'new_address' ? data.billing_landmark : null,
+                country: data.billing_tab === 'new_address' ? data.billing_country : null,
+                city: data.billing_tab === 'new_address' ? data.billing_city : null,
+                po_box: data.billing_tab === 'new_address' ? data.billing_po_box : null
+            },
+            shipping_address: {
+                is_saved: data.shipping_tab === 'saved_address',
+                address_id: data.shipping_combo || null,
+                first_name: data.shipping_tab === 'new_address' ? data.shipping_first_name : null,
+                last_name: data.shipping_tab === 'new_address' ? data.shipping_last_name : null,
+                email: data.shipping_tab === 'new_address' ? data.shipping_email : null,
+                phone_number: data.shipping_tab === 'new_address' ? data.shipping_phone_number : null,
+                full_address: data.shipping_tab === 'new_address' ? data.shipping_full_address : null,
+                landmark: data.shipping_tab === 'new_address' ? data.shipping_landmark : null,
+                country: data.shipping_tab === 'new_address' ? data.shipping_country : null,
+                city: data.shipping_tab === 'new_address' ? data.shipping_city : null,
+                po_box: data.shipping_tab === 'new_address' ? data.shipping_po_box : null
+            },
+            shipping_same_as_billing: !!data.shipping_address_same_as_billing_address
+        };
+        try {
+            const response_data = await frappe_call(
+                "/api/v2/method/commera.api.payments.update_quotation_address", { address: payload }
+            )
+            toast(response_data.data.message, { type: "success" })
+            state.show_billing_state = false;
+            state.billing_address_filled = true;
+        }
+        catch (err) {
+
+        }
+        finally {
+            state.address_loading = false;
+            state.calculate_checkout_total()
+        }
+    }
+    async function update_quotation_address(state, refs) {
+        state.billing_address_filled = false;
+        state.address_loading = true;
+        state.errors = [];
+        if (refs.checkout_form.delivery_option.value === 'store_pickup') {
+            add_pickup_address(state, refs)
+            return;
+        }
+        add_billing_address(state, refs)
+    }
+</script>
+
+<div class="space-y-10" x-data="checkout_state"
+    x-init="$watch('payment_mode_confirmed', value => fetch_payment_details(value, $data))">
+    <div class="flex items-baseline justify-between">
+        <h1 class="text-3xl font-bold my-3 md:mb-11 md">{{ _('Checkout') }}</h1>
+        <div class="md:hidden my-3">
+            {% include 'templates/components/promo_code_component.html' %}
+        </div>
+    </div>
+    <div class="flex items-baseline md:hidden">
+        <h2 class="text-lg font-medium me-2 flex">
+            {{_('TOTAL')}} ( {{ cart_quotation.total_qty|int }}&nbsp;<span class="">
+                {% if cart_quotation.total_qty != 1 %}
+                {{_('Items')}}
+            {% else %}
+                {{_('Item')}}
+                {% endif %}
+            )
+        </span>{{get_currency_symbol()}} <span x-text="checkout_total.toFixed(2)"></span> 
+        </h2>
+        <div>
+            {% call modal.modal(button_text='View Items',button_classes='text-sm text-accent font-semibold ms-2',
+            modal_header='Your Cart') %}
+            <div class="p-6">
+                {% include 'templates/components/checkout_product_details.html' %}
+            </div>
+            {% endcall %}
+        </div>
+    </div>
+    <div class="flex flex-col md:flex-row gap-8 md:gap-25 md:mt-2">
+        <div class="flex-1" x-data="billing_state()">
+            <form x-ref="checkout_form" @submit.prevent="update_quotation_address($data, $refs)">
+                <div class="flex justify-between items-center border-b border-gray-200 pb-4">
+                    <h2 class="text-lg font-semibold text-secondary-accent capitalize">
+                        {{ _('select delivery option') }}
+                    </h2>
+                </div>
+                <div class="mt-4 gap-4 flex flex-col md:flex-row justify-between">
+                    <label
+                        class="flex flex-1 items-center p-3 space-x-3 bg-white border rounded-lg hover:bg-gray-50 border-gray-200/70 cursor-pointer"
+                        :class="{'border-secondary-accent': delivery_option === 'home_delivery'}" @click="billing_address_filled = false;
+                        show_billing_state = true;
+                        payment_mode_confirmed = false;
+                        errors={};">
+                        <input type="radio" name="delivery_option" value="home_delivery"
+                            class="accent-gray-900 translate-y-px focus:ring-gray-700" x-model="delivery_option" />
+                        <span class="text-base capitalize">
+                            {{ _('home delivery') }}
+                        </span>
+                    </label>
+                    <label
+                        class="flex flex-1 items-center p-3 space-x-3 bg-white border rounded-lg hover:bg-gray-50 border-gray-200/70 cursor-pointer"
+                        :class="{'border-secondary-accent': delivery_option === 'store_pickup'}" @click="billing_address_filled = false;
+                        show_pickup_state = true;
+                        payment_mode_confirmed = false;
+                        errors={};">
+                        <input type="radio" name="delivery_option" value="store_pickup"
+                            class="accent-gray-900 translate-y-px focus:ring-gray-700" x-model="delivery_option" />
+                        <span class="text-base capitalize">
+                            {{ _('pickup from store') }}
+                        </span>
+                    </label>
+                </div>
+                <div x-show="delivery_option === 'store_pickup'" class="mt-6 "
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform -translate-y-4"
+                    x-transition:enter-end="opacity-100 transform translate-y-0" x-cloak>
+                    <div class="flex justify-between items-center border-b border-gray-200 pb-4 mt-6">
+                        <h2 class="text-lg font-semibold text-secondary-accent capitalize">
+                            {{ _('billing details') }}
+                        </h2>
+                        <h3 class="text-sm text-secondary-accent hover:text-accent font-semibold ms-2 cursor-pointer"
+                            x-show="!show_pickup_state" x-cloak @click="show_pickup_state = true;
+                            billing_address_filled = false;
+                            payment_mode_confirmed = false " x-collapse.duration.300ms
+                            x-transition:enter="ease-out duration-200" x-transition:leave="ease-in duration-100">
+                            {{icon(name="edit",classes="h-5 w-5")}}
+                        </h3>
+                    </div>
+                    <div x-show="show_pickup_state" x-ref="billing_form" class="mt-5" x-collapse.duration.300ms
+                        x-transition:enter="ease-out duration-200" x-transition:leave="ease-in duration-100">
+                        <h3 class="text-base font-medium mb-4">{{ _('Select Pickup Location') }}</h3>
+                        <div class="space-y-4">
+                            <div class="space-y-20">
+                                {{ search_combo_box.combo_box(options=store_pickup_addresses,id='store_pickup_addresses',show_title = True) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div x-show="delivery_option === 'home_delivery'" x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform -translate-y-4"
+                    x-transition:enter-end="opacity-100 transform translate-y-0">
+                    {% include 'templates/includes/home_delivery.html' %}
+                </div>
+
+                <div x-show="errors.length > 0"
+                    class="bg-red-100 border border-red-400 text-accent px-4 py-3 rounded-lg relative mt-4" x-cloak
+                    x-transition.origin.top>
+                    <ul>
+                        <template x-for="error in errors" :key="error">
+                            <li class="text-sm"> <span x-text="error"></span></li>
+                        </template>
+                    </ul>
+                </div>
+                <div class="mt-6"
+                    x-show="delivery_option === 'home_delivery' && show_billing_state === true || delivery_option === 'store_pickup' && show_pickup_state === true "
+                    x-transition>
+                    <button type="submit"
+                        class="w-full flex items-center justify-center rounded-md bg-accent px-6 py-3 font-normal text-white opacity-90 hover:opacity-100 focus:ring-2 focus:ring-focus focus:outline-none cursor-pointer text-center disabled:opacity-70 disabled:cursor-not-allowed"
+                        :disabled="address_loading">
+                        {{_('Continue')}}
+                        <div class="animate-spin inline-block size-5 border-3 border-current border-t-transparent rounded-full ms-2"
+                            role="status" aria-label="loading" x-show="address_loading" x-cloak>
+                        </div>
+                    </button>
+                </div>
+            </form>
+            <template x-if="billing_address_filled">
+                <div class="space-y-10">
+                    <h2 class="text-lg font-semibold text-secondary-accent border-b border-gray-200 pb-4 my-5">{{ _("Payment method") }}</h2>
+                    <div class="space-y-3">
+                        {% for gateway_name in payment_gateways %}
+                        <label
+                            class="flex items-start flex-col p-3 space-x-3 bg-white border rounded-lg hover:bg-gray-50 border-gray-200/70 cursor-pointer">
+                            <div class="flex items-center">
+                                <input type="radio" name="payment_mode_radio" value="{{ gateway_name }}"
+                                    class="h-5 w-5 accent-gray-900 translate-y-px focus:ring-gray-700 cursor-pointer"
+                                    x-model="payment_mode" />
+                                <span class="text-base ps-3">
+                                    {{ _(gateway_name) }}
+                                </span>
+                            </div>
+                       {% include "templates/components/payment_svg.html" %}
+                        </label>
+                        {% endfor %}
+                        <label
+                            class="flex flex-col items-start p-3 space-x-3 bg-white border rounded-lg hover:bg-gray-50 border-gray-200/70 cursor-pointer"
+                            x-show="{{show_cod}}">
+                            <div class="flex items-center">
+                                <input type="radio" name="payment_mode_radio" value="COD"
+                                    class="h-5 w-5 accent-gray-900 translate-y-px focus:ring-gray-700 cursor-pointer"
+                                    x-model="payment_mode" />
+                                <span class="text-base ps-3">
+                                    {{ _('Cash on Delivery') }}
+                                </span>
+                            </div>
+                            {% if cod_charge_applicable_below > cart_quotation.rounded_total and cod_charge %}
+                            <div class="text-red-600 rounded-lg relative mt-4">
+                                <p class="text-sm">
+                                    ({{ _('Additional cash on delivery charge of')}}  {{get_currency_symbol()}}{{"%.2f"|format(cod_charge)}} {{_('will apply')}})
+                                </p>
+                                <p class="text-sm">
+                                    ({{ _('Non refundable fee of')}} {{get_currency_symbol()}} {{"%.2f"|format(cod_charge)}} {{_('will apply')}})
+                                </p>
+                            </div>
+                            {% endif %}
+                            <img src="/assets/commera/images/cod.png" alt="" class="mt-3 -ms-1 h-6 object-contain">
+                        </label>
+                    </div>
+                    <button @click="payment_mode_confirmed = true"
+                        class="w-full items-center justify-center rounded-md bg-accent px-6 py-3 font-normal text-white opacity-90 hover:opacity-100 focus:ring-2 focus:ring-focus focus:outline-none cursor-pointer text-center mb-5 flex disabled:opacity-75" id="render_payment_gateway_btn">
+                       
+                        {{ _("Proceed to pay") }}
+                         <div class="animate-spin  size-5 border-3 border-current border-t-transparent rounded-full ms-2 hidden"
+								role="status" aria-label="loading"x-cloak>
+							</div>
+                       
+                    </button>
+                </div>
+            </template>
+        </div>
+        <div class="hidden rounded-lg border border-gray-300 md:block md:w-[40%] p-6 h-fit">
+            <div class="flex justify-between items-end mb-4 pb-4 border-b border-gray-300">
+                <h3 class="text-lg font-medium capitalize">{{ _('your cart') }}</h3>
+                {% include 'templates/components/promo_code_component.html' %}
+            </div>
+            {% include 'templates/components/checkout_product_details.html' %}
+        </div>
+    </div>
+</div>
+
+<script>
+    {% set checkout_items = cart_quotation.get("items") or [] %}
+    {% set checkout_value = cart_quotation.grand_total or cart_quotation.net_total or 0 %}
+    {% set checkout_item_codes = checkout_items | map(attribute="item_code") | list %}
+    if (window.fbq) fbq('track', 'InitiateCheckout', {
+        content_ids: {{ checkout_item_codes | tojson }},
+        content_type: 'product',
+        num_items: {{ checkout_items | length }},
+        value: {{ checkout_value | tojson }},
+        currency: window.fb_currency
+    });
+    if (window.gtag) gtag('event', 'begin_checkout', {
+        currency: window.ga4_currency,
+        value: {{ checkout_value | tojson }},
+        items: {{ checkout_item_codes | tojson }}.map(item_code => ({ item_id: item_code }))
+    });
+    if (window.lsAnalytics) lsAnalytics.track('begin_checkout', {
+        value: {{ checkout_value | tojson }},
+        currency: window.ls_currency,
+        qty: {{ checkout_items | length }},
+        items: [
+            {% for row in checkout_items %}
+            { item_code: {{ row.item_code | tojson }}, qty: {{ (row.qty or 0) | tojson }}, price: {{ (row.rate or 0) | tojson }} },
+            {% endfor %}
+        ]
+    });
+</script>

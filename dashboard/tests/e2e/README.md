@@ -60,8 +60,8 @@ and removed by hand.
 ## Traps
 
 - **Stale build.** The browser serves the last `yarn build`, never `dashboard/src`. The
-  entry document is written to `ls_shop/www/commera.html` and the hashed assets to
-  `ls_shop/public/commera/assets/`. `check-build.js` compares their mtimes against
+  entry document is written to `commera/www/commera.html` and the hashed assets to
+  `commera/public/commera/assets/`. `check-build.js` compares their mtimes against
   `dashboard/src` and fails the lane rather than let a green run mean nothing.
 - **Real clicks only.** Use `clickByText` (an `ElementHandle.click()`, a real mouse event).
   An in-page `el.click()` does not fire the pointer events frappe-ui's Select, Autocomplete

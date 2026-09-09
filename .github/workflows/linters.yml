@@ -97,7 +97,7 @@ jobs:
       # because jscpd applies --threshold per format, so a combined run reports a
       # different number. Lower the threshold as cleanup lands; never raise it.
       - name: Run jscpd (python)
-        run: npx --yes jscpd@4 ls_shop --format python --threshold 1
+        run: npx --yes jscpd@4 commera --format python --threshold 1
 
       - name: Run jscpd (dashboard)
         run: npx --yes jscpd@4 dashboard/src --format vue,typescript,javascript --threshold 1

@@ -1,6 +1,6 @@
 // The shared entry point for every screen that reads or writes the real
-// ls_shop backend, instead of each screen wiring its own useCall + toast.
-// Task-shaped endpoints live under `ls_shop.api.admin.*`,
+// commera backend, instead of each screen wiring its own useCall + toast.
+// Task-shaped endpoints live under `commera.api.admin.*`,
 // so callers pass the path below that prefix, e.g. useAdminRead('catalog.get_products').
 import { toast, useCall } from 'frappe-ui'
 import { errorMessage } from './errors'
@@ -12,7 +12,7 @@ import { errorMessage } from './errors'
 // failure as `errorResponse.errors[0]`. Only /api/v2/ answers in that shape — v1 replies
 // `{"message": ...}`, so every read and write silently resolved to null on every screen.
 const METHOD_PREFIX = '/api/v2/method/'
-const ADMIN_MODULE = 'ls_shop.api.admin.'
+const ADMIN_MODULE = 'commera.api.admin.'
 
 // A GET read of any whitelisted method, by its full dotted path. Used where the
 // dashboard shares an endpoint with the Desk form rather than owning an admin

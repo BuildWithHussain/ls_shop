@@ -73,7 +73,7 @@ export function buildProductActions(product, router, handlers = {}) {
           },
         },
         // Named for what the section holds: the generated per-option addresses, read-only.
-        // ls_shop has no per-product SEO field to edit, here or in Desk.
+        // commera has no per-product SEO field to edit, here or in Desk.
         {
           key: 'seo',
           label: 'See storefront addresses',
@@ -118,7 +118,7 @@ export function buildProductActions(product, router, handlers = {}) {
       label: 'Inventory',
       items: [
         // Same operation as the Stock screen's "Adjust quantity", so it is
-        // worded the same: ls_shop only exposes an additive receipt, there is
+        // worded the same: commera only exposes an additive receipt, there is
         // no reason-coded adjustment and no "set on-hand to X".
         itemCodes.length && {
           key: 'adjust',

@@ -72,7 +72,7 @@ function clampHeight(height) {
   return Math.min(Math.max(Math.round(height), MIN_STAGE_HEIGHT), maxStageHeight.value)
 }
 
-const storageKey = `ls-shop-preview-height:${props.path}`
+const storageKey = `commera-preview-height:${props.path}`
 
 function readStoredHeight() {
   try {

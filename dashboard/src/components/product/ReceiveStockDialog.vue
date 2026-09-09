@@ -2,7 +2,7 @@
 /**
  * Take stock in against any mix of a product's sizes in one pass.
  *
- * Quantities are ADDED, never set: ls_shop's only stock write is
+ * Quantities are ADDED, never set: commera's only stock write is
  * `Style Attribute Variant.receive_stock`, a submitted Material Receipt into the
  * ecommerce warehouse. A valuation rate is optional per line — left blank, the
  * item's own valuation stands.

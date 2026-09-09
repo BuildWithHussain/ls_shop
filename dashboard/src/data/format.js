@@ -1,7 +1,7 @@
 import { dayjs } from 'frappe-ui'
 import { bootValue } from './boot'
 
-// The shell (ls_shop/www/commera.py) drops the site's reporting currency and
+// The shell (commera/www/commera.py) drops the site's reporting currency and
 // its symbol on `window`, so money reads correctly without any screen
 // threading a symbol down from its own endpoint — see boot.js.
 const currencyCode = bootValue('currency', 'INR')

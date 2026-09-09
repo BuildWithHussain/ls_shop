@@ -31,7 +31,7 @@ const rows = computed(() => customersRequest.data?.customers ?? [])
 
 <template>
   <!-- No header actions: a customer record is created the moment a shopper checks out
-       (ls_shop/core.py's _create_party_for_user), and there is no export endpoint. -->
+       (commera/core.py's _create_party_for_user), and there is no export endpoint. -->
   <AppPageHeader title="Customers" />
 
   <PageBody>

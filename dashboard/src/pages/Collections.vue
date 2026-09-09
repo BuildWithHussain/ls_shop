@@ -52,7 +52,7 @@ function addCollection() {
     <p v-if="collectionsRequest.loading" class="mt-3 text-sm text-ink-gray-5">Loading collections…</p>
 
     <div v-else-if="rows.length" class="mt-3 overflow-x-auto">
-      <!-- Collection and Products only: ls_shop has no smart-collection rule engine, so
+      <!-- Collection and Products only: commera has no smart-collection rule engine, so
            "Type" read "manual" and "Condition" read "—" on every row — two columns of no
            information, and a caption under the header apologising for them. -->
       <List
