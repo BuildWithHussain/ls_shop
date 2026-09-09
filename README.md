@@ -1,6 +1,8 @@
-# Commera
-
-A modern, multilingual e-commerce solution built on Frappe Framework that extends ERPNext's capabilities with custom frontend and advanced product management.
+<div align="center">
+	<img src="commera/public/images/commera.svg" height="80" alt="Commera logo">
+	<h1>Commera</h1>
+	<p>A modern, multilingual e-commerce solution built on Frappe Framework that extends ERPNext's capabilities with custom frontend and advanced product management.</p>
+</div>
 
 <img width="1470" height="800" alt="Screenshot 2025-09-10 at 1 47 38 AM" src="https://github.com/user-attachments/assets/b776c69b-e009-4b9e-99df-06c1e40a8469" />
 
