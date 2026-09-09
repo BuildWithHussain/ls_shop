@@ -932,7 +932,7 @@ def percent_change(current, previous):
 
 
 def get_reporting_currency():
-	company = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "company")
+	company = frappe.get_cached_value("Commera Settings", "Commera Settings", "company")
 	currency = frappe.get_cached_value("Company", company, "default_currency") if company else None
 	return currency or frappe.defaults.get_global_default("currency")
 

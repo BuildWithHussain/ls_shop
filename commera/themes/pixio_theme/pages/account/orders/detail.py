@@ -11,7 +11,7 @@ def get_context(context):
 	context.order_items = frappe.parse_json(context.order.get("items")) or []
 	context.invoice_name = get_invoice_name(context.order.name)
 	context.print_format = (
-		frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "print_format") or "Standard"
+		frappe.get_cached_value("Commera Settings", "Commera Settings", "print_format") or "Standard"
 	)
 	return context
 

@@ -7,7 +7,7 @@ from commera.branding import BRAND_ASSET_FIELDS, LEGACY_SETTINGS, WEBSITE_SETTIN
 
 
 def execute():
-	"""Seed Website Settings from the legacy Lifestyle Settings branding fields."""
+	"""Seed Website Settings from the legacy Commera Settings branding fields."""
 	legacy_settings = frappe.get_cached_doc(LEGACY_SETTINGS)
 	website_settings = frappe.get_doc(WEBSITE_SETTINGS)
 

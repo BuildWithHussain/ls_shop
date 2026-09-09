@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 {% from "templates/macros/seo.html" import seo_meta, json_ld_block %}
-{% set settings = frappe.get_cached_doc("Lifestyle Settings", "Lifestyle Settings") %}
-{% set store_name = settings.store_name or "Lifestyle" %}
+{% set settings = frappe.get_cached_doc("Commera Settings", "Commera Settings") %}
+{% set store_name = settings.store_name or "Commera" %}
 {% set favicon = get_brand_assets().favicon %}
 
 <head>

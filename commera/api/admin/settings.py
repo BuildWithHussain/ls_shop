@@ -7,7 +7,7 @@ from frappe.utils.data import cint, cstr, flt, getdate
 
 from commera.utils import get_address_lines
 
-SETTINGS_DOCTYPE = "Lifestyle Settings"
+SETTINGS_DOCTYPE = "Commera Settings"
 BRANDING_DOCTYPE = "Website Settings"
 
 # Payload keys are the pre-move names on purpose: the Vue tab and the sidebar bind to them.
@@ -68,7 +68,7 @@ INTEGER_FIELDTYPES = frozenset({"Int", "Check"})
 
 
 def read_settings_fields(fieldnames):
-	"""Read a fixed set of Lifestyle Settings fields for a settings tab."""
+	"""Read a fixed set of Commera Settings fields for a settings tab."""
 	frappe.has_permission(SETTINGS_DOCTYPE, ptype="read", throw=True)
 
 	settings = frappe.get_cached_doc(SETTINGS_DOCTYPE)
@@ -127,7 +127,7 @@ def write_branding_fields(values):
 			website_settings.set(fieldname, coerce_field_value(fieldtype, values[key]))
 
 	# Website Settings is Website Manager's doctype; the store owner never holds that role, so the
-	# brand assets are authorised by Lifestyle Settings above and Website Settings is only storage.
+	# brand assets are authorised by Commera Settings above and Website Settings is only storage.
 	website_settings.save(ignore_permissions=True)
 	return {key: website_settings.get(fieldname) for key, fieldname in BRANDING_FIELDS.items()}
 
@@ -266,7 +266,7 @@ def save_advanced_settings(**kwargs):
 
 
 def get_linked_doctypes():
-	"""Doctypes reachable through a Lifestyle Settings Link field."""
+	"""Doctypes reachable through a Commera Settings Link field."""
 	return {
 		docfield.options
 		for docfield in frappe.get_meta(SETTINGS_DOCTYPE).fields

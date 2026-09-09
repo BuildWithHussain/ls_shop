@@ -82,7 +82,7 @@ class TestRunImportImages(RunImportTestCase):
 		assignments = {get_image_group_key(self.title, self.color): [self.make_photo()]}
 
 		with patch(
-			"commera.lifestyle_shop_ecommerce.doctype.style_attribute_variant.style_attribute_variant"
+			"commera.commera_ecommerce.doctype.style_attribute_variant.style_attribute_variant"
 			".StyleAttributeVariant.add_images",
 			side_effect=frappe.ValidationError("this variant will not take photos"),
 		):

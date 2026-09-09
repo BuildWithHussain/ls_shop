@@ -4,7 +4,7 @@
 import frappe
 
 from commera.branding import get_brand_assets
-from commera.lifestyle_shop_ecommerce.doctype.ecommerce_category.ecommerce_category import get_menu_tree
+from commera.commera_ecommerce.doctype.ecommerce_category.ecommerce_category import get_menu_tree
 
 
 def get_storefront_menu():
@@ -123,12 +123,12 @@ def get_featured_brands(menu):
 
 
 def get_header_data():
-	settings = frappe.get_cached_doc("Lifestyle Settings", "Lifestyle Settings")
+	settings = frappe.get_cached_doc("Commera Settings", "Commera Settings")
 	menu = get_storefront_menu()
 
 	return frappe._dict(
 		settings=settings,
-		store_name=settings.store_name or "Lifestyle",
+		store_name=settings.store_name or "Commera",
 		brand_logo=get_brand_assets().logo,
 		navigation_menu=menu,
 		navigation_categories=build_legacy_navigation(menu),

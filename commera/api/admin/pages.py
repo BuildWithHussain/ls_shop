@@ -4,7 +4,7 @@
 import frappe
 from frappe.utils.data import cint, cstr
 
-from commera.lifestyle_shop_ecommerce.doctype.lifestyle_settings.editor_input import require_value
+from commera.commera_ecommerce.doctype.commera_settings.editor_input import require_value
 
 PAGE_DOCTYPE = "Shop Web Page"
 

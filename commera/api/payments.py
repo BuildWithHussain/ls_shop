@@ -82,7 +82,7 @@ def initiate_checkout_with_mode(payment_mode: str):
 	update_delivery_charges(quotation)
 
 	if is_cod(payment_mode):
-		if not frappe.db.get_single_value("Lifestyle Settings", "cod_enabled"):
+		if not frappe.db.get_single_value("Commera Settings", "cod_enabled"):
 			frappe.throw(_("Cash on delivery is not available."))
 		return {"order_url": get_confirmation_url(quotation.name, payment_mode=COD_PAYMENT_MODE)}
 
@@ -251,9 +251,9 @@ def generate_quotation_for_cart(cart: dict):
 
 
 def get_quotation_for_cart(cart: dict, unsaved_quotation_doc):
-	sale_price_list = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "sale_price_list")
+	sale_price_list = frappe.get_cached_value("Commera Settings", "Commera Settings", "sale_price_list")
 	ecommerce_warehouse = frappe.get_cached_value(
-		"Lifestyle Settings", "Lifestyle Settings", "ecommerce_warehouse"
+		"Commera Settings", "Commera Settings", "ecommerce_warehouse"
 	)
 	unsaved_quotation_doc.selling_price_list = sale_price_list
 	set_attribution_fields(unsaved_quotation_doc)
@@ -274,7 +274,7 @@ def get_quotation_for_cart(cart: dict, unsaved_quotation_doc):
 
 
 def set_charges(quotation):
-	shipping_rule = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "shipping_rule")
+	shipping_rule = frappe.get_cached_value("Commera Settings", "Commera Settings", "shipping_rule")
 	if shipping_rule:
 		quotation.shipping_rule = shipping_rule
 		quotation.run_method("apply_shipping_rule")
@@ -283,7 +283,7 @@ def set_charges(quotation):
 
 def set_cod_charges(quotation):
 	cod_charges_applicable_below, cod_charge = get_cod_configuration()
-	account_head = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "charge_account_head")
+	account_head = frappe.get_cached_value("Commera Settings", "Commera Settings", "charge_account_head")
 	if not cod_charges_applicable_below or not cod_charge:
 		return
 	if flt(cod_charges_applicable_below) < flt(quotation.rounded_total):
@@ -379,7 +379,7 @@ def confirm_payment(reference_id: str, payment_mode: str | None = None):
 
 	if not is_cod(payment_mode):
 		frappe.throw(_("No payment record found for this order."))
-	if not frappe.db.get_single_value("Lifestyle Settings", "cod_enabled"):
+	if not frappe.db.get_single_value("Commera Settings", "cod_enabled"):
 		frappe.throw(_("Cash on delivery is not available."))
 
 	sales_order = place_cod_order(reference_id)

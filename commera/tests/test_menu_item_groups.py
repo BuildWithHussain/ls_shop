@@ -9,8 +9,8 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils.nestedset import get_root_of
 
-from commera.lifestyle_shop_ecommerce.doctype.ecommerce_category.ecommerce_category import get_menu_tree
-from commera.lifestyle_shop_ecommerce.doctype.lifestyle_settings.navbar import navbar_manager
+from commera.commera_ecommerce.doctype.commera_settings.navbar import navbar_manager
+from commera.commera_ecommerce.doctype.ecommerce_category.ecommerce_category import get_menu_tree
 from commera.shop_data import get_category_facets
 from commera.tests import delete_menu_entries
 

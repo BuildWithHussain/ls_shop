@@ -5,7 +5,7 @@ import frappe
 from frappe.utils.caching import request_cache
 
 WEBSITE_SETTINGS = "Website Settings"
-LEGACY_SETTINGS = "Lifestyle Settings"
+LEGACY_SETTINGS = "Commera Settings"
 
 BUNDLED_LOGO = "/assets/commera/images/meta/commera-mark.svg"
 BUNDLED_FOOTER_LOGO = "/assets/commera/images/meta/commera-mark.svg"

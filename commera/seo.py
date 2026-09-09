@@ -54,7 +54,7 @@ def default_store_description():
 
 
 def get_seo_settings():
-	return frappe.get_cached_doc("Lifestyle Settings", "Lifestyle Settings")
+	return frappe.get_cached_doc("Commera Settings", "Commera Settings")
 
 
 class BlankDefaultMap(dict):

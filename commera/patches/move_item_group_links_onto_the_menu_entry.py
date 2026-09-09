@@ -1,6 +1,6 @@
 import frappe
 
-from commera.lifestyle_shop_ecommerce.doctype.ecommerce_category.ecommerce_category import (
+from commera.commera_ecommerce.doctype.ecommerce_category.ecommerce_category import (
 	ITEM_GROUP_LINK_DOCTYPE,
 	add_item_group_links,
 )

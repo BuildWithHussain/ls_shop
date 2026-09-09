@@ -1,5 +1,5 @@
 // Shopify-style "Search engine listing" editor: a live Google snippet preview plus character
-// counters. One script drives every SEO-bearing doctype; Lifestyle Settings has several blocks.
+// counters. One script drives every SEO-bearing doctype; Commera Settings has several blocks.
 
 const TITLE_MAX = 60;
 const DESCRIPTION_MAX = 160;
@@ -11,8 +11,8 @@ let storeSettingsPromise = null;
 async function getStoreSettings() {
 	if (!storeSettingsPromise) {
 		storeSettingsPromise = frappe.db.get_value(
-			'Lifestyle Settings',
-			'Lifestyle Settings',
+			'Commera Settings',
+			'Commera Settings',
 			['store_name', 'seo_title_template', 'default_meta_description'],
 		);
 	}
@@ -67,7 +67,7 @@ const PREVIEW_BLOCKS = {
 			path: (frm) => `/en/products?category=${frm.doc.route_slug || ''}`,
 		},
 	],
-	'Lifestyle Settings': [
+	'Commera Settings': [
 		{
 			preview: 'seo_homepage_preview',
 			title: 'homepage_meta_title',

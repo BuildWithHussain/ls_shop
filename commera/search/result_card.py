@@ -18,8 +18,8 @@ MIN_RESULT_FIELDS, MAX_RESULT_FIELDS = 3, 8
 
 
 def get_search_result_fields():
-	"""Enabled result-card fields from Lifestyle Settings, or the default layout when unconfigured."""
-	settings = frappe.get_cached_doc("Lifestyle Settings")
+	"""Enabled result-card fields from Commera Settings, or the default layout when unconfigured."""
+	settings = frappe.get_cached_doc("Commera Settings")
 	enabled = [
 		row.field
 		for row in (settings.search_result_fields or [])

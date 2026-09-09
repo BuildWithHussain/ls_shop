@@ -34,10 +34,10 @@ PAGE_SEO_KEYS = {
 
 
 def set_seo_settings(**values):
-	"""Write Lifestyle Settings fields and bust the cached doc the SEO helpers read through."""
+	"""Write Commera Settings fields and bust the cached doc the SEO helpers read through."""
 	for field in SEO_SETTING_FIELDS:
-		frappe.db.set_single_value("Lifestyle Settings", field, values.get(field, ""))
-	frappe.clear_document_cache("Lifestyle Settings", "Lifestyle Settings")
+		frappe.db.set_single_value("Commera Settings", field, values.get(field, ""))
+	frappe.clear_document_cache("Commera Settings", "Commera Settings")
 
 
 class TestApplyTitleTemplate(IntegrationTestCase):
@@ -209,10 +209,10 @@ class TestBuildCollectionSeo(IntegrationTestCase):
 
 	def set_product_list_seo(self, **values):
 		"""Write the product-list SEO fields and bust the cached doc build_collection_seo reads through."""
-		frappe.db.set_single_value("Lifestyle Settings", "store_name", values.get("store_name", "MyStore"))
+		frappe.db.set_single_value("Commera Settings", "store_name", values.get("store_name", "MyStore"))
 		for field in ("product_list_meta_title", "product_list_meta_description", "product_list_og_image"):
-			frappe.db.set_single_value("Lifestyle Settings", field, values.get(field, ""))
-		frappe.clear_document_cache("Lifestyle Settings", "Lifestyle Settings")
+			frappe.db.set_single_value("Commera Settings", field, values.get(field, ""))
+		frappe.clear_document_cache("Commera Settings", "Commera Settings")
 
 	def test_no_category_uses_configured_product_list_fields(self):
 		self.set_product_list_seo(
@@ -504,16 +504,16 @@ class TestSitemapSegment(SitemapFixtureMixin, IntegrationTestCase):
 		self.assertEqual(self.run_segment("widgets", 1).urls, [])
 
 	def test_docs_per_page_honours_settings(self):
-		# The per-page budget is set in Lifestyle Settings and split across the storefront languages.
-		original = frappe.db.get_single_value("Lifestyle Settings", "sitemap_urls_per_page")
+		# The per-page budget is set in Commera Settings and split across the storefront languages.
+		original = frappe.db.get_single_value("Commera Settings", "sitemap_urls_per_page")
 		try:
-			frappe.db.set_single_value("Lifestyle Settings", "sitemap_urls_per_page", 10)
+			frappe.db.set_single_value("Commera Settings", "sitemap_urls_per_page", 10)
 			self.assertEqual(
 				sitemap_segment.get_docs_per_page(),
 				10 // len(sitemap_segment.LANGUAGES),
 			)
 		finally:
-			frappe.db.set_single_value("Lifestyle Settings", "sitemap_urls_per_page", original)
+			frappe.db.set_single_value("Commera Settings", "sitemap_urls_per_page", original)
 
 	def test_no_cache_flag_set(self):
 		self.assertEqual(self.run_segment("products", 1).no_cache, 1)

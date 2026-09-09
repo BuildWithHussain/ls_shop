@@ -9,7 +9,7 @@ from pathlib import Path
 import frappe
 from frappe.tests import IntegrationTestCase
 
-from commera.lifestyle_shop_ecommerce.doctype.lifestyle_settings.navbar import navbar_manager
+from commera.commera_ecommerce.doctype.commera_settings.navbar import navbar_manager
 from commera.shop_data import get_category_facets, get_header_data, get_storefront_menu
 from commera.tests import delete_menu_entries
 

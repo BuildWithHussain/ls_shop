@@ -1,4 +1,4 @@
-{% set settings = preview_settings if preview_settings is defined and preview_settings else frappe.get_cached_doc("Lifestyle Settings", "Lifestyle Settings") %}
+{% set settings = preview_settings if preview_settings is defined and preview_settings else frappe.get_cached_doc("Commera Settings", "Commera Settings") %}
 <div class="mb-12 flex items-center space-x-4 md:mb-0">
   {% if settings.facebook_url %}
   <a href="{{ settings.facebook_url }}" target="_blank" rel="noopener noreferrer">

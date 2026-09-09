@@ -122,8 +122,8 @@ def _get_cart_quotation(party=None):
 
 	if quotation:
 		return frappe.get_cached_doc("Quotation", quotation[0])
-	lifestyle_settings = frappe.get_cached_doc("Lifestyle Settings")
-	company = lifestyle_settings.get("company") or frappe.get_cached_value(
+	commera_settings = frappe.get_cached_doc("Commera Settings")
+	company = commera_settings.get("company") or frappe.get_cached_value(
 		"Global Defaults", "Global Defaults", "default_company"
 	)
 	quotation_doc = frappe.new_doc("Quotation")
@@ -135,9 +135,7 @@ def _get_cart_quotation(party=None):
 	quotation_doc.contact_email = frappe.session.user
 	quotation_doc.flags.ignore_permissions = True
 	quotation_doc.run_method("set_missing_values")
-	if sale_price_list := frappe.get_cached_value(
-		"Lifestyle Settings", "Lifestyle Settings", "sale_price_list"
-	):
+	if sale_price_list := frappe.get_cached_value("Commera Settings", "Commera Settings", "sale_price_list"):
 		quotation_doc.selling_price_list = sale_price_list
 	return quotation_doc
 

@@ -1,6 +1,6 @@
 import frappe
 
-from commera.lifestyle_shop_ecommerce.doctype.lifestyle_settings.navbar.navbar_manager import (
+from commera.commera_ecommerce.doctype.commera_settings.navbar.navbar_manager import (
 	seed_menu_when_empty,
 )
 

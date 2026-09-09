@@ -10,7 +10,7 @@ from frappe.utils import add_days, now_datetime
 from commera.analytics import events
 from commera.api.analytics import capture
 from commera.api.analytics_dashboard import get_traffic_sources
-from commera.lifestyle_shop_ecommerce.doctype.storefront_analytics_event.storefront_analytics_event import (
+from commera.commera_ecommerce.doctype.storefront_analytics_event.storefront_analytics_event import (
 	StorefrontAnalyticsEvent,
 )
 from commera.tests import get_test_item

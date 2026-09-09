@@ -140,7 +140,7 @@ def describe_availability(quantity, low_level: int = LOW_STOCK_THRESHOLD):
 
 
 def get_ecommerce_warehouse():
-	return frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "ecommerce_warehouse")
+	return frappe.get_cached_value("Commera Settings", "Commera Settings", "ecommerce_warehouse")
 
 
 @frappe.whitelist(methods=["POST"])

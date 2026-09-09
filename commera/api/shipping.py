@@ -9,7 +9,7 @@ from commera.utils import validate_document_access
 DELIVERY_CHARGE_DESCRIPTION = "Delivery Charges"
 
 # ponytail: one notional box for the whole cart, since commera has no parcel templates; swap for a
-# Shipment Parcel Template on Lifestyle Settings once packing rules matter more than a rate estimate.
+# Shipment Parcel Template on Commera Settings once packing rules matter more than a rate estimate.
 DEFAULT_PARCEL_DIMENSIONS = {"length": 30.0, "width": 20.0, "height": 10.0}
 DEFAULT_ITEM_WEIGHT_KG = 0.5
 
@@ -280,9 +280,9 @@ def get_charge_account(title: str) -> str:
 	if account:
 		return account
 
-	account = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "charge_account_head")
+	account = frappe.get_cached_value("Commera Settings", "Commera Settings", "charge_account_head")
 	if not account:
-		frappe.throw(_("Set a Charge Account Head in Lifestyle Settings before charging for delivery."))
+		frappe.throw(_("Set a Charge Account Head in Commera Settings before charging for delivery."))
 	return account
 
 

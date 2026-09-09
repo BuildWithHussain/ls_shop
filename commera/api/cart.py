@@ -24,7 +24,7 @@ def get_cart_price(item_code: str, default_price_list: str, sale_price_list: str
 
 def get_stock_shortfalls(items) -> list[str]:
 	"""Cart lines the warehouse cannot fulfil, as shopper-facing strings. Empty when the cart is sellable."""
-	warehouse = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "ecommerce_warehouse")
+	warehouse = frappe.get_cached_value("Commera Settings", "Commera Settings", "ecommerce_warehouse")
 	stock_by_item_code = get_available_stocks(get_cart_item_codes(items), warehouse)
 
 	shortfalls = []
@@ -63,10 +63,10 @@ def validate_stock_available(items):
 @frappe.whitelist(allow_guest=True)  # nosemgrep: guest-whitelisted-method
 def get_detail_for_cart_items(items: list | str):
 	items = frappe.parse_json(items)
-	lifestyle_settings = frappe.get_cached_doc("Lifestyle Settings")
-	warehouse = lifestyle_settings.ecommerce_warehouse
-	default_price_list = lifestyle_settings.get_default_price_list()
-	sale_price_list = lifestyle_settings.get_sale_price_list()
+	commera_settings = frappe.get_cached_doc("Commera Settings")
+	warehouse = commera_settings.ecommerce_warehouse
+	default_price_list = commera_settings.get_default_price_list()
+	sale_price_list = commera_settings.get_sale_price_list()
 
 	item_codes = get_cart_item_codes(items)
 	stock_by_item_code = get_available_stocks(item_codes, warehouse)
@@ -96,8 +96,8 @@ def validate_cart_stock(items: list | str):
 @frappe.whitelist()
 def update_variant(product_name: str, size: str):
 	product_variant = frappe.get_cached_doc("Style Attribute Variant", product_name)
-	lifestyle_settings = frappe.get_cached_doc("Lifestyle Settings")
-	warehouse = lifestyle_settings.ecommerce_warehouse
+	commera_settings = frappe.get_cached_doc("Commera Settings")
+	warehouse = commera_settings.ecommerce_warehouse
 	available_sizes = get_available_sizes(product_variant, warehouse)
 	selected_item = get_selected_item(available_sizes, size)
 	if not selected_item or selected_item.get("size") != size:
@@ -105,8 +105,8 @@ def update_variant(product_name: str, size: str):
 
 	default_price, sale_price = get_cart_price(
 		selected_item["item_code"],
-		lifestyle_settings.get_default_price_list(),
-		lifestyle_settings.get_sale_price_list(),
+		commera_settings.get_default_price_list(),
+		commera_settings.get_sale_price_list(),
 	)
 
 	return {

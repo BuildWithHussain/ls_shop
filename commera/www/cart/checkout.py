@@ -25,10 +25,10 @@ def get_context(context):
 	cart_quotation = _get_cart_quotation()
 	if not cart_quotation or not cart_quotation.items:
 		frappe.redirect(f"/{frappe.local.lang}/cart")
-	lifestyle_settings = frappe.get_cached_doc("Lifestyle Settings")
-	default_price_list = lifestyle_settings.get("default_price_list")
+	commera_settings = frappe.get_cached_doc("Commera Settings")
+	default_price_list = commera_settings.get("default_price_list")
 	context.payment_gateways = get_available_payment_modes()
-	context.show_cod = lifestyle_settings.get("cod_enabled", 0)
+	context.show_cod = commera_settings.get("cod_enabled", 0)
 	context.cart_quotation = cart_quotation
 	context.coupon_code = get_coupon_code(cart_quotation)
 	context.country_list = get_country_list()

@@ -7,7 +7,7 @@ from frappe.utils.data import flt
 
 from commera.install_analytics_demo_data import install_analytics_demo_data
 from commera.install_demo_data import (
-	configure_lifestyle_settings,
+	configure_commera_settings,
 	create_item_attributes,
 	ensure_warehouse_exists,
 )
@@ -120,7 +120,7 @@ def install_pixio_demo(currency=DEFAULT_CURRENCY):
 	normalise_size_attribute()
 	save_shipping_rule(profile)
 
-	configure_lifestyle_settings()
+	configure_commera_settings()
 	apply_store_copy(profile)
 
 	activate_pixio_theme()
@@ -282,8 +282,8 @@ def save_shipping_rule(profile):
 
 
 def apply_store_copy(profile):
-	"""Local COD thresholds and the storefront's own name, over what configure_lifestyle_settings left."""
-	settings = frappe.get_doc("Lifestyle Settings")
+	"""Local COD thresholds and the storefront's own name, over what configure_commera_settings left."""
+	settings = frappe.get_doc("Commera Settings")
 	settings.cod_enabled = 1
 	settings.cod_charge = profile["cod_charge"]
 	settings.cod_charge_applicable_below = profile["cod_charge_applicable_below"]
@@ -374,7 +374,7 @@ def activate_pixio_theme():
 
 def save_footer_sections():
 	"""Rebuild the footer from the reference columns, replacing whatever the base seeder left."""
-	settings = frappe.get_doc("Lifestyle Settings")
+	settings = frappe.get_doc("Commera Settings")
 	settings.footer_sections = []
 
 	for section_order, section in enumerate(FOOTER_SECTIONS, start=1):

@@ -1,0 +1,62 @@
+{
+	"cards": [
+		{
+			"card": "FB PageView (30d)"
+		},
+		{
+			"card": "FB ViewContent (30d)"
+		},
+		{
+			"card": "FB AddToCart (30d)"
+		},
+		{
+			"card": "FB InitiateCheckout (30d)"
+		},
+		{
+			"card": "FB Purchase (30d)"
+		},
+		{
+			"card": "GA4 Sessions (30d)"
+		},
+		{
+			"card": "GA4 Active Users (30d)"
+		},
+		{
+			"card": "GA4 page_view (30d)"
+		},
+		{
+			"card": "GA4 view_item (30d)"
+		},
+		{
+			"card": "GA4 add_to_cart (30d)"
+		},
+		{
+			"card": "GA4 begin_checkout (30d)"
+		},
+		{
+			"card": "GA4 purchase (30d)"
+		}
+	],
+	"charts": [
+		{
+			"chart": "Facebook PageView Trend",
+			"width": "Full"
+		},
+		{
+			"chart": "GA4 Sessions Trend",
+			"width": "Full"
+		}
+	],
+	"creation": "2026-07-15 12:00:00.000000",
+	"dashboard_name": "Storefront Analytics",
+	"docstatus": 0,
+	"doctype": "Dashboard",
+	"idx": 0,
+	"is_default": 0,
+	"is_standard": 1,
+	"modified": "2026-07-15 22:00:00.000000",
+	"modified_by": "Administrator",
+	"module": "Commera Ecommerce",
+	"name": "Storefront Analytics",
+	"owner": "Administrator"
+}

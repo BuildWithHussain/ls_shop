@@ -59,7 +59,7 @@
 	const CSS_COLOR_PATTERN = /^(#[0-9a-f]{3,8}|[a-z]+)$/i;
 
 	const PUBLISH_METHOD =
-		'commera.lifestyle_shop_ecommerce.doctype.bulk_publish_variants.bulk_publish_variants.set_variants_published';
+		'commera.commera_ecommerce.doctype.bulk_publish_variants.bulk_publish_variants.set_variants_published';
 
 	frappe.ui.form.on('Item', {
 		refresh(frm) {
@@ -335,13 +335,13 @@
 			let configurator_name = existing_configurator.message?.name;
 			if (!configurator_name) {
 				const based_on_attribute = await frappe.db.get_single_value(
-					'Lifestyle Settings',
+					'Commera Settings',
 					'based_on_attribute',
 				);
 				if (!based_on_attribute) {
 					frappe.throw(
 						__(
-							'Set "Based On Attribute" in Lifestyle Settings before generating variants.',
+							'Set "Based On Attribute" in Commera Settings before generating variants.',
 						),
 					);
 				}
@@ -994,8 +994,8 @@
 		}
 
 		const { message: settings_price_lists } = await frappe.db.get_value(
-			'Lifestyle Settings',
-			'Lifestyle Settings',
+			'Commera Settings',
+			'Commera Settings',
 			['default_price_list', 'sale_price_list'],
 		);
 		const default_price_list = settings_price_lists?.default_price_list;

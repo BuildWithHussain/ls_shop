@@ -4,7 +4,7 @@ import frappe
 from bwh_payments.bwh_payments.utils import get_available_payment_modes
 
 from commera.api.payments import COD_PAYMENT_MODE
-from commera.lifestyle_shop_ecommerce.doctype.lifestyle_settings.navbar.navbar_manager import (
+from commera.commera_ecommerce.doctype.commera_settings.navbar.navbar_manager import (
 	seed_menu_when_empty,
 )
 from commera.search.build import ensure_index_built
@@ -25,7 +25,7 @@ def after_install():
 		import traceback
 
 		error_msg = f"Error creating default email templates: {e!s}"
-		frappe.log_error(traceback.format_exc(), "Lifestyle Shop Installation - Email Templates")
+		frappe.log_error(traceback.format_exc(), "Commera Installation - Email Templates")
 		frappe.errprint(error_msg)
 		frappe.errprint(traceback.format_exc())
 
@@ -50,10 +50,10 @@ def after_migrate():
 
 def populate_search_settings():
 	"""Seed the search content/result field tables when they have never been configured (idempotent)."""
-	if not frappe.db.exists("DocType", "Lifestyle Settings"):
+	if not frappe.db.exists("DocType", "Commera Settings"):
 		return
 
-	settings = frappe.get_single("Lifestyle Settings")
+	settings = frappe.get_single("Commera Settings")
 	if settings.search_content_fields and settings.search_result_fields:
 		return
 
@@ -143,13 +143,13 @@ def add_payment_mode(mode_of_payment: str, payment_type: str):
 
 
 def get_shop_company() -> str | None:
-	return frappe.db.get_single_value("Lifestyle Settings", "company") or frappe.get_cached_value(
+	return frappe.db.get_single_value("Commera Settings", "company") or frappe.get_cached_value(
 		"Global Defaults", "Global Defaults", "default_company"
 	)
 
 
 def create_default_email_templates():
-	"""Create default email templates required by Lifestyle Settings"""
+	"""Create default email templates required by Commera Settings"""
 
 	email_templates = [
 		{
@@ -208,9 +208,9 @@ Best regards,
 
 
 def seed_llms_txt():
-	current = frappe.db.get_single_value("Lifestyle Settings", "llms_txt")
+	current = frappe.db.get_single_value("Commera Settings", "llms_txt")
 	if not (current and current.strip()):
-		frappe.db.set_single_value("Lifestyle Settings", "llms_txt", DEFAULT_LLMS_TXT)
+		frappe.db.set_single_value("Commera Settings", "llms_txt", DEFAULT_LLMS_TXT)
 
 
 def setup_robots_txt():

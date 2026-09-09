@@ -8,7 +8,7 @@ import re
 import frappe
 from frappe.utils import cstr, escape_html, validate_url
 
-from commera.lifestyle_shop_ecommerce.doctype.lifestyle_settings.editor_input import SAFE_URL_SCHEMES
+from commera.commera_ecommerce.doctype.commera_settings.editor_input import SAFE_URL_SCHEMES
 from commera.shop_themes.chrome_preview import (
 	COMMON_BLANKED_BLOCKS,
 	HEADER_BLOCKS,
@@ -62,9 +62,9 @@ PREVIEW_LANGUAGES = ("en", "ar")
 
 
 def get_context(context):
-	frappe.has_permission("Lifestyle Settings", "write", throw=True)
+	frappe.has_permission("Commera Settings", "write", throw=True)
 
-	settings = frappe.get_single("Lifestyle Settings")
+	settings = frappe.get_single("Commera Settings")
 	for fieldname in PREVIEW_OVERRIDE_FIELDS:
 		value = frappe.form_dict.get(fieldname)
 		# Werkzeug hands back a list when a param repeats.

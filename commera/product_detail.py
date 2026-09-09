@@ -18,16 +18,16 @@ def get_product_detail(route, selected_size=None):
 		return None
 
 	product = frappe.get_doc("Item", product_variant.item_style)
-	lifestyle_settings = frappe.get_cached_doc("Lifestyle Settings")
-	warehouse = lifestyle_settings.ecommerce_warehouse
+	commera_settings = frappe.get_cached_doc("Commera Settings")
+	warehouse = commera_settings.ecommerce_warehouse
 
 	available_sizes = get_available_sizes(product_variant, warehouse)
 	selected_item = get_selected_item(available_sizes, selected_size)
 	if not selected_item:
 		selected_item = available_sizes[0] if available_sizes else None
 
-	default_price = flt(get_price(selected_item, lifestyle_settings.get_default_price_list()))
-	sale_price = get_price(selected_item, lifestyle_settings.get_sale_price_list())
+	default_price = flt(get_price(selected_item, commera_settings.get_default_price_list()))
+	sale_price = get_price(selected_item, commera_settings.get_sale_price_list())
 	selected_price = sale_price if sale_price is not None else default_price
 
 	images = (

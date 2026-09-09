@@ -428,7 +428,7 @@ def save_item_variants(template_name, product, variant):
 
 def receive_opening_stock(qty_per_item=25):
 	"""Stock every unstocked fashion item in the ecommerce warehouse so the storefront sells them."""
-	warehouse = frappe.get_cached_doc("Lifestyle Settings").ecommerce_warehouse or ensure_warehouse_exists()
+	warehouse = frappe.get_cached_doc("Commera Settings").ecommerce_warehouse or ensure_warehouse_exists()
 	company = frappe.db.get_value("Warehouse", warehouse, "company")
 	item_codes = frappe.get_all(
 		"Item",

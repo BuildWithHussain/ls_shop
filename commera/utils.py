@@ -190,7 +190,7 @@ def attach_live_prices(cards):
 	if not cards:
 		return cards
 
-	settings = frappe.get_cached_doc("Lifestyle Settings")
+	settings = frappe.get_cached_doc("Commera Settings")
 	item_codes = list(
 		{size["item_code"] for card in cards for size in (card.get("sizes") or []) if size.get("item_code")}
 	)
@@ -225,9 +225,9 @@ def get_product_count_qb(filters=None, product_list=None):
 
 
 def get_product_base_query(filters=None, product_list=None):
-	lifestyle_settings = frappe.get_cached_doc("Lifestyle Settings")
-	default_price_list = lifestyle_settings.default_price_list
-	sale_price_list = lifestyle_settings.sale_price_list
+	commera_settings = frappe.get_cached_doc("Commera Settings")
+	default_price_list = commera_settings.default_price_list
+	sale_price_list = commera_settings.sale_price_list
 	style_attribute_variant = DocType("Style Attribute Variant")
 	website_slideshow_item = DocType("Website Slideshow Item")
 	color_size_item = DocType("Color Size Item")
@@ -303,7 +303,7 @@ def get_product_base_query(filters=None, product_list=None):
 
 
 def get_delivery_configuration():
-	shoe_arena_settings = frappe.get_cached_doc("Lifestyle Settings")
+	shoe_arena_settings = frappe.get_cached_doc("Commera Settings")
 	if not shoe_arena_settings.shipping_rule:
 		return 0, 0
 	shipping_rule = frappe.get_cached_doc("Shipping Rule", shoe_arena_settings.shipping_rule)
@@ -318,7 +318,7 @@ COD_CHARGE_DESCRIPTION = " Cash on Delivery Charges"
 
 
 def get_cod_configuration():
-	shoe_arena_settings = frappe.get_cached_doc("Lifestyle Settings")
+	shoe_arena_settings = frappe.get_cached_doc("Commera Settings")
 	return (
 		shoe_arena_settings.cod_charge_applicable_below,
 		shoe_arena_settings.cod_charge,
@@ -327,7 +327,7 @@ def get_cod_configuration():
 
 def format_theme_css():
 	# jinja's safe globals return documents as plain dicts, so controller methods are unreachable from templates
-	return frappe.get_cached_doc("Lifestyle Settings", "Lifestyle Settings").generate_theme_css()
+	return frappe.get_cached_doc("Commera Settings", "Commera Settings").generate_theme_css()
 
 
 def get_currency_symbol():

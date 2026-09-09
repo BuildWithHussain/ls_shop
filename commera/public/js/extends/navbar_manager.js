@@ -4,14 +4,14 @@
 // Frappe concatenates every `doctype_js` file for a doctype into one `new Function()` scope
 // (script_manager.js `setup`), so a top-level name here would collide with the other scripts.
 (() => {
-	frappe.ui.form.on('Lifestyle Settings', {
+	frappe.ui.form.on('Commera Settings', {
 		refresh(frm) {
 			refresh_navbar_editor(frm);
 		},
 	});
 
 	const MENU_MANAGER_METHOD_PREFIX =
-		'commera.lifestyle_shop_ecommerce.doctype.lifestyle_settings.navbar.navbar_manager.';
+		'commera.commera_ecommerce.doctype.commera_settings.navbar.navbar_manager.';
 	const MAX_MENU_DEPTH = 3;
 	const NO_LINK = 'No Link';
 	const LINK_TYPES = [NO_LINK, 'Item Group', 'Brand', 'URL'];
@@ -773,7 +773,7 @@
 			<div style="display:flex; align-items:center; padding:0 18px; background:var(--card-bg, var(--fg-color));
 				border-bottom:1px solid var(--border-color); flex-wrap:wrap;">
 				<span style="font-weight:700; font-size:15px; margin-right:28px; padding:10px 0;
-					color:var(--text-color);">Lifestyle</span>
+					color:var(--text-color);">Commera</span>
 				${tabs}
 			</div>
 			<div style="display:flex; gap:32px; padding:20px 24px 24px; background:var(--card-bg, var(--fg-color));

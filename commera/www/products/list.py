@@ -56,7 +56,7 @@ def get_product_filters(selected_filters):
 	"""Fetches available filters like brand, price range, and sizes."""
 	category = selected_filters.get("category", "")
 	item_price = DocType("Item Price")
-	sale_price_list = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "sale_price_list")
+	sale_price_list = frappe.get_cached_value("Commera Settings", "Commera Settings", "sale_price_list")
 	price_range = (
 		frappe.qb.from_(item_price)
 		.select(

@@ -34,7 +34,7 @@ x-init="fetch_returned_items('{{ order.name }}')" class=" flex flex-col border b
                 frappe.utils.pretty_date(frappe.utils.get_datetime(order.creation)) }}</h1>
             <h1 class="text-base mb-2 md:mb-0 md:text-lg">{{_('Order Id')}}: {{order.name}}</h1>
         </div>
-       {% set print_format  =  frappe.db.get_value("Lifestyle Settings","Lifestyle Settings","print_format") or 'Standard' %}
+       {% set print_format  =  frappe.db.get_value("Commera Settings","Commera Settings","print_format") or 'Standard' %}
 
         {% with sales_invoice = frappe.get_all("Sales Invoice",filters={'sales_order':order.name},limit=1) %}
         {% if sales_invoice %}

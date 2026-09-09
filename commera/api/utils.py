@@ -151,6 +151,6 @@ def get_stock_for_items(item_codes: list[str] | str):
 	if isinstance(item_codes, str):
 		item_codes = frappe.parse_json(item_codes)
 
-	warehouse = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "ecommerce_warehouse")
+	warehouse = frappe.get_cached_value("Commera Settings", "Commera Settings", "ecommerce_warehouse")
 	stocks = get_available_stocks(item_codes, warehouse)
 	return {item_code: data["stock_qty"] for item_code, data in stocks.items()}

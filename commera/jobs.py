@@ -6,15 +6,15 @@ from frappe.utils import add_to_date, get_url, now_datetime
 
 
 def get_cc_email():
-	return frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "cc_email")
+	return frappe.get_cached_value("Commera Settings", "Commera Settings", "cc_email")
 
 
 def send_order_success_acknowledgement(doc, method):
 	try:
 		doc_args = doc.as_dict()
 		order_confirmation_template_name = frappe.get_cached_value(
-			"Lifestyle Settings",
-			"Lifestyle Settings",
+			"Commera Settings",
+			"Commera Settings",
 			"order_confirmation_email_template",
 		)
 		email_template = frappe.get_doc("Email Template", order_confirmation_template_name)
@@ -38,8 +38,8 @@ def send_order_cancel_acknowledgement(doc, method):
 	try:
 		doc_args = doc.as_dict()
 		order_confirmation_template_name = frappe.get_cached_value(
-			"Lifestyle Settings",
-			"Lifestyle Settings",
+			"Commera Settings",
+			"Commera Settings",
 			"order_cancellation_email_template",
 		)
 		email_template = frappe.get_doc("Email Template", order_confirmation_template_name)
@@ -61,7 +61,7 @@ def send_order_cancel_acknowledgement(doc, method):
 
 def send_product_back_in_stock_email(doc, method):
 	ecommerce_warehouse = frappe.get_cached_value(
-		"Lifestyle Settings", "Lifestyle Settings", "ecommerce_warehouse"
+		"Commera Settings", "Commera Settings", "ecommerce_warehouse"
 	)
 	if doc.warehouse != ecommerce_warehouse:
 		return
@@ -135,14 +135,14 @@ def notify_users_if_item_in_stock(item_code):
 	if not style_attribute_variant.is_published:
 		return
 	item_in_stock_template_name = frappe.get_cached_value(
-		"Lifestyle Settings",
-		"Lifestyle Settings",
+		"Commera Settings",
+		"Commera Settings",
 		"item_in_stock_email_template",
 	)
 	email_template = frappe.get_doc("Email Template", item_in_stock_template_name)
 	doc_args = {
 		"item_code": style_attribute_variant.display_name,
-		"company": "Lifestyle",
+		"company": "Commera",
 		"website_url": get_url(f"{frappe.local.lang}/products/{style_attribute_variant.route}"),
 	}
 	# The template is Desk-authored on Email Template, so it is as trusted as the code itself.

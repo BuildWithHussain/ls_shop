@@ -14,7 +14,7 @@ class PixioThemeSettings(Document):
 		from frappe.types import DF
 		from frappe.website.doctype.website_slideshow_item.website_slideshow_item import WebsiteSlideshowItem
 
-		from commera.lifestyle_shop_ecommerce.doctype.recommended_variant.recommended_variant import (
+		from commera.commera_ecommerce.doctype.recommended_variant.recommended_variant import (
 			RecommendedVariant,
 		)
 		from commera.shop_themes.doctype.pixio_hero_slide.pixio_hero_slide import PixioHeroSlide

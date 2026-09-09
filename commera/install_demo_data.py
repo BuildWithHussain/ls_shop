@@ -21,9 +21,9 @@ def install_demo_data():
 		create_price_lists()
 		create_shipping_rule()
 
-		# Step 2: Configure Lifestyle Settings
-		print("\nStep 2: Configuring Lifestyle Settings...")
-		configure_lifestyle_settings()
+		# Step 2: Configure Commera Settings
+		print("\nStep 2: Configuring Commera Settings...")
+		configure_commera_settings()
 		# Step 2.1: Create Ecommerce Structure
 		print("\nStep 2.1: Creating Ecommerce Structure...")
 		create_ecommerce_group()
@@ -255,18 +255,18 @@ def ensure_warehouse_exists():
 	return warehouse_name
 
 
-def configure_lifestyle_settings():
-	"""Configure Lifestyle Settings"""
-	print("  - Configuring Lifestyle Settings...")
+def configure_commera_settings():
+	"""Configure Commera Settings"""
+	print("  - Configuring Commera Settings...")
 
 	# Ensure warehouse exists
 	warehouse = ensure_warehouse_exists()
 
 	# Get or create settings
-	if frappe.db.exists("Lifestyle Settings", "Lifestyle Settings"):
-		settings = frappe.get_doc("Lifestyle Settings", "Lifestyle Settings")
+	if frappe.db.exists("Commera Settings", "Commera Settings"):
+		settings = frappe.get_doc("Commera Settings", "Commera Settings")
 	else:
-		settings = frappe.get_doc({"doctype": "Lifestyle Settings"})
+		settings = frappe.get_doc({"doctype": "Commera Settings"})
 
 	# Configure settings
 	settings.company = frappe.defaults.get_user_default("Company") or frappe.db.get_value(
@@ -295,7 +295,7 @@ def configure_lifestyle_settings():
 			settings.append("reason_for_return", {"display_name": reason_text})
 
 	settings.save(ignore_permissions=True)
-	print("    ✓ Lifestyle Settings configured")
+	print("    ✓ Commera Settings configured")
 
 
 def get_available_attribute_values(attribute_name):
@@ -864,13 +864,13 @@ def create_ecommerce_categories():
 
 
 def create_default_footer_sections():
-	"""Create default footer sections in Lifestyle Settings"""
+	"""Create default footer sections in Commera Settings"""
 
-	if not frappe.db.exists("Lifestyle Settings", "Lifestyle Settings"):
-		frappe.errprint("Lifestyle Settings not found, skipping footer sections")
+	if not frappe.db.exists("Commera Settings", "Commera Settings"):
+		frappe.errprint("Commera Settings not found, skipping footer sections")
 		return
 
-	settings = frappe.get_doc("Lifestyle Settings", "Lifestyle Settings")
+	settings = frappe.get_doc("Commera Settings", "Commera Settings")
 
 	# Set default email templates if not already set (required fields)
 	if not settings.order_confirmation_email_template:
@@ -930,7 +930,7 @@ def create_default_footer_sections():
 		},
 	]
 
-	# Create Footer Section Config records and link them to Lifestyle Settings
+	# Create Footer Section Config records and link them to Commera Settings
 	for section_data in default_sections:
 		# Create Footer Section Config
 		section_config_name = section_data["section_title"]
@@ -947,7 +947,7 @@ def create_default_footer_sections():
 			section_config.insert(ignore_permissions=True)
 			frappe.errprint(f"Created Footer Section Config: {section_config_name}")
 
-		# Add to Lifestyle Settings footer_sections (Footer Section Mapping)
+		# Add to Commera Settings footer_sections (Footer Section Mapping)
 		settings.append(
 			"footer_sections",
 			{

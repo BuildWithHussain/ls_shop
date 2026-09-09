@@ -9,7 +9,7 @@ LANGUAGES = ("en", "ar")
 
 
 def get_docs_per_page():
-	urls_per_sitemap = cint(frappe.db.get_single_value("Lifestyle Settings", "sitemap_urls_per_page"))
+	urls_per_sitemap = cint(frappe.db.get_single_value("Commera Settings", "sitemap_urls_per_page"))
 	if urls_per_sitemap <= 0:
 		urls_per_sitemap = DEFAULT_URLS_PER_SITEMAP
 	return urls_per_sitemap // len(LANGUAGES)

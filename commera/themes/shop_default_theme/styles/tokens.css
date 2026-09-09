@@ -1,4 +1,4 @@
-/* Colour variables come from format_theme_css() (Lifestyle Settings), not from here - a
+/* Colour variables come from format_theme_css() (Commera Settings), not from here - a
    theme's own tokens must never redefine --ls-*. */
 :root,
 html[data-theme] {

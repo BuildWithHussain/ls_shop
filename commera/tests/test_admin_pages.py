@@ -7,7 +7,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from commera.api.admin.pages import delete_page, get_page, get_pages, save_page
-from commera.lifestyle_shop_ecommerce.doctype.lifestyle_settings.footer.footer_preview import (
+from commera.commera_ecommerce.doctype.commera_settings.footer.footer_preview import (
 	get_footer_editor_data,
 )
 from commera.tests.test_order_access import make_website_user

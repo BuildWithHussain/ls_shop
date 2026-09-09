@@ -44,7 +44,7 @@ DYNAMIC_PAGE_LANG_PREFIXES = frozenset({"en", "ar"})
 # templates/includes/header.html and silently disconnect the menu manager and footer editor.
 THEME_OVERRIDABLE_PREFIX = "components/"
 
-DEFAULT_APP_NAME = "Lifestyle"
+DEFAULT_APP_NAME = "Commera"
 
 
 def find_theme_file(theme_dirs, relative_path):

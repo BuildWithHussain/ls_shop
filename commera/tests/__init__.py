@@ -5,10 +5,10 @@
 
 import frappe
 
-from commera.install import TEST_ITEM_GROUP
-from commera.lifestyle_shop_ecommerce.doctype.ecommerce_category.ecommerce_category import (
+from commera.commera_ecommerce.doctype.ecommerce_category.ecommerce_category import (
 	ITEM_GROUP_LINK_DOCTYPE,
 )
+from commera.install import TEST_ITEM_GROUP
 from commera.utils import IN_CLAUSE_CHUNK_SIZE
 
 

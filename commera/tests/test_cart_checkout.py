@@ -19,10 +19,10 @@ class TestCartCheckout(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		lifestyle_settings = frappe.get_cached_doc("Lifestyle Settings")
-		cls.default_price_list = lifestyle_settings.get_default_price_list()
-		cls.sale_price_list = lifestyle_settings.get_sale_price_list()
-		cls.warehouse = lifestyle_settings.ecommerce_warehouse
+		commera_settings = frappe.get_cached_doc("Commera Settings")
+		cls.default_price_list = commera_settings.get_default_price_list()
+		cls.sale_price_list = commera_settings.get_sale_price_list()
+		cls.warehouse = commera_settings.ecommerce_warehouse
 
 	def setUp(self):
 		self.addCleanup(frappe.set_user, "Administrator")

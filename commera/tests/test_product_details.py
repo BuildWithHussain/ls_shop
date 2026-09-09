@@ -20,12 +20,12 @@ class ProductDetailPriceTestCase(IntegrationTestCase):
 		self.sale_price_list = self.make_price_list("Sale")
 		self.warehouse = frappe.db.get_value("Warehouse", {"is_group": 0}, "name")
 
-		settings = frappe.get_doc("Lifestyle Settings")
+		settings = frappe.get_doc("Commera Settings")
 		settings.default_price_list = self.default_price_list
 		settings.sale_price_list = self.sale_price_list
 		settings.ecommerce_warehouse = self.warehouse
 		settings.save(ignore_permissions=True)
-		frappe.clear_document_cache("Lifestyle Settings", "Lifestyle Settings")
+		frappe.clear_document_cache("Commera Settings", "Commera Settings")
 
 		self.item_group = self.make_item_group()
 		self.configurator = get_test_configurator()

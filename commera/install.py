@@ -15,7 +15,7 @@ def before_tests():
 	complete_setup_wizard()
 	seed_erpnext_test_defaults()
 	seed_storefront_item_group()
-	seed_lifestyle_settings()
+	seed_commera_settings()
 
 	frappe.db.commit()  # nosemgrep: frappe-manual-commit -- persist seed data before the test run begins
 
@@ -88,9 +88,9 @@ def seed_storefront_item_group():
 	).insert(ignore_permissions=True)
 
 
-def seed_lifestyle_settings():
-	"""Fill the four mandatory Lifestyle Settings fields, which any later save() would otherwise trip on."""
-	settings = frappe.get_single("Lifestyle Settings")
+def seed_commera_settings():
+	"""Fill the four mandatory Commera Settings fields, which any later save() would otherwise trip on."""
+	settings = frappe.get_single("Commera Settings")
 	settings.company = TEST_COMPANY
 	settings.order_confirmation_email_template = "Order Confirmation"
 	settings.order_cancellation_email_template = "Order Cancellation"

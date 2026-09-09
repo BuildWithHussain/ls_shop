@@ -1,8 +1,8 @@
 {% macro search_bar() %}
 {% from "templates/macros/icon.html" import icon %}
-{% set settings = frappe.get_cached_doc("Lifestyle Settings", "Lifestyle Settings") %}
+{% set settings = frappe.get_cached_doc("Commera Settings", "Commera Settings") %}
 {% set brand_logo = get_brand_assets().logo %}
-{% set store_name = settings.store_name or "Lifestyle" %}
+{% set store_name = settings.store_name or "Commera" %}
 {% set card_fields = get_search_result_fields() %}
 <div x-data="{
     is_open: false,

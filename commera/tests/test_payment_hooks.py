@@ -446,7 +446,7 @@ class TestPaymentHookIdempotency(IntegrationTestCase):
 	def test_a_cod_confirmation_is_refused_while_a_gateway_session_is_open(self):
 		"""payment_mode is a query-string parameter, so it is the shopper who chooses this branch."""
 		self.create_pending_payment_request(self.quotation)
-		frappe.db.set_single_value("Lifestyle Settings", "cod_enabled", 1)
+		frappe.db.set_single_value("Commera Settings", "cod_enabled", 1)
 
 		frappe.set_user(self.shopper)
 

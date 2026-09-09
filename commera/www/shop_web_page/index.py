@@ -1,7 +1,7 @@
 import frappe
 
 from commera import seo
-from commera.lifestyle_shop_ecommerce.doctype.shop_web_page.shop_web_page import (
+from commera.commera_ecommerce.doctype.shop_web_page.shop_web_page import (
 	get_page_by_route,
 	get_page_content,
 )

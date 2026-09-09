@@ -1,7 +1,7 @@
 import frappe
 from frappe.utils import cint, create_batch, cstr
 
-from commera.lifestyle_shop_ecommerce.doctype.ecommerce_category.ecommerce_category import root_filter
+from commera.commera_ecommerce.doctype.ecommerce_category.ecommerce_category import root_filter
 from commera.utils import IN_CLAUSE_CHUNK_SIZE
 
 # The only doctypes reachable from a variant (itself, its Item, its Style Attribute Configurator).
@@ -21,7 +21,7 @@ DEFAULT_CONTENT_FIELDS = (
 
 def get_configured_content_fields():
 	"""Configured (doctype, field) pairs that feed `content` (allowed + text-typed only), else the defaults."""
-	settings = frappe.get_cached_doc("Lifestyle Settings")
+	settings = frappe.get_cached_doc("Commera Settings")
 	configured = [
 		(row.search_doctype, row.field)
 		for row in (settings.search_content_fields or [])
@@ -285,7 +285,7 @@ def images_for_variants(variant_names):
 
 def prices_for_variants(sizes_by_variant):
 	"""Map variant -> price snapshot, aggregating Item Price over the variant's item_codes."""
-	settings = frappe.get_cached_doc("Lifestyle Settings")
+	settings = frappe.get_cached_doc("Commera Settings")
 	default_price_list = settings.default_price_list
 	sale_price_list = settings.sale_price_list
 

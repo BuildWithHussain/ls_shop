@@ -46,7 +46,7 @@ class TestBrandAssetResolution(IntegrationTestCase):
 		self.assertEqual(assets.favicon, "/files/website-favicon.png")
 
 	def test_legacy_settings_used_when_website_settings_empty(self):
-		# Existing sites branded through Lifestyle Settings must not go blank on upgrade.
+		# Existing sites branded through Commera Settings must not go blank on upgrade.
 		set_brand_settings(
 			legacy={
 				"brand_logo": "/files/legacy-logo.png",

@@ -153,8 +153,8 @@ def pick_rows(variant_names):
 
 def save_social_urls():
 	"""Seed demo placeholder social handles, not the merchant's real accounts."""
-	# Written field-wise: Lifestyle Settings.validate rejects a site with no payment method configured.
-	settings = frappe.get_cached_doc("Lifestyle Settings")
+	# Written field-wise: Commera Settings.validate rejects a site with no payment method configured.
+	settings = frappe.get_cached_doc("Commera Settings")
 	for fieldname, url in SOCIAL_URLS.items():
 		if not settings.get(fieldname):
-			frappe.db.set_single_value("Lifestyle Settings", fieldname, url)
+			frappe.db.set_single_value("Commera Settings", fieldname, url)

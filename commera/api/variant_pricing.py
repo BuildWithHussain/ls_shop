@@ -17,9 +17,9 @@ JOB_COMMIT_CHUNK_SIZE = 500
 
 
 def get_selling_price_lists():
-	settings = frappe.get_cached_doc("Lifestyle Settings")
+	settings = frappe.get_cached_doc("Commera Settings")
 	if not settings.default_price_list or not settings.sale_price_list:
-		frappe.throw(_("Set Default Price List and Sale Price List in Lifestyle Settings first."))
+		frappe.throw(_("Set Default Price List and Sale Price List in Commera Settings first."))
 	return settings.default_price_list, settings.sale_price_list
 
 

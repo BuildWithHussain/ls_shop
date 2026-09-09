@@ -4,10 +4,10 @@
 import frappe
 from frappe.utils import cstr
 
-from commera.lifestyle_shop_ecommerce.doctype.ecommerce_category.ecommerce_category import (
+from commera.commera_ecommerce.doctype.commera_settings.navbar import navbar_manager
+from commera.commera_ecommerce.doctype.ecommerce_category.ecommerce_category import (
 	MAX_MENU_DEPTH,
 )
-from commera.lifestyle_shop_ecommerce.doctype.lifestyle_settings.navbar import navbar_manager
 
 # Re-exported by reference: frappe.whitelist records the function object, so whitelisting travels with it.
 add_node = navbar_manager.add_node

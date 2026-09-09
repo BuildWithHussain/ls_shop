@@ -39,7 +39,7 @@ class TestStorefrontSearch(IntegrationTestCase):
 		SqliteProductSearch.INDEX_NAME = TEST_INDEX_NAME
 		SqliteProductSearch().drop_index()
 
-		settings = frappe.get_cached_doc("Lifestyle Settings")
+		settings = frappe.get_cached_doc("Commera Settings")
 		cls.default_price_list = settings.default_price_list
 		cls.sale_price_list = settings.sale_price_list
 		cls.price_names = {}
@@ -509,16 +509,16 @@ class TestStorefrontSearch(IntegrationTestCase):
 	# -- configurable content resolution -----------------------------------------------------------
 
 	def set_content_fields(self, pairs):
-		"""Point Lifestyle Settings.search_content_fields at the given (doctype, field) pairs."""
-		frappe.clear_document_cache("Lifestyle Settings")
-		self.addCleanup(frappe.clear_document_cache, "Lifestyle Settings")
-		settings = frappe.get_single("Lifestyle Settings")
+		"""Point Commera Settings.search_content_fields at the given (doctype, field) pairs."""
+		frappe.clear_document_cache("Commera Settings")
+		self.addCleanup(frappe.clear_document_cache, "Commera Settings")
+		settings = frappe.get_single("Commera Settings")
 		settings.search_content_fields = []
 		for search_doctype, field in pairs:
 			settings.append("search_content_fields", {"search_doctype": search_doctype, "field": field})
 		with patch("frappe.enqueue"):
 			settings.save(ignore_permissions=True)
-		frappe.clear_document_cache("Lifestyle Settings")
+		frappe.clear_document_cache("Commera Settings")
 
 	def content_for(self, variant_name):
 		return record_builder.build_product_search_records([variant_name])[0]["content"]

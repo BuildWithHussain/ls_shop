@@ -22,7 +22,7 @@ function endSelecting() {
   selection.value = []
 }
 
-// commera is single-warehouse (Bin, resolved server-side from Lifestyle Settings) — the mock's
+// commera is single-warehouse (Bin, resolved server-side from Commera Settings) — the mock's
 // per-row `locationId` never varied, and there is no pagination control in this frozen layout
 // either, so one generous page stands in for it (same call as Attributes.vue/Collections.vue).
 const inventoryRequest = useAdminRead('inventory.get_inventory', {

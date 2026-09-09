@@ -31,7 +31,7 @@
    "label": "Navigation"
   },
   {
-   "description": "Falls back to Lifestyle Settings.copyright_text when blank.",
+   "description": "Falls back to Commera Settings.copyright_text when blank.",
    "fieldname": "footer_note",
    "fieldtype": "Data",
    "label": "Footer Note"

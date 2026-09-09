@@ -117,7 +117,7 @@
                 {% endif %}
             </h3>
         </div>
-       {% set print_format  =  frappe.db.get_value("Lifestyle Settings","Lifestyle Settings","print_format") or 'Standard' %}
+       {% set print_format  =  frappe.db.get_value("Commera Settings","Commera Settings","print_format") or 'Standard' %}
         <div class=" md:w-1/6">
             <div class="min-h-5">
                 {% with sales_invoice = frappe.get_all("Sales Invoice",filters={'sales_order':order.name},limit=1) %}

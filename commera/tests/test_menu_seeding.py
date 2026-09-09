@@ -10,11 +10,11 @@ from frappe.database.schema import add_column
 from frappe.tests import IntegrationTestCase
 from frappe.utils.nestedset import get_root_of
 
-from commera.lifestyle_shop_ecommerce.doctype.ecommerce_category.ecommerce_category import (
+from commera.commera_ecommerce.doctype.commera_settings.navbar import navbar_manager
+from commera.commera_ecommerce.doctype.ecommerce_category.ecommerce_category import (
 	get_item_groups_by_entry,
 	get_menu_tree,
 )
-from commera.lifestyle_shop_ecommerce.doctype.lifestyle_settings.navbar import navbar_manager
 from commera.patches import move_ecommerce_category_to_item_group_link as seeding_patch
 from commera.patches import move_item_group_links_onto_the_menu_entry as link_migration
 from commera.tests import delete_menu_entries
@@ -193,7 +193,7 @@ def make_interim_child_doctype():
 		{
 			"doctype": "DocType",
 			"name": INTERIM_DOCTYPE,
-			"module": "Lifestyle Shop Ecommerce",
+			"module": "Commera Ecommerce",
 			"custom": 1,
 			"istable": 1,
 			"fields": [

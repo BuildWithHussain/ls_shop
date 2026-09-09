@@ -1,7 +1,7 @@
 {% import "templates/macros/collapsible_section.html" as macros %}
-{% set settings = preview_settings if preview_settings is defined and preview_settings else frappe.get_cached_doc("Lifestyle Settings", "Lifestyle Settings") %}
+{% set settings = preview_settings if preview_settings is defined and preview_settings else frappe.get_cached_doc("Commera Settings", "Commera Settings") %}
 {% set footer_logo = preview_settings.footer_logo if preview_settings is defined and preview_settings and preview_settings.footer_logo else get_brand_assets().footer_logo %}
-{% set store_name = settings.store_name or "Lifestyle" %}
+{% set store_name = settings.store_name or "Commera" %}
 {% set contact_phone = settings.contact_phone or "920000576" %}
 {% set contact_email = settings.contact_email or "Contact@lifestyle.sa" %}
 {% set working_hours = settings.working_hours or "Sun - Thu / 10.00 AM - 6.00 PM" %}

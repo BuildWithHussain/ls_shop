@@ -4,14 +4,14 @@
 // Frappe concatenates every `doctype_js` file for a doctype into one `new Function()` scope
 // (script_manager.js `setup`), so a top-level name here would collide with the other scripts.
 (() => {
-	frappe.ui.form.on('Lifestyle Settings', {
+	frappe.ui.form.on('Commera Settings', {
 		refresh(frm) {
 			refresh_footer_editor(frm);
 		},
 	});
 
 	const FOOTER_EDITOR_METHOD_PREFIX =
-		'commera.lifestyle_shop_ecommerce.doctype.lifestyle_settings.footer.footer_preview.';
+		'commera.commera_ecommerce.doctype.commera_settings.footer.footer_preview.';
 
 	const LINK_SOURCE_URL = 'Custom URL';
 	const LINK_SOURCE_PAGE = 'Existing Page';
@@ -87,7 +87,7 @@
 		add_preview_handlers(frm, wrapper);
 	}
 
-	// A section change writes to Lifestyle Settings itself, so the open form is now stale. Reloading it
+	// A section change writes to Commera Settings itself, so the open form is now stale. Reloading it
 	// would throw away whatever the shop owner is mid-edit on another tab, hence the dirty branch.
 	async function refresh_after_section_change(frm, wrapper, data) {
 		if (frm.is_dirty()) {
@@ -291,7 +291,7 @@
 	);
 
 	frappe.ui.form.on(
-		'Lifestyle Settings',
+		'Commera Settings',
 		Object.fromEntries(
 			PREVIEW_OVERRIDE_FIELDS.map((fieldname) => [
 				fieldname,

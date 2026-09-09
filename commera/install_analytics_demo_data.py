@@ -258,7 +258,7 @@ def get_selling_price_list(company_currency):
 
 def get_ecommerce_warehouse(company):
 	"""Same warehouse the storefront checkout stamps on its orders."""
-	warehouse = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "ecommerce_warehouse")
+	warehouse = frappe.get_cached_value("Commera Settings", "Commera Settings", "ecommerce_warehouse")
 	return warehouse or frappe.db.get_value("Warehouse", {"company": company, "is_group": 0}, "name")
 
 

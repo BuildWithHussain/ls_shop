@@ -216,7 +216,7 @@ def get_ecommerce_stock(item_codes):
 	if not item_codes:
 		return {}
 
-	warehouse = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "ecommerce_warehouse")
+	warehouse = frappe.get_cached_value("Commera Settings", "Commera Settings", "ecommerce_warehouse")
 	if not warehouse:
 		# ponytail: stock reads as zero until the warehouse is set, revisit if multi-warehouse lands
 		return {}
@@ -254,7 +254,7 @@ def get_size_stock(item_codes):
 	if not item_codes:
 		return {}
 
-	warehouse = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "ecommerce_warehouse")
+	warehouse = frappe.get_cached_value("Commera Settings", "Commera Settings", "ecommerce_warehouse")
 	if not warehouse:
 		return {}
 
@@ -1005,7 +1005,7 @@ def create_product(
 	option_abbreviations: dict | str | None = None,
 	size_abbreviations: dict | str | None = None,
 ):
-	"""Create a sellable product; company, warehouse, price list, UOM and naming series come from Lifestyle
+	"""Create a sellable product; company, warehouse, price list, UOM and naming series come from Commera
 	Settings. Both axes are always written whatever the caller omits - see the note above SIZE_ATTRIBUTE."""
 	frappe.has_permission("Item", ptype="create", throw=True)
 

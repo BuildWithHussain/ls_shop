@@ -54,7 +54,7 @@ def get_retired_single_value(doctype: str, field: str):
 
 def telr_was_enabled() -> int:
 	# The field is gone from the meta by the time this runs, so the value comes off the Singles table.
-	return cint(get_retired_single_value("Lifestyle Settings", "telr_enabled"))
+	return cint(get_retired_single_value("Commera Settings", "telr_enabled"))
 
 
 def migrate_settings():

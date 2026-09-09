@@ -13,10 +13,8 @@ def get_context(context):
 	if not order_details:
 		frappe.redirect(f"/{frappe.local.lang}/account/orders")
 	context.order = order_details[0]
-	context.return_period = frappe.get_cached_value(
-		"Lifestyle Settings", "Lifestyle Settings", "return_period"
-	)
-	return_reasons = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "reason_for_return")
+	context.return_period = frappe.get_cached_value("Commera Settings", "Commera Settings", "return_period")
+	return_reasons = frappe.get_cached_value("Commera Settings", "Commera Settings", "reason_for_return")
 	context.return_reasons = [
 		{"name": return_reason.name, "display_name": return_reason.display_name}
 		for return_reason in return_reasons

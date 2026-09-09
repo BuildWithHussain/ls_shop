@@ -45,9 +45,9 @@ Before installing Commera, ensure these are configured in ERPNext:
 
 If you want to quickly test Commera with demo products, you have two options:
 
-#### Option 1: Using Lifestyle Settings (Recommended)
+#### Option 1: Using Commera Settings (Recommended)
 
-1. Navigate to: **Desk → Lifestyle Shop Ecommerce → Lifestyle Settings**
+1. Navigate to: **Desk → Commera Ecommerce → Commera Settings**
 2. Scroll to **Demo Data & Testing** section
 3. Click **"Install Demo Data"** button
 4. Wait for completion notification
@@ -100,7 +100,7 @@ Two things about that order are load-bearing:
 - ✅ Shipping Rule (Free shipping over $50)
 - ✅ 3 Demo Products with variants (~40 SKUs)
 - ✅ Style Attribute Configurators & Variants
-- ✅ Configured Lifestyle Settings
+- ✅ Configured Commera Settings
 - ✅ Published to website with Commera routes
 
 After installation, immediately visit:
@@ -160,9 +160,9 @@ Check that these were created successfully by navigating to:
 
 ## Initial Configuration
 
-### Step 1: Configure Lifestyle Settings
+### Step 1: Configure Commera Settings
 
-Navigate to: **Desk → Lifestyle Shop Ecommerce → Lifestyle Settings**
+Navigate to: **Desk → Commera Ecommerce → Commera Settings**
 
 #### A. Price List Configuration
 1. **Default Price List**: Select your main selling price list (e.g., "Standard Selling")
@@ -178,7 +178,7 @@ Navigate to: **Desk → Lifestyle Shop Ecommerce → Lifestyle Settings**
    - Navigate to **Desk → Selling → Shipping Rule**
    - Create a new Shipping Rule based on "Net Total"
    - Example: Free shipping above $100, else $10 flat rate
-   - Select this rule in Lifestyle Settings
+   - Select this rule in Commera Settings
 
 2. **Return Period**: Enter number of days customers can return items (e.g., 14, 30)
 
@@ -315,7 +315,7 @@ Save the item template.
 
 #### Step 2: Create Style Attribute Configurator (SAC)
 
-Navigate to: **Desk → Lifestyle Shop Ecommerce → Style Attribute Configurator → New**
+Navigate to: **Desk → Commera Ecommerce → Style Attribute Configurator → New**
 
 1. **Item Template**: Select your template (e.g., "TSHIRT-CLASSIC-TEMPLATE")
 2. **Item Attribute**: Select primary attribute (usually "Color")
@@ -324,7 +324,7 @@ Navigate to: **Desk → Lifestyle Shop Ecommerce → Style Attribute Configurato
 
 #### Step 3: Create Style Attribute Variants (SAV)
 
-Navigate to: **Desk → Lifestyle Shop Ecommerce → Style Attribute Variant → New**
+Navigate to: **Desk → Commera Ecommerce → Style Attribute Variant → New**
 
 For each color variant:
 
@@ -347,7 +347,7 @@ Repeat for each color variant.
 #### Step 4: Publish Variants
 
 After saving all SAV records:
-1. Go back to **Lifestyle Settings**
+1. Go back to **Commera Settings**
 2. Click "Publish Variants for All Templates"
 3. This creates all variant combinations and publishes them to the website
 
@@ -426,31 +426,31 @@ The Commera frontend uses URL-based language routing:
 
 #### Bulk Image Upload
 For uploading multiple product images at once:
-1. Navigate to: **Desk → Lifestyle Shop Ecommerce → Bulk Image Upload**
+1. Navigate to: **Desk → Commera Ecommerce → Bulk Image Upload**
 2. Follow the tool to upload images in bulk
 
 #### Bulk Variant Publishing
 To publish multiple variants at once:
-1. Navigate to: **Lifestyle Settings → Bulk Actions / Import Tab**
+1. Navigate to: **Commera Settings → Bulk Actions / Import Tab**
 2. Use "Publish Variants for All Templates" button
 
 ### Landing Page Configuration
 
 Configure hero banners and featured sections:
-1. Navigate to: **Desk → Lifestyle Shop Ecommerce → Landing Page Settings**
+1. Navigate to: **Desk → Commera Ecommerce → Landing Page Settings**
 2. Add hero banners, featured categories, and promotional sections
 
 ### Size Charts
 
 Add size charts for products:
-1. Navigate to: **Desk → Lifestyle Shop Ecommerce → Size Chart**
+1. Navigate to: **Desk → Commera Ecommerce → Size Chart**
 2. Create size charts for different item groups
 3. Link to items or item groups
 
 ### Payment Gateway Configuration
 
 #### Telr Payment Gateway
-1. Navigate to: **Desk → Lifestyle Shop Ecommerce → Telr Settings**
+1. Navigate to: **Desk → Commera Ecommerce → Telr Settings**
 2. Enter:
    - Store ID
    - Auth Key
@@ -551,7 +551,7 @@ bench restart
    - Test mode vs Live mode settings
    - API credentials are correct
 
-2. **Check Lifestyle Settings:**
+2. **Check Commera Settings:**
    - Payment modes are enabled
    - COD settings are configured if using COD
 

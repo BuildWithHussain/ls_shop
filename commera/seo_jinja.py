@@ -7,7 +7,7 @@ from commera import seo
 
 
 def seo_page_meta():
-	# A broken Lifestyle Settings doc must never 500 the storefront over meta tags.
+	# A broken Commera Settings doc must never 500 the storefront over meta tags.
 	try:
 		return seo.default_seo()
 	except Exception:

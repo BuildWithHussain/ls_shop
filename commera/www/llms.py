@@ -1,6 +1,6 @@
 import frappe
 
-# Fallback when the Lifestyle Settings field is blank; migrate.py also seeds this text into that field.
+# Fallback when the Commera Settings field is blank; migrate.py also seeds this text into that field.
 DEFAULT_LLMS_TXT = """# Storefront
 
 > An online retail storefront, available in English and Arabic. Product pages are
@@ -32,5 +32,5 @@ DEFAULT_LLMS_TXT = """# Storefront
 
 def get_context(context):
 	context.no_cache = 1
-	content = frappe.db.get_single_value("Lifestyle Settings", "llms_txt")
+	content = frappe.db.get_single_value("Commera Settings", "llms_txt")
 	context.content = content.strip() if content and content.strip() else DEFAULT_LLMS_TXT

@@ -107,7 +107,7 @@ doctype_js = {
 	"Sales Order": "public/js/extends/sales_order.js",
 	"Style Attribute Variant": "public/js/extends/seo_listing.js",
 	"Ecommerce Category": "public/js/extends/seo_listing.js",
-	"Lifestyle Settings": [
+	"Commera Settings": [
 		"public/js/extends/seo_listing.js",
 		"public/js/extends/footer_manager.js",
 		"public/js/extends/navbar_manager.js",
@@ -194,7 +194,7 @@ ignore_links_on_delete = [
 # 	{
 # 		"name": "commera",
 # 		"logo": "/assets/commera/logo.png",
-# 		"title": "Lifestyle Shop Ecommerce",
+# 		"title": "Commera Ecommerce",
 # 		"route": "/commera",
 # 		"has_permission": "commera.api.permission.has_app_permission"
 # 	}

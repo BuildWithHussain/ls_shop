@@ -529,7 +529,7 @@
 					this.payment_mode = this.available_payment_modes[0] || null;
 				},
 
-// The shipping rule lives on the quotation, so the billed charge can differ from what Lifestyle Settings advertised on page load.
+// The shipping rule lives on the quotation, so the billed charge can differ from what Commera Settings advertised on page load.
 				async set_delivery_charge() {
 					const response = await frappe_call("/api/v2/method/commera.api.checkout.apply_shipping_rule");
 					[this.delivery_charge, this.delivery_charge_applicable_below] = response.data.map(Number);

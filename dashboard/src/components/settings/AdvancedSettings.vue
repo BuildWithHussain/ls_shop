@@ -1,6 +1,6 @@
 <script setup>
 /**
- * The long tail of store setup: every remaining Lifestyle Settings field, grouped by the section it
+ * The long tail of store setup: every remaining Commera Settings field, grouped by the section it
  * sits under in Desk and rendered from that doctype's own meta. Add a field to the doctype and it
  * appears here; nothing about this screen names a field.
  *
@@ -78,7 +78,7 @@ async function commitField(fieldname, value, label) {
       <div v-if="advanced.data.child_tables.length" class="mt-8 border-t border-outline-gray-1 pt-6">
         <h3 class="text-base font-medium text-ink-gray-8">Managed in Desk</h3>
         <p class="mt-1 text-p-sm text-ink-gray-5">
-          These are lists rather than single values, so they are still edited on the Lifestyle
+          These are lists rather than single values, so they are still edited on the Commera
           Settings form.
         </p>
         <ul class="mt-3 divide-y divide-outline-gray-1 border-y border-outline-gray-1">

@@ -12,9 +12,7 @@ def get_context(context):
 	if current_user == "Guest":
 		raise frappe.PermissionError
 	page = get_current_page()
-	context.return_period = frappe.get_cached_value(
-		"Lifestyle Settings", "Lifestyle Settings", "return_period"
-	)
+	context.return_period = frappe.get_cached_value("Commera Settings", "Commera Settings", "return_period")
 	context.page_length = 6
 	context.current_page = page
 	total_count, orders = get_orders_list(
@@ -23,7 +21,7 @@ def get_context(context):
 	)
 	context.orders = orders
 	context.total_count = total_count
-	return_reasons = frappe.get_cached_value("Lifestyle Settings", "Lifestyle Settings", "reason_for_return")
+	return_reasons = frappe.get_cached_value("Commera Settings", "Commera Settings", "reason_for_return")
 	context.return_reasons = [
 		{"name": return_reason.name, "display_name": return_reason.display_name}
 		for return_reason in return_reasons
