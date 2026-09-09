@@ -1,161 +1,115 @@
-# Commera
+<div align="center" markdown="1">
 
-A modern, multilingual e-commerce solution built on Frappe Framework that extends ERPNext's capabilities with custom frontend and advanced product management.
+<img src="commera/public/images/commera.svg" alt="Commera logo" width="80" />
+<h1>Commera</h1>
 
-<img width="1470" height="800" alt="Screenshot 2025-09-10 at 1 47 38 AM" src="https://github.com/user-attachments/assets/b776c69b-e009-4b9e-99df-06c1e40a8469" />
+**Open source storefront and merchant dashboard for ERPNext**
 
-## RTL
+<div>
+	<img width="1402" alt="Commera storefront" src=".github/screenshots/storefront.png">
+</div>
 
-<img width="1470" height="803" alt="Screenshot 2025-09-10 at 1 49 46 AM" src="https://github.com/user-attachments/assets/90180c6e-34d6-454f-b493-e5e984db13ee" />
+</div>
 
+## Commera
 
-## 🌟 Features
+Commera turns an ERPNext site into a complete online shop. Shoppers get a fast, bilingual, themeable storefront rendered server-side; the people running the shop get a modern dashboard built with Vue 3 and Frappe UI. ERPNext stays the system of record underneath, so stock, pricing, tax and accounting are never a second copy that drifts.
 
-### 🌍 Multilingual Support
-- Built-in internationalization with URL-based language switching (`/en/`, `/ar/`)
-- Seamless translation management using Frappe's native translation system
-- RTL (Right-to-Left) language support
+### Motivation
 
-### 🛍️ Advanced Product Management
-- **Style Attribute Configurator (SAC)**: Manage item templates with attributes
-- **Style Attribute Variants (SAV)**: Handle product variations efficiently
-- Support for complex product hierarchies with multiple attributes and sizes
-- Bulk operations for product creation and management
+Most ERPNext storefronts make you choose. Either you take a server-rendered portal that is quick and SEO-friendly but painful to administer, or you bolt on a separate storefront platform and spend the rest of the project reconciling two catalogues, two stock counts and two sets of orders.
 
-### ⚡ Performance Optimized
-- Server-side rendering with Jinja templates
-- 6x faster loading times compared to traditional SPA approaches
-- Optimized for Core Web Vitals and SEO
+Commera refuses that trade. The storefront is Jinja, Tailwind and Alpine — no SPA payload between a shopper and a product page — while the merchant side is a proper single-page app that feels like the commerce tools people already use. Both read and write the same ERPNext documents.
 
-### 🎨 Modern Frontend
-- Built with Tailwind CSS for responsive design
-- Alpine.js for reactive components
-- Component library integration (Pines UI, Penguin UI)
-- Clean, professional design system
+### The Merchant Dashboard
 
-### 💼 E-commerce Capabilities
-- Integration with ERPNext's accounting and inventory
-- POS integration for offline stores
-- Payment gateway integrations (including BNPL services like Tabby)
-- Partial refunds and returns management
-- Consolidated stock management across channels
+<div>
+	<img width="1402" alt="Commera merchant dashboard" src=".github/screenshots/dashboard.png">
+</div>
 
-## 📄 Pages & Features
+A Vue 3 + [Frappe UI](https://github.com/frappe/frappe-ui) app served at `/commera`, and registered on the desk apps screen so it sits alongside ERPNext.
 
-The application includes the following key pages and functionalities:
+- **Overview** — Revenue, order counts and what needs fulfilling, against the previous period.
+- **Orders** — Filter by unfulfilled, unpaid, open or closed; drill into payment and fulfilment state per order.
+- **Products** — Templates, variants, pricing and inventory, including bulk publishing and bulk image upload.
+- **Customers, Collections and Attributes** — The catalogue structure, editable without touching the desk.
+- **Analytics** — Revenue, inventory and first-party storefront funnels.
+- **Storefront** — Switch theme, build the navigation menu, and edit content pages with live preview.
 
-<!-- TODO: Update this section with your actual pages from the demo -->
-<!-- Add specific page routes and descriptions based on your www/ directory structure -->
-<!-- Example format:
-- **Homepage** (`/`): Modern landing page with product highlights
-- **Product Catalog** (`/products`): Advanced filtering and search capabilities
-- **Product Details** (`/product/[slug]`): Comprehensive product information with variants
-- **Shopping Cart** (`/cart`): Seamless cart management
-- **Checkout** (`/checkout`): Streamlined checkout process
-- **User Account** (`/account`): Order history and profile management
--->
+### Payments, Shipping and Analytics
 
-### Frontend Pages
-- **Homepage**: Modern landing page with product highlights
-- **Product Catalog**: Advanced filtering and search capabilities  
-- **Product Details**: Comprehensive product information with variants
-- **Shopping Cart**: Seamless cart management
-- **Checkout**: Streamlined checkout process
-- **User Account**: Order history and profile management
-- **Multi-store Support**: Support for multiple physical locations
+> Payments and shipping are provided by two companion apps, [**bwh_payments**](https://github.com/bwhtech/bwh_payments) and [**bwh_shipping**](https://github.com/bwhtech/bwh_shipping). Both are required alongside ERPNext.
 
-### Admin/Backend Features
-- **Admin Dashboard**: Bulk operations and reporting tools
-- **SAC Management**: Style Attribute Configurator administration
-- **SAV Management**: Style Attribute Variants handling
-- **Bulk Operations**: Mass product creation and image uploads
-- **Reporting**: Consolidated inventory and sales reports
+Providers are configured from the dashboard rather than the desk. Each keeps its own credentials, and each can be switched on independently.
 
+#### Payments
 
+- **Razorpay** — Cards, UPI, netbanking and wallets. India.
+- **Stripe** — Cards and wallets, worldwide.
+- **Telr** — Cards and local methods across the GCC.
+- **Tabby** — Buy now, pay later in four instalments. MENA.
+- **Cash on delivery** — With its own fee, a threshold above which the fee is waived, and the account it books to.
 
-## 🔗 Compatibility
+Gateway callbacks are idempotent, so a replayed webhook racing a shopper's return cannot bill twice.
 
-This app is compatible with the following versions of Frappe and ERPNext:
+<div>
+	<img width="1402" alt="Payment providers and cash on delivery settings" src=".github/screenshots/payments.png">
+</div>
 
-| Commera branch | Stability   | Frappe branch | ERPNext branch |
-| :------------- | :---------- | :------------ | :------------- |
-| main           | stable      | v16.x & above | v16.x & above  |
-| develop        | maintenance | v15.x         | v15.x          |
+#### Shipping
 
-## 🚀 Quick Start
+- **Shiprocket** — Courier aggregator for domestic India, with pincode serviceability.
+- **AfterShip** — Global labels and tracking across hundreds of carriers.
 
-### Prerequisites
-- Frappe Framework and ERPNext — see [Compatibility](#-compatibility) for the branch to install
-- Node.js and npm (for asset compilation)
+Each carrier quotes its own rates at checkout, and delivery options control what shoppers actually pick from.
 
-### Installation
+<div>
+	<img width="1402" alt="Shipping carriers and delivery options settings" src=".github/screenshots/shipping.png">
+</div>
 
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/commera.git
-cd commera
-```
+#### Analytics
 
-2. Install the app:
-```bash
-bench get-app https://github.com/BuildWithHussain/commera
-bench install-app commera --site your-site-name
-```
+- **Storefront tracking** — First-party, powers the Storefront report, and nothing leaves the site.
+- **Google Analytics 4** — The storefront reports `page_view`, `view_item`, `add_to_cart`, `begin_checkout` and `purchase`. Add a service account alongside the measurement ID and the dashboard reads the numbers back through the GA4 Data API.
+- **Meta** — The pixel reports `PageView`, `ViewContent`, `AddToCart`, `InitiateCheckout` and `Purchase`, and an access token lets the dashboard read those counts back from the Graph API.
 
-3. Build assets:
-```bash
-bench build --app commera
-```
+Both connections are optional and off until their keys are filled in. Because the dashboard reads the counts back rather than only sending them, the funnel sits next to your own revenue figures instead of living in another tab.
 
-### Key Components
-- **WWW Directory**: Server-rendered pages for optimal performance
-- **Custom Doctypes**: SAC and SAV for advanced product management
-- **Hooks Integration**: URL routing and custom business logic
-- **API Layer**: RESTful APIs for frontend interactions
+<div>
+	<img width="1402" alt="Analytics and marketing connections" src=".github/screenshots/analytics.png">
+</div>
 
+### Key Features
 
+- **Bilingual, RTL-ready storefront.** URL-based language switching (`/en/`, `/ar/`) on Frappe's native translation system, with right-to-left layout handled throughout rather than patched on.
 
-### Project Structure
-```
-commera/
-├── commera/
-│   ├── hooks.py              # App configuration and hooks
-│   ├── www/                  # Public web pages
-│   ├── templates/            # Jinja2 templates
-│   ├── public/               # Static assets
-│   └── commera/              # App modules
-├── requirements.txt          # Python dependencies
-└── package.json             # Node.js dependencies
-```
+- **Themeable without forking.** Themes are data: a `Shop Theme` record plus a template directory. A theme declares its own routes, may require auth per route, and can override any page the app ships — so a shop can restyle checkout without maintaining a fork.
 
-## 📊 Bulk Operations
+- **Style Attribute Configurator.** Model a garment once as a template with colour and size attributes, then generate and publish its variants in bulk instead of hand-creating each SKU.
 
-Commera provides powerful bulk operation capabilities:
+- **Returns and refunds.** Return reasons, return delivery notes and partial refunds booked back through ERPNext.
 
-- **Bulk SAC/SAV Creation**: Create multiple product configurations at once
-- **Bulk Image Upload**: Upload and associate product images in batches
-- **Bulk Publishing**: Publish multiple products to the website simultaneously
-- **Consolidated Reporting**: Generate comprehensive reports across all items
+- **Search.** A configurable index over the catalogue with per-field content and result mapping, rebuilt nightly.
 
-## 🔧 Configuration
+- **SEO and AI discoverability.** Per-page metadata, generated `sitemap.xml`, `llms.txt`, and Open Graph images rendered from templates at request time.
 
-### Language Setup
-Configure supported languages in `hooks.py`:
-```python
-website_route_rules = [
-    {"from_route": "/", "to_route": "/en"},
-    {"from_route": "/<path:app_path>", "to_route": "/en/<path:app_path>"},
-]
-```
+- **Merchandising.** Landing page hero banners, promo banners, recommended variants, size charts and back-in-stock notifications.
 
-### Payment Gateway Integration
-The app supports various payment gateways. For Tabby BNPL integration, check out our companion app: [tabby_frappe](https://github.com/cinnamonlabs/tabby_frappe)
+### Under the Hood
 
+- [Frappe Framework](https://github.com/frappe/frappe) — Full-stack Python web framework.
+- [ERPNext](https://github.com/frappe/erpnext) — Stock, pricing, tax and accounting.
+- [Frappe UI](https://github.com/frappe/frappe-ui) — Vue 3 component library for the dashboard.
+- Jinja, [Tailwind CSS](https://tailwindcss.com) and [Alpine.js](https://alpinejs.dev) for the storefront.
 
-## 🏢 About BWH Studios
+## About BWH Studios
 
 Commera is developed and maintained by BWH Studios, a tech company based in Jagdalpur, Chhattisgarh, specializing in Frappe customizations and consulting.
 
 ---
 
-⭐ If you find Commera helpful, please consider starring the repository!
+<div align="center">
+
+Let's make it the best open source eCommerce platform ✌️
+
+</div>
