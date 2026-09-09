@@ -1,160 +1,129 @@
-<div align="center">
-	<img src="commera/public/images/commera.svg" height="80" alt="Commera logo">
-	<h1>Commera</h1>
-	<p>A modern, multilingual e-commerce solution built on Frappe Framework that extends ERPNext's capabilities with custom frontend and advanced product management.</p>
+<div align="center" markdown="1">
+
+<img src="commera/public/images/commera.svg" alt="Commera logo" width="80" />
+<h1>Commera</h1>
+
+**Open source storefront and merchant dashboard for ERPNext**
+
+<div>
+	<img width="1402" alt="Commera storefront" src=".github/screenshots/storefront.png">
 </div>
 
-<img width="1470" height="800" alt="Screenshot 2025-09-10 at 1 47 38 AM" src="https://github.com/user-attachments/assets/b776c69b-e009-4b9e-99df-06c1e40a8469" />
+</div>
 
-## RTL
+## Commera
 
-<img width="1470" height="803" alt="Screenshot 2025-09-10 at 1 49 46 AM" src="https://github.com/user-attachments/assets/90180c6e-34d6-454f-b493-e5e984db13ee" />
+Commera turns an ERPNext site into a complete online shop. Shoppers get a fast, bilingual, themeable storefront rendered server-side; the people running the shop get a modern dashboard built with Vue 3 and frappe-ui. ERPNext stays the system of record underneath, so stock, pricing, tax and accounting are never a second copy that drifts.
 
+### Motivation
 
-## 🌟 Features
+Most ERPNext storefronts make you choose. Either you take a server-rendered portal that is quick and SEO-friendly but painful to administer, or you bolt on a separate storefront platform and spend the rest of the project reconciling two catalogues, two stock counts and two sets of orders.
 
-### 🌍 Multilingual Support
-- Built-in internationalization with URL-based language switching (`/en/`, `/ar/`)
-- Seamless translation management using Frappe's native translation system
-- RTL (Right-to-Left) language support
+Commera refuses that trade. The storefront is Jinja, Tailwind and Alpine — no SPA payload between a shopper and a product page — while the merchant side is a proper single-page app that feels like the commerce tools people already use. Both read and write the same ERPNext documents.
 
-### 🛍️ Advanced Product Management
-- **Style Attribute Configurator (SAC)**: Manage item templates with attributes
-- **Style Attribute Variants (SAV)**: Handle product variations efficiently
-- Support for complex product hierarchies with multiple attributes and sizes
-- Bulk operations for product creation and management
+### The merchant dashboard
 
-### ⚡ Performance Optimized
-- Server-side rendering with Jinja templates
-- 6x faster loading times compared to traditional SPA approaches
-- Optimized for Core Web Vitals and SEO
+<div>
+	<img width="1402" alt="Commera merchant dashboard" src=".github/screenshots/dashboard.png">
+</div>
 
-### 🎨 Modern Frontend
-- Built with Tailwind CSS for responsive design
-- Alpine.js for reactive components
-- Component library integration (Pines UI, Penguin UI)
-- Clean, professional design system
+A Vue 3 + [frappe-ui](https://github.com/frappe/frappe-ui) app served at `/commera`, and registered on the desk apps screen so it sits alongside ERPNext.
 
-### 💼 E-commerce Capabilities
-- Integration with ERPNext's accounting and inventory
-- POS integration for offline stores
-- Payment gateway integrations (including BNPL services like Tabby)
-- Partial refunds and returns management
-- Consolidated stock management across channels
+- **Overview** — revenue, order counts and what needs fulfilling, against the previous period
+- **Orders** — filter by unfulfilled, unpaid, open or closed; drill into payment and fulfilment state per order
+- **Products** — templates, variants, pricing and inventory, including bulk publishing and bulk image upload
+- **Customers, Collections and Attributes** — the catalogue structure, editable without touching the desk
+- **Analytics** — revenue, inventory and first-party storefront funnels
+- **Storefront** — switch theme, build the navigation menu, and edit content pages with live preview
 
-## 📄 Pages & Features
+### Key features
 
-The application includes the following key pages and functionalities:
+- **Bilingual, RTL-ready storefront.** URL-based language switching (`/en/`, `/ar/`) on Frappe's native translation system, with right-to-left layout handled throughout rather than patched on.
 
-<!-- TODO: Update this section with your actual pages from the demo -->
-<!-- Add specific page routes and descriptions based on your www/ directory structure -->
-<!-- Example format:
-- **Homepage** (`/`): Modern landing page with product highlights
-- **Product Catalog** (`/products`): Advanced filtering and search capabilities
-- **Product Details** (`/product/[slug]`): Comprehensive product information with variants
-- **Shopping Cart** (`/cart`): Seamless cart management
-- **Checkout** (`/checkout`): Streamlined checkout process
-- **User Account** (`/account`): Order history and profile management
--->
+- **Themeable without forking.** Themes are data: a `Shop Theme` record plus a template directory. A theme declares its own routes, may require auth per route, and can override any page the app ships — so a shop can restyle checkout without maintaining a fork.
 
-### Frontend Pages
-- **Homepage**: Modern landing page with product highlights
-- **Product Catalog**: Advanced filtering and search capabilities  
-- **Product Details**: Comprehensive product information with variants
-- **Shopping Cart**: Seamless cart management
-- **Checkout**: Streamlined checkout process
-- **User Account**: Order history and profile management
-- **Multi-store Support**: Support for multiple physical locations
+- **Style Attribute Configurator.** Model a garment once as a template with colour and size attributes, then generate and publish its variants in bulk instead of hand-creating each SKU.
 
-### Admin/Backend Features
-- **Admin Dashboard**: Bulk operations and reporting tools
-- **SAC Management**: Style Attribute Configurator administration
-- **SAV Management**: Style Attribute Variants handling
-- **Bulk Operations**: Mass product creation and image uploads
-- **Reporting**: Consolidated inventory and sales reports
+- **Payments.** Razorpay, Stripe, Telr and Tabby (BNPL) through [bwh_payments](https://github.com/bwhtech/bwh_payments), plus cash on delivery. Gateway callbacks are idempotent, so a replayed webhook racing a shopper's return cannot bill twice.
 
+- **Shipping.** Shiprocket and AfterShip through [bwh_shipping](https://github.com/bwhtech/bwh_shipping), with delivery options, parcels and tracking events on the order.
 
+- **Returns and refunds.** Return reasons, return delivery notes and partial refunds booked back through ERPNext.
 
-## 🔗 Compatibility
+- **Search.** A configurable index over the catalogue with per-field content and result mapping, rebuilt nightly.
 
-This app is compatible with the following versions of Frappe and ERPNext:
+- **SEO and AI discoverability.** Per-page metadata, generated `sitemap.xml`, `llms.txt`, and Open Graph images rendered from templates at request time.
+
+- **Analytics.** First-party storefront events stored on the site, plus GA4 and Meta pixel integration and custom tracking scripts.
+
+- **Merchandising.** Landing page hero banners, promo banners, recommended variants, size charts and back-in-stock notifications.
+
+### Under the hood
+
+- [Frappe Framework](https://github.com/frappe/frappe) — full-stack Python web framework
+- [ERPNext](https://github.com/frappe/erpnext) — stock, pricing, tax and accounting
+- [Frappe UI](https://github.com/frappe/frappe-ui) — Vue 3 component library for the dashboard
+- Jinja, [Tailwind CSS](https://tailwindcss.com) and [Alpine.js](https://alpinejs.dev) for the storefront
+
+## Compatibility
 
 | Commera branch | Stability   | Frappe branch | ERPNext branch |
 | :------------- | :---------- | :------------ | :------------- |
 | main           | stable      | v16.x & above | v16.x & above  |
 | develop        | maintenance | v15.x         | v15.x          |
 
-## 🚀 Quick Start
+Commera requires Python 3.11 or newer.
 
-### Prerequisites
-- Frappe Framework and ERPNext — see [Compatibility](#-compatibility) for the branch to install
-- Node.js and npm (for asset compilation)
+## Installation
 
-### Installation
+Commera needs ERPNext plus its two companion apps. From your bench:
 
-1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/commera.git
-cd commera
-```
+bench get-app https://github.com/bwhtech/bwh_payments
+bench get-app https://github.com/bwhtech/bwh_shipping
+bench get-app https://github.com/bwhtech/commera
 
-2. Install the app:
-```bash
-bench get-app https://github.com/BuildWithHussain/commera
-bench install-app commera --site your-site-name
-```
+bench --site your-site.localhost install-app erpnext
+bench --site your-site.localhost install-app bwh_payments
+bench --site your-site.localhost install-app bwh_shipping
+bench --site your-site.localhost install-app commera
 
-3. Build assets:
-```bash
+# Themes live in the module tree and only sync on migrate, never on install-app.
+bench --site your-site.localhost migrate
 bench build --app commera
 ```
 
-### Key Components
-- **WWW Directory**: Server-rendered pages for optimal performance
-- **Custom Doctypes**: SAC and SAV for advanced product management
-- **Hooks Integration**: URL routing and custom business logic
-- **API Layer**: RESTful APIs for frontend interactions
+Then open `/commera` on your site to reach the dashboard, and `/en` for the storefront.
 
+### Seeding a demo store
 
+To see a populated shop rather than an empty one:
 
-### Project Structure
-```
-commera/
-├── commera/
-│   ├── hooks.py              # App configuration and hooks
-│   ├── www/                  # Public web pages
-│   ├── templates/            # Jinja2 templates
-│   ├── public/               # Static assets
-│   └── commera/              # App modules
-├── requirements.txt          # Python dependencies
-└── package.json             # Node.js dependencies
+```bash
+bench --site your-site.localhost execute commera.install_pixio_demo.install_pixio_demo
 ```
 
-## 📊 Bulk Operations
+That seeds the catalogue, theme, navigation, footer and a period of storefront analytics. It is safe to re-run.
 
-Commera provides powerful bulk operation capabilities:
+## Development
 
-- **Bulk SAC/SAV Creation**: Create multiple product configurations at once
-- **Bulk Image Upload**: Upload and associate product images in batches
-- **Bulk Publishing**: Publish multiple products to the website simultaneously
-- **Consolidated Reporting**: Generate comprehensive reports across all items
+```bash
+# storefront CSS
+npm install
+npm run tailwind:watch
 
-## 🔧 Configuration
-
-### Language Setup
-Configure supported languages in `hooks.py`:
-```python
-website_route_rules = [
-    {"from_route": "/", "to_route": "/en"},
-    {"from_route": "/<path:app_path>", "to_route": "/en/<path:app_path>"},
-]
+# merchant dashboard
+cd dashboard && npm install && npm run dev
 ```
 
-### Payment Gateway Integration
-The app supports various payment gateways. For Tabby BNPL integration, check out our companion app: [tabby_frappe](https://github.com/cinnamonlabs/tabby_frappe)
+Run the test suite against a site with `allow_tests` enabled:
 
+```bash
+bench --site your-site.localhost set-config allow_tests true
+bench --site your-site.localhost run-tests --app commera
+```
 
-## 🏢 About BWH Studios
+## About BWH Studios
 
 Commera is developed and maintained by BWH Studios, a tech company based in Jagdalpur, Chhattisgarh, specializing in Frappe customizations and consulting.
 
