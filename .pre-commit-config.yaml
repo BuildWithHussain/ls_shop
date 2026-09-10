@@ -30,7 +30,7 @@ repos:
         types_or: [python, vue, html, javascript, ts, css]
         # Third-party bundles we ship but do not author: their banners and licence
         # headers are theirs to keep, and rewriting them loses the provenance.
-        exclude: '(^|/)vendor/|^commera/public/themes/pixio_theme/css/style\.css$'
+        exclude: '(^|/)vendor/|^commera/public/themes/summer_theme/css/style\.css$'
 
   # Whole-tree scans: too slow to justify per-commit, and they need node_modules,
   # so they run on push. Enable with: pre-commit install --hook-type pre-push

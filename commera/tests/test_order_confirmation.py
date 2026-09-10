@@ -18,7 +18,7 @@ EXPECTED_LOGIN_URL = (
 
 
 def get_theme_confirmation_controller():
-	theme_dir = frappe.get_app_path("commera", "themes", "pixio_theme")
+	theme_dir = frappe.get_app_path("commera", "themes", "summer_theme")
 	return load_page_controller([theme_dir], "pages/account/orders/confirmation.html")
 
 

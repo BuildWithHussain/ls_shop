@@ -19,8 +19,8 @@ TRACKING_BLANKED_BLOCKS = ("seo", "json_ld", "analytics_head", "analytics_events
 # A chrome preview frames the header or the footer, so the page content between them goes too.
 COMMON_BLANKED_BLOCKS = (*TRACKING_BLANKED_BLOCKS, "body", "uncontained_body")
 
-# Both naming conventions: the base theme uses `header`/`footer`, Pixio `site_header`/`site_footer`.
-# Not chrome_top/chrome_bottom: Pixio opens .page-wraper in one and closes it in the other.
+# Both naming conventions: the base theme uses `header`/`footer`, Summer `site_header`/`site_footer`.
+# Not chrome_top/chrome_bottom: Summer opens .page-wraper in one and closes it in the other.
 HEADER_BLOCKS = ("header", "site_header")
 FOOTER_BLOCKS = ("footer", "site_footer")
 

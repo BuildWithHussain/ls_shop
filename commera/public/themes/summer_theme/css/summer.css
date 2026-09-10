@@ -1,0 +1,237 @@
+/* Embla only moves the track and never writes a slide width, so the per-carousel widths and
+   gutters the vendor JS used to set live here. style.css and skin-1.css own the theme's looks. */
+
+[data-summer-carousel] > .swiper-wrapper {
+	flex-direction: row;
+	height: auto;
+}
+
+/* Embla has no clipping .slick-list, so the hero's two viewports clip themselves; .swiper
+   carousels get this from swiper-bundle.min.css already. */
+.main-slider-wrapper .slider-main,
+.main-slider-wrapper .slider-thumbs {
+	overflow: hidden;
+}
+
+[data-summer-carousel] .swiper-slide,
+[data-summer-carousel] .slick-slide {
+	flex: 0 0 auto;
+	width: 100%;
+	height: auto;
+}
+
+/* Two banners per view: style.css marks the slide after the current one .slick-active too, which
+   is slick's two-up config showing through. .slider-thumbs is 65vw, so the pair overhangs. */
+.main-slider-wrapper .slider-thumbs .slick-slide {
+	width: 50%;
+}
+
+.swiper-shop .swiper-slide {
+	width: 33.333%;
+	padding-inline: 15px;
+}
+
+.swiper-four .swiper-slide {
+	width: 25%;
+	padding-inline: 15px;
+}
+
+/* Three-up on a 15px gutter, not the 30px the others use, and the width is load-bearing:
+   .product-box.style-2 pins its copy to the right edge of a fixed 400px card. */
+.swiper-product .swiper-slide {
+	width: calc(33.333% - 10px);
+	margin-inline-end: 15px;
+}
+
+/* .shop-card.style-4 lays its media and copy out side by side behind a 150px fixed image,
+   so the featured rail runs one slide wider than the other two to keep titles off four lines. */
+.swiper-product2 .swiper-slide {
+	width: 33.333%;
+	padding-inline: 15px;
+}
+
+/* .swiper-product steps 3 - 2 - 1.5 - 1 across the breakpoints below, which is why it is
+   kept apart from the rails that share one ladder. */
+@media only screen and (max-width: 1199px) {
+	.swiper-four .swiper-slide {
+		width: 33.333%;
+	}
+
+	.swiper-product .swiper-slide {
+		width: calc(50% - 7.5px);
+	}
+
+	.swiper-product2 .swiper-slide {
+		width: 50%;
+	}
+}
+
+@media only screen and (max-width: 991px) {
+	.swiper-shop .swiper-slide,
+	.swiper-four .swiper-slide,
+	.swiper-product2 .swiper-slide {
+		width: 50%;
+	}
+}
+
+@media only screen and (max-width: 767px) {
+	.swiper-product .swiper-slide {
+		width: calc(66.666% - 5px);
+	}
+}
+
+@media only screen and (max-width: 575px) {
+	.main-slider-wrapper .slider-thumbs .slick-slide {
+		width: 55%;
+	}
+
+	.swiper-shop .swiper-slide {
+		width: 50%;
+	}
+
+	.swiper-four .swiper-slide,
+	.swiper-product2 .swiper-slide {
+		width: 80%;
+	}
+
+	.swiper-product .swiper-slide {
+		width: 100%;
+	}
+}
+
+/* Reference photography is uniformly 450x600 and .dz-media has no size of its own; merchant
+   uploads run 0.51 to 1.17 aspect, so without a frame the row staircases. */
+.card-container .shop-card .dz-media {
+	aspect-ratio: 3 / 4;
+	background-color: var(--bg-light);
+}
+
+/* contain, not cover: the catalogue ships cut-out packshots cropped to the garment's own edges,
+   so filling the frame amputates them - the 130x255 jeans lose their legs. */
+.card-container .shop-card .dz-media img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+/* --- Header gaps left by the vendor JS this theme does not load --- */
+
+/* style.css puts this column's geometry on the .bootstrap-select wrapper and .dropdown-toggle
+   that script builds; without it the native control has to carry that geometry itself. */
+.dz-search-area .search-input select.default-select {
+	flex: 0 0 auto;
+	width: auto;
+	min-width: 185px;
+	height: 45px;
+	padding: 0 20px !important;
+	background-color: transparent;
+	border-right: 1px solid rgba(187, 187, 187, 0.68) !important;
+}
+
+/* style.css fixes the canvas at 580px for the reference's product carousel; this one holds the
+   form alone, so a fixed height would be 400px of empty cream. */
+.dz-search-area.offcanvas {
+	height: auto;
+	/* .offcanvas pins bottom as well as top, so height alone would still stretch to the fold. */
+	bottom: auto;
+}
+
+/* --- Footer gap left by this theme's own mobile chrome --- */
+
+/* Below 992px this theme's .extra-nav icon bar is fixed across the bottom 50px; the reference
+   has no such bar, so nothing in style.css reserves the space under the footer. */
+@media only screen and (max-width: 991px) {
+	.site-footer.style-1 .footer-bottom {
+		padding-bottom: 50px;
+	}
+}
+
+/* --- Marquee band: the loop dz.carousel.js used to drive --- */
+
+/* @keyframes ticker's translateX(-100%) has to equal one track: style.css leaves the wrapper
+   display:block, so it shifts one viewport instead and the strip snaps back mid-word. */
+.dz-features-wrapper {
+	display: flex;
+	/* Pinned LTR so /ar cannot reverse the two tracks and expose the wrap gap; Arabic labels
+	   still shape RTL inside their own item. */
+	direction: ltr;
+}
+
+.dz-features-wrapper .dz-features {
+	flex: 0 0 auto;
+	width: max-content;
+	/* 32.9528s was written by the vendor JS for a shift of one 1440px viewport. Ours travels a
+	   whole 4355px track, so the duration is re-timed to keep the reference's 43.8px/s crawl. */
+	animation-duration: 99s;
+}
+
+/* style.css only pauses on hover; a strip that never stops is exactly what this query is for. */
+@media (prefers-reduced-motion: reduce) {
+	.dz-features-wrapper .dz-features {
+		animation-play-state: paused;
+	}
+}
+
+/* --- Language switcher: an icon-cluster item that opens a panel --- */
+
+/* The cluster's icon rule (.extra-nav .extra-cell ul li a/button) is a descendant selector, so it
+   also squashes the language panel's buttons into a centred 40px icon slot. */
+.site-header .extra-nav .extra-cell ul li .dropdown-menu .dropdown-item {
+	display: block;
+	min-width: 100%;
+	padding: 6px 20px;
+	line-height: 1.5;
+	text-align: start;
+}
+
+/* The toggle is a language code where its neighbours are 20px glyphs, and the same rule sizes
+   any <i> in the cluster to 20px - here the chevron only marks that a panel opens. */
+.site-header .extra-nav .extra-cell ul li.language-link a {
+	gap: 6px;
+	align-items: center;
+	font-size: 16px;
+	color: var(--title);
+}
+
+.site-header .extra-nav .extra-cell ul li.language-link a i {
+	font-size: 11px;
+}
+
+/* Below 767px .extra-nav is the fixed 50px bar on the viewport's bottom edge, so a panel that
+   drops below its toggle opens off-screen. */
+@media only screen and (max-width: 767px) {
+	.site-header .extra-nav .extra-cell ul li.language-link .dropdown-menu[data-bs-popper] {
+		top: auto;
+		bottom: 100%;
+		margin-top: 0;
+		margin-bottom: var(--bs-dropdown-spacer);
+	}
+}
+
+/* style.css pins the dropdown's text and its own edge to the physical left, so an Arabic menu
+   reads flush-left inside a right-anchored panel. The logical value leaves English untouched. */
+.header-nav .nav > li .mega-menu,
+.header-nav .nav > li .sub-menu,
+.header-nav.w3menu .nav > li .mega-menu,
+.header-nav.w3menu .nav > li .sub-menu {
+	text-align: start;
+}
+
+/* The child-menu marker is a Font Awesome chevron-right floated right: a glyph cannot be made
+   logical, so Arabic needs the mirrored codepoint (\f053) on the opposite edge. */
+[dir="rtl"] .header-nav .nav > li .mega-menu .menu-item-has-children > a:before,
+[dir="rtl"] .header-nav .nav > li .sub-menu .menu-item-has-children > a:before {
+	content: "\f053";
+	float: left;
+}
+
+/* The subscribe button is absolutely positioned at right: 0, which in Arabic parks it on top of
+   the placeholder where the text begins. */
+.dzSubscribe .form-group .input-group .input-group-addon {
+	inset-inline-start: auto;
+	inset-inline-end: 0;
+}
+
+[dir="rtl"] .dzSubscribe .form-group .input-group .input-group-addon .btn i {
+	transform: scaleX(-1);
+}

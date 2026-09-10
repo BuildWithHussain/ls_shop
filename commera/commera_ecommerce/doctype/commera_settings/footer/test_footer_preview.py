@@ -261,7 +261,7 @@ class TestFooterEditor(IntegrationTestCase):
 		if not get_theme_context(theme_name)["dirs"]:
 			self.skipTest("no theme active on this site")
 
-		self.assertIn("page-wraper" if theme_name == "Pixio Theme" else "theme-shop-default", html)
+		self.assertIn("page-wraper" if theme_name == "Summer Theme" else "theme-shop-default", html)
 
 	def test_preview_hides_every_chrome_but_the_footer(self):
 		html = self.render_preview()

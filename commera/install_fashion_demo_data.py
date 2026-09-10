@@ -7,12 +7,12 @@ from commera.install_demo_data import (
 	get_root_item_group,
 )
 
-IMAGE_ROOT = "/assets/commera/themes/pixio_theme/images"
+IMAGE_ROOT = "/assets/commera/themes/summer_theme/images"
 
 CAR_PART_TEMPLATES = ("BRAKE-PADS", "AIR-FILTER", "FLOOR-MATS")
 CAR_PART_CATEGORIES = ("Engine Parts", "Brake System", "Interior Accessories")
 
-BRAND = "Pixio"
+BRAND = "Summer"
 
 FASHION_COLORS = (
 	("Pink", "PNK"),

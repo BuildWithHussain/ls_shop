@@ -223,14 +223,14 @@ class CommeraSettings(Document):
 
 	@frappe.whitelist()
 	def install_demo_data(self):
-		"""Seed the Pixio demo storefront in the store's own currency.
+		"""Seed the Summer demo storefront in the store's own currency.
 		Not install_demo_data: its price lists are hardcoded USD, which blocks every Sales Invoice on a non-USD company.
 		"""
-		from commera.install_pixio_demo import (
+		from commera.install_summer_demo import (
 			CURRENCY_PROFILES,
 			DEFAULT_CURRENCY,
 			get_company_currency,
-			install_pixio_demo,
+			install_summer_demo,
 		)
 
 		# A store already trading in a supported currency keeps it; anything else gets the default.
@@ -239,7 +239,7 @@ class CommeraSettings(Document):
 			currency = DEFAULT_CURRENCY
 
 		frappe.enqueue(
-			install_pixio_demo,
+			install_summer_demo,
 			queue="long",
 			timeout=3000,
 			enqueue_after_commit=True,

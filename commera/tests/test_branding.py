@@ -149,27 +149,27 @@ class TestStoreSettingsApi(IntegrationTestCase):
 
 	def test_a_blank_store_name_is_refused(self):
 		"""A blank store name silently rebrands the live site: the storefront then renders "Store"."""
-		frappe.db.set_single_value(branding.LEGACY_SETTINGS, "store_name", "Pixio")
+		frappe.db.set_single_value(branding.LEGACY_SETTINGS, "store_name", "Summer")
 
 		for blank in ("", "   "):
 			with self.subTest(store_name=blank):
 				with self.assertRaises(frappe.MandatoryError):
 					admin_settings.save_store_settings(store_name=blank)
 
-		self.assertEqual(frappe.db.get_single_value(branding.LEGACY_SETTINGS, "store_name"), "Pixio")
+		self.assertEqual(frappe.db.get_single_value(branding.LEGACY_SETTINGS, "store_name"), "Summer")
 
 	def test_a_real_store_name_still_saves(self):
-		saved = admin_settings.save_store_settings(store_name="Pixio")
+		saved = admin_settings.save_store_settings(store_name="Summer")
 
-		self.assertEqual(saved["store_name"], "Pixio")
-		self.assertEqual(frappe.db.get_single_value(branding.LEGACY_SETTINGS, "store_name"), "Pixio")
+		self.assertEqual(saved["store_name"], "Summer")
+		self.assertEqual(frappe.db.get_single_value(branding.LEGACY_SETTINGS, "store_name"), "Summer")
 
 	def test_a_save_that_does_not_touch_the_store_name_is_unaffected(self):
-		frappe.db.set_single_value(branding.LEGACY_SETTINGS, "store_name", "Pixio")
+		frappe.db.set_single_value(branding.LEGACY_SETTINGS, "store_name", "Summer")
 
 		admin_settings.save_store_settings(contact_phone="+966500000000")
 
-		self.assertEqual(frappe.db.get_single_value(branding.LEGACY_SETTINGS, "store_name"), "Pixio")
+		self.assertEqual(frappe.db.get_single_value(branding.LEGACY_SETTINGS, "store_name"), "Summer")
 
 	def test_omitted_branding_keys_are_left_untouched(self):
 		set_brand_settings(website={"footer_logo": "/files/website-footer.png"})

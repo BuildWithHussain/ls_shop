@@ -1,0 +1,44 @@
+/* Net-new CSS for the two homepage product bands, kept to the same rule as summer.css: only
+   what the vendor JS and the vendor image pack would have supplied. style.css owns the looks. */
+
+/* --- Similar-products rail: the slide width Swiper used to write --- */
+
+/* Embla only moves the track, so every rail's per-view width lives in CSS. This one runs inside
+   the band's col-lg-7, so it steps down one breakpoint earlier than the rails in summer.css. */
+.swiper-similar .swiper-slide {
+	width: 33.333%;
+	padding-inline: 15px;
+}
+
+@media only screen and (max-width: 1199px) {
+	.swiper-similar .swiper-slide {
+		width: 50%;
+	}
+}
+
+@media only screen and (max-width: 575px) {
+	.swiper-similar .swiper-slide {
+		width: 80%;
+	}
+}
+
+/* --- Shortlist promo panel: two assets the vendor pack never shipped --- */
+
+/* ../images/bg-media.svg is absent from reference_themes/summer, so the wave is redrawn inline. The
+   480x810 ratio is load-bearing: style.css sizes the mask `auto 100%` against a 50vw media box. */
+.about-box.style-1 .dz-media img {
+	mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="480" height="810" viewBox="0 0 480 810" fill="none"><path d="M480 0H60C60 0 0 50 0 101C0 152 60 152 60 203C60 254 0 254 0 304C0 355 60 355 60 405C60 456 0 456 0 506C0 557 60 557 60 608C60 659 0 659 0 709C0 760 60 760 60 810H480V0Z" fill="black"/></svg>');
+}
+
+/* The outline word is an inline <svg> with no intrinsic width, so the 1320-unit viewBox renders at
+   the replaced-element default of 300px. style.css styles the text but never sizes the box. */
+.about-box.style-1 .animation-text {
+	width: 100%;
+	height: auto;
+}
+
+/* style.css parks the outline word 90% of its own height below the panel; this band is p-b0 and
+   clipped at the section edge, so the word would fall entirely inside the clip. */
+.about-box.style-1 .animation-text {
+	transform: translate(30%, 0);
+}

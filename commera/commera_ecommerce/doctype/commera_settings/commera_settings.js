@@ -71,7 +71,7 @@ frappe.ui.form.on('Commera Settings', {
 	install_demo_data(frm) {
 		frappe.confirm(
 			__(
-				'This will seed the Pixio demo storefront: catalogue, menu, footer, banners and settings. Continue?',
+				'This will seed the Summer demo storefront: catalogue, menu, footer, banners and settings. Continue?',
 			),
 			() => {
 				frm
