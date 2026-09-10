@@ -9,6 +9,9 @@ from commera.install_demo_data import (
 
 IMAGE_ROOT = "/assets/commera/themes/summer_theme/images"
 
+# Apparel, knitted: the closest single heading for a demo catalogue that is all garments.
+DEMO_HSN_CODE = "6109"
+
 CAR_PART_TEMPLATES = ("BRAKE-PADS", "AIR-FILTER", "FLOOR-MATS")
 CAR_PART_CATEGORIES = ("Engine Parts", "Brake System", "Interior Accessories")
 
@@ -312,6 +315,16 @@ def save_category(node, parent, root_display_name, display_order, is_group):
 	return category
 
 
+def apply_demo_hsn_code(item):
+	"""india_compliance makes gst_hsn_code mandatory on every sales Item, then reads its tax rows
+	back through GST HSN Code - so the code must be one that app's own fixtures shipped."""
+	if "india_compliance" not in frappe.get_installed_apps():
+		return
+
+	if frappe.db.exists("GST HSN Code", DEMO_HSN_CODE):
+		item.gst_hsn_code = DEMO_HSN_CODE
+
+
 def save_product(product):
 	template = save_item_template(product)
 	configurator = create_configurator(template.name, product)
@@ -350,6 +363,7 @@ def save_item_template(product):
 			],
 		}
 	)
+	apply_demo_hsn_code(template)
 	template.insert(ignore_permissions=True)
 	return template
 
@@ -396,7 +410,7 @@ def save_item_variants(template_name, product, variant):
 		item_code = f"{product['code']}-{color[:3].upper()}-{size}"
 
 		if not frappe.db.exists("Item", item_code):
-			frappe.get_doc(
+			variant = frappe.get_doc(
 				{
 					"doctype": "Item",
 					"item_code": item_code,
@@ -414,7 +428,9 @@ def save_item_variants(template_name, product, variant):
 					],
 					"valuation_rate": product["base_price"] * 0.5,
 				}
-			).insert(ignore_permissions=True)
+			)
+			apply_demo_hsn_code(variant)
+			variant.insert(ignore_permissions=True)
 
 		create_item_price(item_code, "Standard Selling", product["base_price"])
 		create_item_price(item_code, "Sale Price List", product["sale_price"])

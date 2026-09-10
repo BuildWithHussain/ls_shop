@@ -5,6 +5,7 @@ import frappe
 from frappe.contacts.doctype.address.address import get_address_display, get_default_address
 from frappe.utils.data import cint, cstr, flt, getdate
 
+from commera.install_analytics_demo_data import LEGACY_SESSION_PREFIX, SESSION_PREFIX
 from commera.utils import get_address_lines
 
 SETTINGS_DOCTYPE = "Commera Settings"
@@ -252,7 +253,13 @@ def get_advanced_settings():
 			}
 		)
 
-	return {"groups": groups, "child_tables": child_tables}
+	# The flag rides this answer rather than costing the tab its own round trip: the panel
+	# already re-reads on activation, so it cannot go stale while the tab is open.
+	return {
+		"groups": groups,
+		"child_tables": child_tables,
+		"can_install_demo_data": not has_real_orders(),
+	}
 
 
 @frappe.whitelist(methods=["POST"])
@@ -263,6 +270,30 @@ def save_advanced_settings(**kwargs):
 		frappe.throw(frappe._("Not an advanced setting: {0}").format(", ".join(sorted(unknown))))
 
 	return write_settings_fields(advanced_fieldnames, kwargs)
+
+
+def has_real_orders() -> bool:
+	"""Counting the seeded orders off the total, rather than filtering them out: an order whose
+	session id is NULL belongs on the real side, and `not like` would drop it."""
+	total_orders = frappe.db.count("Sales Order")
+	if not total_orders:
+		return False
+
+	seeded_orders = frappe.db.count(
+		"Sales Order", {"custom_analytics_session_id": ("like", f"{SESSION_PREFIX}%")}
+	) + frappe.db.count("Sales Order", {"custom_analytics_session_id": ("like", f"{LEGACY_SESSION_PREFIX}%")})
+	return total_orders > seeded_orders
+
+
+@frappe.whitelist(methods=["POST"])
+def install_demo_data():
+	"""Seed the demo storefront. Delegates to the controller so the Desk button and this screen
+	queue the same job; System Manager only, because the seeder overwrites live store config."""
+	frappe.only_for("System Manager")
+	if has_real_orders():
+		frappe.throw(frappe._("This store has its own orders. Demo data would overwrite its setup."))
+
+	return frappe.get_doc(SETTINGS_DOCTYPE).install_demo_data()
 
 
 def get_linked_doctypes():
