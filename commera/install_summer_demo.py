@@ -14,7 +14,6 @@ from commera.install_demo_data import (
 from commera.install_fashion_demo_data import (
 	DEFAULT_SIZES,
 	FASHION_PRODUCTS,
-	IMAGE_ROOT,
 	install_fashion_demo_data,
 )
 from commera.install_summer_theme_data import HERO_SLIDES, PRODUCTS_URL, install_summer_theme_data
@@ -62,8 +61,6 @@ DEFAULT_WIDE_BANNER = "wide-1.webp"
 
 STORE_COPY = {
 	"store_name": "Summer",
-	"brand_logo": f"{IMAGE_ROOT}/logo.svg",
-	"footer_logo": f"{IMAGE_ROOT}/logo-white.svg",
 	"contact_email": "hello@summer.demo",
 	"working_hours": "Mon - Sat, 10:00 - 19:00",
 	"newsletter_title": "Sign Up For Newsletter",
