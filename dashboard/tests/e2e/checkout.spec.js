@@ -1,5 +1,5 @@
 // The one flow that crosses both halves of the product: a brand-new shopper signs up
-// on the Pixio storefront, places a COD order, and finds it in their own order list.
+// on the Summer storefront, places a COD order, and finds it in their own order list.
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { describe } from 'node:test'
@@ -111,24 +111,24 @@ async function signUp(page, email) {
   await page.goto(BASE + '/en/cart', { waitUntil: 'networkidle2', timeout: 60000 })
   await clickByText(page, 'button', 'Sign In to Checkout')
   await wait(700)
-  await clickByText(page, '.pixio-auth button[role="tab"]', 'Sign Up')
+  await clickByText(page, '.summer-auth button[role="tab"]', 'Sign Up')
   await wait(400)
 
-  const forms = await page.$$('.pixio-auth form')
+  const forms = await page.$$('.summer-auth form')
   assert.ok(forms.length >= 2, 'the auth dialog has no signup form')
   const inputs = await forms[1].$$('input')
   // Field order in the template: email, first name, last name.
   await inputs[0].type(email)
   await inputs[1].type('E2E')
   await inputs[2].type('Shopper')
-  await clickByText(page, '.pixio-auth form button[type="submit"]', 'Sign Up')
+  await clickByText(page, '.summer-auth form button[type="submit"]', 'Sign Up')
   await wait(2000)
 
   const otp = readOtp(email)
-  const otpInputs = await page.$$('.pixio-auth-otp input')
+  const otpInputs = await page.$$('.summer-auth-otp input')
   assert.equal(otpInputs.length, 6, 'the OTP field did not appear')
   for (let index = 0; index < 6; index++) await otpInputs[index].type(otp[index])
-  await clickByText(page, '.pixio-auth form button[type="submit"]', 'Verify')
+  await clickByText(page, '.summer-auth form button[type="submit"]', 'Verify')
   await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 20000 }).catch(() => {})
   await wait(1000)
 }

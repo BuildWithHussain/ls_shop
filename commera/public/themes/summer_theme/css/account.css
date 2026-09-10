@@ -1,0 +1,86 @@
+/* Gaps the vendored Summer sheet leaves on the six account-*.html pages, which all link this one
+   file. Anything style.css already shapes (.account-sidebar, .account-card) is not restated. */
+
+/* header-transparent lifts the bar out of flow, and .dz-bnr-inr-entry drops to 40px below 575px -
+   less than the mobile bar is tall, which puts the page heading under the logo. */
+@media only screen and (max-width: 575px) {
+	.account-banner .dz-bnr-inr-entry {
+		padding-top: 70px;
+	}
+}
+
+/* Upstream pulls the sidebar 170px up to overlap the reference's dark bg1.jpg banner; this theme
+   keeps that banner light, so the pull-up would drop the panel on the page heading. */
+.account-page .account-sidebar-wrapper {
+	margin-top: 0;
+}
+
+/* style.css ships no current-page state for the account nav: upstream's demo pages each link
+   a static list and never mark one. */
+.account-sidebar .account-nav ul li a.active {
+	color: var(--primary);
+	font-weight: 500;
+}
+
+/* Below 1200px .account-sidebar becomes a fixed off-canvas panel. style.css slides it in but
+   dims nothing behind it, so the page underneath still reads as the active surface. */
+.account-sidebar-backdrop {
+	display: none;
+}
+
+@media only screen and (max-width: 1199px) {
+	.account-sidebar-backdrop {
+		display: block;
+		position: fixed;
+		inset: 0;
+		z-index: 99999;
+		background-color: rgba(0, 0, 0, 0.5);
+	}
+}
+
+/* .total-icon is sized for the reference's three inline SVGs; the wishlist counter has no
+   upstream SVG and uses the feather heart the product card already uses. */
+.total-contain .total-icon i {
+	font-size: 26px;
+	line-height: 1;
+	color: var(--primary);
+}
+
+/* .total-contain is a plain div upstream. The wishlist card links through, and an anchor
+   would otherwise pick up the global link colour and underline on hover. */
+a.total-contain,
+a.total-contain:hover {
+	color: inherit;
+	text-decoration: none;
+}
+
+/* Summer ships no empty state on any account page. */
+.account-empty {
+	padding: 20px 0 10px;
+	text-align: center;
+}
+
+.account-empty i {
+	display: block;
+	font-size: 48px;
+	line-height: 1;
+	margin-bottom: 20px;
+	color: var(--secondary);
+}
+
+.account-empty p {
+	margin-bottom: 20px;
+}
+
+/* The reference's demo order ids are short; a real Sales Order name plus a currency symbol
+   wraps the first and last columns onto two lines at tablet width. */
+.account-table th,
+.account-table td {
+	white-space: nowrap;
+}
+
+/* Five columns cannot compress below this without the status badge wrapping, so
+   .table-responsive scrolls instead of the page. */
+.account-table {
+	min-width: 34rem;
+}

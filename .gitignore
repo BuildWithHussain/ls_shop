@@ -71,7 +71,7 @@ commera/www/commera.html
 commera/public/dashboard/
 commera/www/dashboard.html
 
-# The Pixio vendor theme, kept locally as the provenance reference the theme templates cite.
+# The Pixio vendor theme the Summer theme derives from, kept locally as the provenance reference.
 # 14MB of demo pages and duplicated CSS that nothing loads at build or run time.
 reference_themes/
 

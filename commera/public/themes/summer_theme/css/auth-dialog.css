@@ -1,0 +1,78 @@
+/* Sign in / sign up dialog. The theme ships no Tailwind, so `hidden` and `animate-spin` — toggled
+   by templates/macros/auth_script.html — have to be defined here rather than inherited. */
+
+.summer-auth-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1040;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.summer-auth-panel {
+  position: fixed;
+  z-index: 1050;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  border-radius: var(--border-radius-base, 0.5rem);
+  background: #fff;
+}
+
+.summer-auth-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.summer-auth-head .btn-close {
+  border: 0;
+  background: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.summer-auth-body {
+  padding: 1.5rem;
+}
+
+/* Six single-character boxes that stay on one row down to the narrowest phone. */
+.summer-auth-otp {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.summer-auth-otp .form-control {
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+}
+
+.animate-spin {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  margin-inline-start: 0.5rem;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  vertical-align: -0.15em;
+  animation: summer-auth-spin 0.7s linear infinite;
+}
+
+@keyframes summer-auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Must stay after .animate-spin: same specificity, so source order is what decides whether a
+   resting button shows its spinner. */
+.hidden {
+  display: none;
+}

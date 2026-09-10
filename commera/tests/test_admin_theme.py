@@ -14,7 +14,7 @@ from commera.api.admin.theme import (
 )
 from commera.www import theme_editor_preview
 
-PIXIO_THEME = "Pixio Theme"
+SUMMER_THEME = "Summer Theme"
 BASE_THEME = "Shop Base Theme"
 DEFAULT_THEME = "Shop Default Theme"
 
@@ -25,7 +25,7 @@ class TestAdminTheme(IntegrationTestCase):
 		self.addCleanup(frappe.db.rollback)
 		self.addCleanup(frappe.clear_cache)
 
-		activate_theme(PIXIO_THEME)
+		activate_theme(SUMMER_THEME)
 
 	def find_theme(self, themes, name):
 		return next((theme for theme in themes if theme["name"] == name), None)
@@ -36,8 +36,8 @@ class TestAdminTheme(IntegrationTestCase):
 	def test_editor_data_names_the_live_theme_and_lists_the_rest(self):
 		data = get_editor_data()
 
-		self.assertEqual(data["active_theme"], PIXIO_THEME)
-		self.assertTrue(self.find_theme(data["themes"], PIXIO_THEME)["live"])
+		self.assertEqual(data["active_theme"], SUMMER_THEME)
+		self.assertTrue(self.find_theme(data["themes"], SUMMER_THEME)["live"])
 		self.assertFalse(self.find_theme(data["themes"], BASE_THEME)["live"])
 		# Live first: the screen leads with the theme the storefront is actually serving.
 		self.assertTrue(data["themes"][0]["live"])
@@ -45,7 +45,7 @@ class TestAdminTheme(IntegrationTestCase):
 	def test_editor_data_renders_the_live_themes_own_settings(self):
 		data = get_editor_data()
 
-		self.assertEqual(data["settings"]["doctype"], "Pixio Theme Settings")
+		self.assertEqual(data["settings"]["doctype"], "Summer Theme Settings")
 		self.assertIn("categories_title", self.field_labels(data["settings"]["groups"]))
 		# A table is rows, not a field: it is reported so the screen can link out to it.
 		self.assertNotIn("hero_slides", self.field_labels(data["settings"]["groups"]))
@@ -71,7 +71,7 @@ class TestAdminTheme(IntegrationTestCase):
 		data = save_theme_settings(categories_title="ZZ Categories")
 
 		self.assertEqual(
-			frappe.db.get_single_value("Pixio Theme Settings", "categories_title"), "ZZ Categories"
+			frappe.db.get_single_value("Summer Theme Settings", "categories_title"), "ZZ Categories"
 		)
 		# The write answers with the whole screen, so the editor never renders a stale value.
 		saved = next(
@@ -96,7 +96,7 @@ class TestThemeEditorPreview(IntegrationTestCase):
 		self.addCleanup(frappe.db.rollback)
 		self.addCleanup(frappe.clear_cache)
 		frappe.set_user("Administrator")
-		activate_theme(PIXIO_THEME)
+		activate_theme(SUMMER_THEME)
 
 	def render(self, lang="en", theme=None):
 		# frappe.local, never frappe.form_dict: rebinding the module attribute swaps the LocalProxy out
@@ -109,7 +109,7 @@ class TestThemeEditorPreview(IntegrationTestCase):
 	def test_the_pane_frames_the_live_themes_own_home_page(self):
 		html = self.render()
 
-		self.assertIn("theme-pixio", html)
+		self.assertIn("theme-summer", html)
 		# Tracking is blanked: an editor pane must never emit a page view or a second canonical.
 		self.assertNotIn("application/ld+json", html)
 		self.assertNotIn('rel="canonical"', html)
@@ -122,21 +122,21 @@ class TestThemeEditorPreview(IntegrationTestCase):
 	def test_the_pane_frames_a_theme_that_is_not_live(self):
 		html = self.render(theme=DEFAULT_THEME)
 
-		# Its own body class and its own assets, while Pixio is the theme the storefront serves:
+		# Its own body class and its own assets, while Summer is the theme the storefront serves:
 		# the template helpers must follow the previewed theme, not the live one.
 		self.assertIn("theme-shop-default", html)
 		self.assertIn("themes/shop_default_theme", html)
-		self.assertNotIn("theme-pixio", html)
+		self.assertNotIn("theme-summer", html)
 
 	def test_previewing_a_theme_leaves_the_live_one_alone(self):
 		self.render(theme=DEFAULT_THEME)
 
-		self.assertEqual(frappe.db.get_single_value("Shop Theme Settings", "active_theme"), PIXIO_THEME)
+		self.assertEqual(frappe.db.get_single_value("Shop Theme Settings", "active_theme"), SUMMER_THEME)
 		# The pin is scoped to the render: the next preview is the live theme again.
-		self.assertIn("theme-pixio", self.render())
+		self.assertIn("theme-summer", self.render())
 
 	def test_a_theme_that_is_not_installed_falls_back_to_the_live_one(self):
-		self.assertIn("theme-pixio", self.render(theme="ZZ No Such Theme"))
+		self.assertIn("theme-summer", self.render(theme="ZZ No Such Theme"))
 
 	def test_a_previewed_theme_with_no_home_page_is_named_in_the_message(self):
 		html = self.render(theme=BASE_THEME)

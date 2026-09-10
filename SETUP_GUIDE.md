@@ -58,11 +58,11 @@ If you want to quickly test Commera with demo products, you have two options:
 
 ```bash
 # After installing commera
-bench --site your-site-name execute commera.install_pixio_demo.install_pixio_demo
+bench --site your-site-name execute commera.install_summer_demo.install_summer_demo
 ```
 
-This seeds the Pixio storefront in **SAR**. Pass `--kwargs '{"currency": "INR"}'` for a rupee store;
-the supported currencies are the keys of `CURRENCY_PROFILES` in `commera/install_pixio_demo.py`.
+This seeds the Summer storefront in **SAR**. Pass `--kwargs '{"currency": "INR"}'` for a rupee store;
+the supported currencies are the keys of `CURRENCY_PROFILES` in `commera/install_summer_demo.py`.
 The seeder is idempotent — run it as often as you like.
 
 Currency is a parameter, not a constant: one run puts the system default, the company, every account
@@ -82,13 +82,13 @@ bench new-site $SITE --admin-password admin
 bench --site $SITE install-app erpnext commera
 bench --site $SITE execute frappe.desk.page.setup_wizard.setup_wizard.setup_complete --kwargs '{"args": {"language": "en", "country": "Saudi Arabia", "timezone": "Asia/Riyadh", "currency": "SAR", "company_name": "Lifestyle Demo", "company_abbr": "LSD", "chart_of_accounts": "Standard", "fy_start_date": "2026-01-01", "fy_end_date": "2026-12-31", "full_name": "Administrator", "email": "admin@example.com", "password": "admin"}}'
 bench --site $SITE migrate
-bench --site $SITE execute commera.install_pixio_demo.install_pixio_demo --kwargs '{"currency": "SAR"}'
+bench --site $SITE execute commera.install_summer_demo.install_summer_demo --kwargs '{"currency": "SAR"}'
 ```
 
 Two things about that order are load-bearing:
 
 - **`bench migrate` before the seeder.** `Shop Theme` records sync on migrate and not on install-app,
-  so activating the Pixio theme straight after install throws "Could not find Active Theme".
+  so activating the Summer theme straight after install throws "Could not find Active Theme".
 - **The setup wizard will log `MandatoryError: [Item Group, ...]: custom_displayname`.** commera makes
   that field mandatory, so ERPNext cannot insert its own stock groups. The wizard still completes and
   the storefront does not use those groups; the errors are noise.
