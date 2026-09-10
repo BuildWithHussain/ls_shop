@@ -9,8 +9,9 @@ from commera.install_demo_data import (
 
 IMAGE_ROOT = "/assets/commera/themes/summer_theme/images"
 
-# Apparel, knitted: the closest single heading for a demo catalogue that is all garments.
-DEMO_HSN_CODE = "6109"
+# Knitted cotton t-shirts. Eight digits, because GST Settings.min_hsn_digits defaults to 6 and
+# only 4/6/8 are accepted - an 8-digit code stays valid whatever a site raises that floor to.
+DEMO_HSN_CODE = "61091000"
 
 CAR_PART_TEMPLATES = ("BRAKE-PADS", "AIR-FILTER", "FLOOR-MATS")
 CAR_PART_CATEGORIES = ("Engine Parts", "Brake System", "Interior Accessories")
